@@ -1,0 +1,77 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body {
+    background-color: rgb(13, 13, 13);
+}
+
+
+.landing {
+    height: 100vh;
+    min-height: 700px;
+    color: white;
+}
+
+.center {
+    position: relative;
+    font-family: Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    width: 90%;
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+}
+
+.center .header {
+    margin: 60px 0 20px 0;
+}
+.center h1 {
+    margin: 10px 0;
+    font-weight: 800;
+}
+.center p {
+    color:rgb(210, 210, 210);
+}
+
+form {
+    position: relative;
+    display: flex;
+}
+
+.center::before {
+    content: "";
+    position: absolute;
+    transform: translate(-50%, 50px);
+    left: 50%;
+    z-index: -1;
+    height: 50px;
+    width: 100%;
+    filter: blur(100px);
+    border-radius: 5em;
+    opacity: .2;
+    background: linear-gradient(90deg, rgb(48, 225, 213) 0%, rgb(30, 200, 172) 100%);
+    padding: 100px 0;
+}
+
+.center input[type="submit"] {
+    margin: 20px 0 20px auto;
+    transition: 100ms ease;
+    width: 25%;
+    border: 0;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 7px;
+    background: rgb(223, 223, 223);
+}
+.center input[type="file"] {
+    font-family: Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin: 20px auto 20px 0;
+}
+input[type="file"]#file-upload-button {
+    padding: 20px 0 !important;
+}
+
+.center input[type="submit"]:hover {
+    background: rgba(255, 255, 255, 0.538);
+}
