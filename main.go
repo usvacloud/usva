@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -11,22 +12,21 @@ import (
 	"github.com/romeq/tapsa/utils"
 )
 
-func main() {
-	setuplogger()
+type Options struct {
+	server config.Server
+}
 
-	// arguments
-	args := arguments.Parse()
-	defer setLogWriter(args.LogOutput).Close()
+func parseOpts(cfg config.Config, args arguments.Arguments) Options {
+	return Options{
+		server: config.Server{
+			Address: utils.StringOr(args.Address, cfg.Server.Address),
+			Port:    utils.IntOr(args.Port, cfg.Server.Port),
+		},
+	}
+}
 
-	// config file
-	cfgHandle, err := os.Open(args.ConfigFile)
-	utils.Check(err)
-	cfg := config.ParseFromFile(cfgHandle)
-
-	// start server
-	log.Println("Starting server at", cfg.GetListenAddress())
-	r := setuprouter(cfg)
-	utils.Check(r.Run(cfg.GetListenAddress()))
+func (o *Options) getaddr() string {
+	return fmt.Sprintf("%s:%d", o.server.Address, o.server.Port)
 }
 
 func setuprouter(cfg config.Config) *gin.Engine {
@@ -54,4 +54,25 @@ func setLogWriter(file string) *os.File {
 
 	log.SetOutput(fhandle)
 	return fhandle
+}
+
+func main() {
+	setuplogger()
+
+	// arguments
+	args := arguments.Parse()
+	defer setLogWriter(args.LogOutput).Close()
+
+	// config file
+	cfgHandle, err := os.Open(args.ConfigFile)
+	utils.Check(err)
+	cfg := config.ParseFromFile(cfgHandle)
+
+	// runtime options
+	opts := parseOpts(cfg, args)
+
+	// start server
+	log.Println("Starting server at", opts.getaddr())
+	r := setuprouter(cfg)
+	utils.Check(r.Run(opts.getaddr()))
 }

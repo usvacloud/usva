@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -54,10 +53,6 @@ func ParseFromFile(f *os.File) (cfg Config) {
 	toml.Decode(string(configtoml), &cfg)
 	cfg.EnsureRequiredValues()
 	return cfg
-}
-
-func (c *Config) GetListenAddress() string {
-	return fmt.Sprintf("%s:%d", c.Server.Address, c.Server.Port)
 }
 
 func (c *Config) EnsureRequiredValues() {
