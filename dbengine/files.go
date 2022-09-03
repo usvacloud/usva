@@ -1,8 +1,14 @@
 package dbengine
 
+import "errors"
+
 // InsertFile creates a new record on file database
 // from given File struct
 func InsertFile(file File) error {
+	if err := ensureConnection(); err != nil {
+		return err
+	}
+
 	statement := `INSERT INTO files(
 		filename,
 		password,
@@ -23,6 +29,10 @@ func InsertFile(file File) error {
 
 // GetPasswordHash returns password field from database
 func GetPasswordHash(filename string) (pwd string, err error) {
+	if err = ensureConnection(); err != nil {
+		return "", err
+	}
+
 	row := DbConnection.QueryRow("SELECT password FROM files WHERE filename = ?;", filename)
 	err = row.Scan(&pwd)
 	return pwd, err
@@ -40,6 +50,10 @@ fields will remain empty:
   - ViewCount
 */
 func GetFile(filename string) (f File, err error) {
+	if err = ensureConnection(); err != nil {
+		return File{}, err
+	}
+
 	row := DbConnection.QueryRow("SELECT filename, upload_date, file_size, viewcount FROM files WHERE filename = ?",
 		filename)
 	if err = row.Scan(&f.Filename, &f.UploadDate,
@@ -53,10 +67,21 @@ func GetFile(filename string) (f File, err error) {
 // IncrementFileViewCount increments file's viewcount
 // field by 1 in database
 func IncrementFileViewCount(filename string) error {
+	if err := ensureConnection(); err != nil {
+		return err
+	}
+
 	statement := "UPDATE files SET viewcount = viewcount + 1 WHERE filename = ?"
 	if _, err := DbConnection.Exec(statement, filename); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func ensureConnection() error {
+	if DbConnection == nil {
+		return errors.New("database is not connected")
+	}
 	return nil
 }

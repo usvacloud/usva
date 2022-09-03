@@ -9,10 +9,22 @@ import (
 	"testing"
 
 	"github.com/romeq/tapsa/config"
+	"github.com/romeq/tapsa/dbengine"
 	"github.com/stretchr/testify/assert"
 )
 
+func initdb(t *testing.T) {
+	f, err := os.Create("test.db")
+	if err != nil {
+		t.Error(err)
+	}
+	f.Close()
+	dbengine.Init("test.db")
+}
+
 func TestUpload(t *testing.T) {
+	initdb(t)
+
 	cfg := config.New("127.0.0.1", 8080, []string{""}, false, 20, "uploads")
 	testfileName := path.Join(cfg.Files.UploadsDir, "testfile")
 	pr, pw := io.Pipe()
@@ -41,6 +53,7 @@ func TestUpload(t *testing.T) {
 	r.ServeHTTP(response, request)
 
 	// test output
+	t.Log(response.Body)
 	assert.Equal(t, 200, response.Code)
 
 	uploadedFile, err := os.Open("uploads/testfile")
@@ -48,7 +61,9 @@ func TestUpload(t *testing.T) {
 	fileEquals(t, testfile, uploadedFile)
 
 	t.Cleanup(func() {
-		err := os.Remove("uploads/testfile")
+		err := os.Remove("test.db")
+		errhandle(t, err)
+		err = os.Remove("uploads/testfile")
 		errhandle(t, err)
 	})
 }
