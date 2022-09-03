@@ -17,3 +17,5 @@
 # project directories
 uploads
 tmp
+db.db
+__debug*

@@ -1,13 +1,13 @@
 package utils
 
-import (
-	"log"
-)
+import "log"
 
 // Check logs error and exits program
-func Check(err error) {
-	if err != nil {
-		log.Panic(err.Error())
+func Check(errs ...error) {
+	for _, err := range errs {
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
 	}
 }
 

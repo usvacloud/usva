@@ -9,6 +9,7 @@ import (
 	"github.com/romeq/tapsa/api"
 	"github.com/romeq/tapsa/arguments"
 	"github.com/romeq/tapsa/config"
+	"github.com/romeq/tapsa/dbengine"
 	"github.com/romeq/tapsa/utils"
 )
 
@@ -70,6 +71,8 @@ func main() {
 
 	// runtime options
 	opts := parseOpts(cfg, args)
+	dbengine.Init(args.DatabasePath)
+	defer dbengine.DbConnection.Close()
 
 	// start server
 	log.Println("Starting server at", opts.getaddr())
