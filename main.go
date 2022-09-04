@@ -35,7 +35,8 @@ func setuprouter(cfg config.Config) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(logger(), gin.Recovery())
 	api.SetupRoutes(r, &cfg)
 	r.SetTrustedProxies(cfg.Server.TrustedProxies)
 	return r
@@ -55,6 +56,12 @@ func setLogWriter(file string) *os.File {
 
 	log.SetOutput(fhandle)
 	return fhandle
+}
+
+func logger() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		log.Printf("request: %s (%d) \n", ctx.Request.URL, ctx.Writer.Status())
+	}
 }
 
 func main() {
