@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/tapsa/api"
@@ -60,7 +61,12 @@ func setLogWriter(file string) *os.File {
 
 func logger() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		log.Printf("request: %s (%d) \n", ctx.Request.URL, ctx.Writer.Status())
+		t := time.Now()
+		ctx.Next()
+		c := time.Since(t).Milliseconds()
+
+		log.Printf("request: %s %s (%d) took %dms \n",
+			ctx.Request.Method, ctx.Request.URL, ctx.Writer.Status(), c)
 	}
 }
 
