@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/tapsa/config"
 )
@@ -23,5 +25,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 }
 
 func notfound(ctx *gin.Context) {
+	ctx.AbortWithStatus(http.StatusNotFound)
 	ctx.File("public/404.html")
 }
