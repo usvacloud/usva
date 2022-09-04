@@ -37,7 +37,7 @@ func setuprouter(cfg config.Config) *gin.Engine {
 	}
 
 	r := gin.New()
-	r.Use(logger(), gin.Recovery())
+	r.Use(logger, gin.Recovery())
 	api.SetupRoutes(r, &cfg)
 	r.SetTrustedProxies(cfg.Server.TrustedProxies)
 	return r
@@ -59,15 +59,13 @@ func setLogWriter(file string) *os.File {
 	return fhandle
 }
 
-func logger() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		t := time.Now()
-		ctx.Next()
-		c := time.Since(t).Milliseconds()
+func logger(ctx *gin.Context) {
+	t := time.Now()
+	ctx.Next()
+	c := time.Since(t).Milliseconds()
 
-		log.Printf("request: %s %s (%d) took %dms \n",
-			ctx.Request.Method, ctx.Request.URL, ctx.Writer.Status(), c)
-	}
+	log.Printf("request: [%s] %s %s %d (took %dms) \n",
+		ctx.ClientIP(), ctx.Request.Method, ctx.Request.URL, ctx.Writer.Status(), c)
 }
 
 func main() {
