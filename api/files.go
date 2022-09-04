@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -68,7 +69,7 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	ctx.SaveUploadedFile(f, path.Join(uploadOptions.UploadsDir, filename))
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message":  "File uploaded",
+		"message":  "file uploaded",
 		"filename": filename,
 	})
 }
@@ -120,6 +121,34 @@ func downloadFile(ctx *gin.Context, downloadOptions *config.Files) {
 	}
 
 	ctx.File(path.Join(downloadOptions.UploadsDir, filename))
+}
+
+func deleteFile(ctx *gin.Context, fileOptions *config.Files) {
+	filename, filenameGiven := ctx.GetQuery("filename")
+	if !filenameGiven {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "filename not given",
+		})
+		return
+	}
+
+	if !authorizeRequest(ctx, filename) {
+		return
+	}
+
+	if err := os.Remove(path.Join(fileOptions.UploadsDir, filename)); err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	if err := dbengine.DeleteFile(filename); err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "file deleted!",
+	})
 }
 
 func authorizeRequest(ctx *gin.Context, filename string) (success bool) {

@@ -13,13 +13,16 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	// API
 	api := router.Group("/api")
 	{
-		api.POST("/file/upload", func(ctx *gin.Context) {
-			uploadFile(ctx, &cfg.Files)
+		api.GET("/file/info", fileInformation)
+		api.GET("/file", func(ctx *gin.Context) {
+			downloadFile(ctx, &cfg.Files)
 		})
 
-		api.GET("/file/info", fileInformation)
-		api.GET("/file/get", func(ctx *gin.Context) {
-			downloadFile(ctx, &cfg.Files)
+		api.DELETE("/file", func(ctx *gin.Context) {
+			deleteFile(ctx, &cfg.Files)
+		})
+		api.POST("/file/upload", func(ctx *gin.Context) {
+			uploadFile(ctx, &cfg.Files)
 		})
 	}
 }

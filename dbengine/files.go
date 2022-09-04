@@ -27,6 +27,20 @@ func InsertFile(file File) error {
 	return nil
 }
 
+// DeleteFile removes file metadata from database
+func DeleteFile(filename string) error {
+	if err := ensureConnection(); err != nil {
+		return err
+	}
+
+	stmt := "DELETE FROM files WHERE filename = ?;"
+	if _, err := DbConnection.Exec(stmt, filename); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetPasswordHash returns password field from database
 func GetPasswordHash(filename string) (pwd string, err error) {
 	if err = ensureConnection(); err != nil {
