@@ -1,3 +1,3 @@
 # Tapsa
-*Very* simple fileserver with privacy in mind.
+*Very* simple file cloud with privacy in mind.
 
