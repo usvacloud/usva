@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"mime/multipart"
 	"net/http/httptest"
@@ -16,7 +17,7 @@ import (
 func initdb(t *testing.T) {
 	f, err := os.Create("test.db")
 	if err != nil {
-		t.Error(err)
+		t.Error("Failed to create database file:", err)
 	}
 	f.Close()
 	dbengine.Init("test.db")
@@ -24,14 +25,17 @@ func initdb(t *testing.T) {
 
 func TestUpload(t *testing.T) {
 	initdb(t)
+	setuplogger()
 
-	cfg := config.New("127.0.0.1", 8080, []string{""}, false, 20, "uploads")
-	testfileName := path.Join(cfg.Files.UploadsDir, "testfile")
+	cfg := config.New("127.0.0.1", 8080, []string{"127.0.0.1"}, false, true, 20, "uploads")
+	testFileName := path.Join("tmp", "testfile")
+	testFileContent := `testtesttest!`
 	pr, pw := io.Pipe()
 
 	// setup writers
 	errhandle(t, os.MkdirAll(cfg.Files.UploadsDir, 0755))
-	testfile, err := os.Create(testfileName)
+	errhandle(t, os.MkdirAll("tmp", 0755))
+	testfile, err := os.Create(testFileName)
 	errhandle(t, err)
 	defer testfile.Close()
 
@@ -41,43 +45,45 @@ func TestUpload(t *testing.T) {
 
 		part, err := writer.CreateFormFile("file", testfile.Name())
 		errhandle(t, err)
-		_, err = part.Write([]byte("testtesttest!"))
+		_, err = part.Write([]byte(testFileContent))
 		errhandle(t, err)
 	}()
 
+	r := setuprouter(cfg)
 	request := httptest.NewRequest("POST", "/api/file/upload", pr)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 
 	response := httptest.NewRecorder()
-	r := setuprouter(cfg)
 	r.ServeHTTP(response, request)
 
 	// test output
-	t.Log(response.Body)
 	assert.Equal(t, 200, response.Code)
 
-	uploadedFile, err := os.Open("uploads/testfile")
+	output := map[string]string{}
+	errhandle(t, json.Unmarshal(response.Body.Bytes(), &output))
+	filepath := path.Join(cfg.Files.UploadsDir, output["filename"])
+	uploadedFile, err := os.Open(filepath)
 	errhandle(t, err)
-	fileEquals(t, testfile, uploadedFile)
+	fileContentEquals(t, testFileContent, uploadedFile)
 
 	t.Cleanup(func() {
 		err := os.Remove("test.db")
 		errhandle(t, err)
-		err = os.Remove("uploads/testfile")
+		err = os.Remove(path.Join("tmp", "testfile"))
+		errhandle(t, err)
+		err = os.Remove(filepath)
 		errhandle(t, err)
 	})
 }
 
-func fileEquals(t *testing.T, z *os.File, f *os.File) {
-	zc, err := io.ReadAll(z)
-	errhandle(t, err)
+func fileContentEquals(t *testing.T, z string, f *os.File) {
 	fc, err := io.ReadAll(f)
 	errhandle(t, err)
-	assert.Equal(t, zc, fc)
+	assert.Equal(t, z, string(fc))
 }
 
 func errhandle(t *testing.T, err error) {
 	if err != nil {
-		t.Error(err)
+		t.Fatal("test resulted in an error: ", err)
 	}
 }
