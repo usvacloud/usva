@@ -66,7 +66,11 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 		return
 	}
 
-	ctx.SaveUploadedFile(f, path.Join(uploadOptions.UploadsDir, filename))
+	err = ctx.SaveUploadedFile(f, path.Join(uploadOptions.UploadsDir, filename))
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message":  "file uploaded",
@@ -93,11 +97,17 @@ func fileInformation(ctx *gin.Context) {
 		return
 	}
 
+	pwd, err := dbengine.GetPasswordHash(filename)
+	if err != nil {
+		setErrResponse(ctx, err)
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"filename":   f.Filename,
 		"size":       f.FileSize,
 		"uploadDate": f.UploadDate,
 		"viewCount":  f.ViewCount,
+		"locked":     pwd != "",
 	})
 }
 

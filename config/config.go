@@ -14,6 +14,7 @@ type Server struct {
 	Port           int
 	TrustedProxies []string
 	DebugMode      bool
+	HideRequests   bool
 }
 type Files struct {
 	MaxSize    int
@@ -29,6 +30,7 @@ func New(
 	sv_port int,
 	sv_tp []string,
 	sv_dm bool,
+	sv_hr bool,
 	f_ms int,
 	f_ud string,
 ) Config {
@@ -38,6 +40,7 @@ func New(
 			Port:           sv_port,
 			TrustedProxies: sv_tp,
 			DebugMode:      sv_dm,
+			HideRequests:   sv_hr,
 		},
 		Files: Files{
 			MaxSize:    f_ms,
@@ -50,7 +53,9 @@ func ParseFromFile(f *os.File) (cfg Config) {
 	configtoml, err := ioutil.ReadAll(f)
 	utils.Check(err)
 
-	toml.Decode(string(configtoml), &cfg)
+	_, err = toml.Decode(string(configtoml), &cfg)
+	utils.Check(err)
+
 	cfg.EnsureRequiredValues()
 	return cfg
 }
