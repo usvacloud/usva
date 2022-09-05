@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -50,7 +50,7 @@ func New(
 }
 
 func ParseFromFile(f *os.File) (cfg Config) {
-	configtoml, err := ioutil.ReadAll(f)
+	configtoml, err := io.ReadAll(f)
 	utils.Check(err)
 
 	_, err = toml.Decode(string(configtoml), &cfg)
