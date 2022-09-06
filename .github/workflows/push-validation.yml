@@ -8,10 +8,10 @@ jobs:
       - uses: actions/setup-go@v3
         with: 
           go-version: 1.19
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3.2.0
 
       - name: Unit Testing
         run: make test
-      - name: Linting
-        run: make lint
       - name: Building
         run: make build
