@@ -47,8 +47,10 @@ func GetPasswordHash(filename string) (pwd string, err error) {
 		return "", err
 	}
 
-	row := DbConnection.QueryRow("SELECT password FROM files WHERE filename = ?;", filename)
+	stmt := "SELECT password FROM files WHERE filename = ?;"
+	row := DbConnection.QueryRow(stmt, filename)
 	err = row.Scan(&pwd)
+
 	return pwd, err
 }
 
