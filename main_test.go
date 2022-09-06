@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
@@ -17,9 +18,10 @@ import (
 )
 
 var (
-	r       = &gin.Engine{}
-	workdir = ""
-	cfg     = config.Config{
+	r        = &gin.Engine{}
+	workdir  = ""
+	filename = ""
+	cfg      = config.Config{
 		Server: config.Server{
 			Address:        "127.0.0.1",
 			Port:           8080,
@@ -118,7 +120,8 @@ func TestUpload(t *testing.T) {
 
 	output := map[string]string{}
 	errhandle(t, json.Unmarshal(response.Body.Bytes(), &output))
-	filepath := path.Join(cfg.Files.UploadsDir, output["filename"])
+	filename = output["filename"]
+	filepath := path.Join(cfg.Files.UploadsDir, filename)
 
 	uploadedFile, err := os.Open(filepath)
 	errhandle(t, err)
@@ -127,7 +130,19 @@ func TestUpload(t *testing.T) {
 	t.Cleanup(func() {
 		err = os.Remove(path.Join(workdir, "testfile"))
 		errhandle(t, err)
-		err = os.Remove(filepath)
+	})
+}
+
+func TestGet(t *testing.T) {
+	requestpath := fmt.Sprintf("/api/file?filename=%s", filename)
+	req := httptest.NewRequest("GET", requestpath, nil)
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Code)
+
+	t.Cleanup(func() {
+		err := os.Remove(path.Join(cfg.Files.UploadsDir, filename))
 		errhandle(t, err)
 	})
 }
