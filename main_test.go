@@ -140,9 +140,13 @@ func TestGet(t *testing.T) {
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Code)
+}
 
-	t.Cleanup(func() {
-		err := os.Remove(path.Join(cfg.Files.UploadsDir, filename))
-		errhandle(t, err)
-	})
+func TestDelete(t *testing.T) {
+	requestpath := fmt.Sprintf("/api/file?filename=%s", filename)
+	req := httptest.NewRequest("DELETE", requestpath, nil)
+	res := httptest.NewRecorder()
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Code)
 }
