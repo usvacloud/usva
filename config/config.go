@@ -9,12 +9,18 @@ import (
 	"github.com/romeq/tapsa/utils"
 )
 
+type TLS struct {
+	Enabled  bool
+	CertFile string
+	KeyFile  string
+}
 type Server struct {
 	Address        string
 	Port           int
 	TrustedProxies []string
 	DebugMode      bool
 	HideRequests   bool
+	TLS            TLS
 }
 type Files struct {
 	MaxSize    int
@@ -23,30 +29,6 @@ type Files struct {
 type Config struct {
 	Server Server
 	Files  Files
-}
-
-func New(
-	sv_addr string,
-	sv_port int,
-	sv_tp []string,
-	sv_dm bool,
-	sv_hr bool,
-	f_ms int,
-	f_ud string,
-) Config {
-	return Config{
-		Server: Server{
-			Address:        sv_addr,
-			Port:           sv_port,
-			TrustedProxies: sv_tp,
-			DebugMode:      sv_dm,
-			HideRequests:   sv_hr,
-		},
-		Files: Files{
-			MaxSize:    f_ms,
-			UploadsDir: f_ud,
-		},
-	}
 }
 
 func ParseFromFile(f *os.File) (cfg Config) {
@@ -64,10 +46,14 @@ func (c *Config) EnsureRequiredValues() {
 	ensureVal("server address", c.Server.Address)
 	ensureVal("server port", c.Server.Port)
 	ensureVal("file upload directory", c.Files.UploadsDir)
+	if c.Server.TLS.Enabled {
+		ensureVal("tls: certificate file", c.Server.TLS.CertFile)
+		ensureVal("tls: key file", c.Server.TLS.KeyFile)
+	}
 }
 
 func ensureVal(key string, val any) {
 	if val == nil || val == "" || val == 0 {
-		log.Fatalln(key, "is required")
+		log.Fatalln("config validation failed: ", key, "is required but not present")
 	}
 }

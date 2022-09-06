@@ -93,6 +93,12 @@ func main() {
 
 	// start server
 	log.Println("Starting server at", opts.getaddr())
+
 	r := setuprouter(cfg)
-	utils.Check(r.Run(opts.getaddr()))
+	tlssettings := cfg.Server.TLS
+	if tlssettings.Enabled {
+		utils.Check(r.RunTLS(opts.getaddr(), tlssettings.KeyFile, tlssettings.CertFile))
+	} else {
+		utils.Check(r.Run(opts.getaddr()))
+	}
 }
