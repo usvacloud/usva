@@ -11,17 +11,17 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	router.NoRoute(notfound)
 
 	// API
-	api := router.Group("/api")
+	api := router.Group("/file")
 	{
-		api.GET("/file/info", fileInformation)
-		api.GET("/file", func(ctx *gin.Context) {
+		api.GET("/info", fileInformation)
+		api.GET("/", func(ctx *gin.Context) {
 			downloadFile(ctx, &cfg.Files)
 		})
 
-		api.DELETE("/file", func(ctx *gin.Context) {
+		api.DELETE("/", func(ctx *gin.Context) {
 			deleteFile(ctx, &cfg.Files)
 		})
-		api.POST("/file/upload", func(ctx *gin.Context) {
+		api.POST("/upload", func(ctx *gin.Context) {
 			uploadFile(ctx, &cfg.Files)
 		})
 	}
