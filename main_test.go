@@ -109,7 +109,7 @@ func TestUpload(t *testing.T) {
 		errhandle(t, err)
 	}()
 
-	request := httptest.NewRequest("POST", "/api/file/upload", pr)
+	request := httptest.NewRequest("POST", "/file/upload", pr)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 
 	response := httptest.NewRecorder()
@@ -134,7 +134,7 @@ func TestUpload(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	requestpath := fmt.Sprintf("/api/file?filename=%s", filename)
+	requestpath := fmt.Sprintf("/file?filename=%s", filename)
 	req := httptest.NewRequest("GET", requestpath, nil)
 	res := httptest.NewRecorder()
 	r.ServeHTTP(res, req)
@@ -143,7 +143,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	requestpath := fmt.Sprintf("/api/file?filename=%s", filename)
+	requestpath := fmt.Sprintf("/file?filename=%s", filename)
 	req := httptest.NewRequest("DELETE", requestpath, nil)
 	res := httptest.NewRecorder()
 	r.ServeHTTP(res, req)
