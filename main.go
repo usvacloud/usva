@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/tapsa/api"
 	"github.com/romeq/tapsa/arguments"
@@ -37,6 +38,9 @@ func setuprouter(cfg config.Config) *gin.Engine {
 	}
 
 	r := gin.New()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: cfg.Server.AllowedOrigins,
+	}))
 
 	r.Use(gin.Recovery())
 	if !cfg.Server.HideRequests {

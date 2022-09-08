@@ -20,6 +20,7 @@ type Server struct {
 	TrustedProxies []string
 	DebugMode      bool
 	HideRequests   bool
+	AllowedOrigins []string
 	TLS            TLS
 }
 type Files struct {
@@ -46,6 +47,7 @@ func (c *Config) EnsureRequiredValues() {
 	ensureVal("server address", c.Server.Address)
 	ensureVal("server port", c.Server.Port)
 	ensureVal("file upload directory", c.Files.UploadsDir)
+	ensureList("allowed origins", c.Server.AllowedOrigins)
 	if c.Server.TLS.Enabled {
 		ensureVal("tls: certificate file", c.Server.TLS.CertFile)
 		ensureVal("tls: key file", c.Server.TLS.KeyFile)
@@ -54,6 +56,12 @@ func (c *Config) EnsureRequiredValues() {
 
 func ensureVal(key string, val any) {
 	if val == nil || val == "" || val == 0 {
+		log.Fatalln("config validation failed: ", key, "is required but not present")
+	}
+}
+
+func ensureList(key string, val []string) {
+	if len(val) == 0 {
 		log.Fatalln("config validation failed: ", key, "is required but not present")
 	}
 }
