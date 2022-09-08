@@ -28,6 +28,7 @@ var (
 			TrustedProxies: []string{"127.0.0.1"},
 			DebugMode:      false,
 			HideRequests:   true,
+			AllowedOrigins: []string{"http://127.0.0.1"},
 		},
 		Files: config.Files{
 			MaxSize:    0,
@@ -139,7 +140,7 @@ func TestGet(t *testing.T) {
 	res := httptest.NewRecorder()
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Code)
+	assert.GreaterOrEqual(t, 399, res.Code)
 }
 
 func TestDelete(t *testing.T) {
@@ -148,5 +149,5 @@ func TestDelete(t *testing.T) {
 	res := httptest.NewRecorder()
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Code)
+	assert.GreaterOrEqual(t, 399, res.Code)
 }
