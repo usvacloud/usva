@@ -67,4 +67,6 @@ Port = 8080
 UploadsDir = "uploads"
 ```
 
-### 
+## API Specification
+
+Most up-to-date API specification can be found in `APISPEC.md`
