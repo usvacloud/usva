@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/tapsa/config"
+	"github.com/romeq/usva/config"
 )
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config) {

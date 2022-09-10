@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/tapsa/config"
-	"github.com/romeq/tapsa/dbengine"
+	"github.com/romeq/usva/config"
+	"github.com/romeq/usva/dbengine"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +40,7 @@ var (
 func prepareWorkspace() {
 	setuplogger()
 
-	tmpdir, err := os.MkdirTemp("", "tapsa")
+	tmpdir, err := os.MkdirTemp("", "usva")
 	if err != nil {
 		log.Fatal(err.Error())
 	}

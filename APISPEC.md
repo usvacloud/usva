@@ -10,7 +10,7 @@ Documentation about endpoints and their usage
 
 In order to authorize a request, you need to set `Authorization` header to `Bearer <password>` with base64 encoded password.  
 
-Example of authorization header, where file is locked with password `tapsaisbest` (this example will be used in sample requests):
+Example of authorization header, where file is locked with password `usvaisbest` (this example will be used in sample requests):
 
 | Name          | Value                   | Description |
 | ------------- | ----------------------- | ----------- |
@@ -42,7 +42,7 @@ Request file's content. `filename` param is required.
 ##### Sample request
 
 ```sh
-curl "http://tapsa.local/file?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
+curl "http://usva.local/file?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
 	--header "Authorization: Bearer dGFwc2Fpc2Jlc3QK"
 ```
 
@@ -65,7 +65,7 @@ Request file's information. `filename` param is required.
 ##### Sample request
 
 ```sh
-curl "http://tapsa.local/file/info?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
+curl "http://usva.local/file/info?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
 	--header "Authorization: Bearer dGFwc2Fpc2Jlc3QK"
 ```
 

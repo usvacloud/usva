@@ -1,7 +1,7 @@
 SHELL 		= /bin/bash
 GO			= go
-BINARY		= tapsa
-identifier	= tapsa
+BINARY		= usva
+identifier	= usva
 
 .PHONY: all lint test
 

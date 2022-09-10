@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/romeq/tapsa/utils"
+	"github.com/romeq/usva/utils"
 )
 
 type TLS struct {

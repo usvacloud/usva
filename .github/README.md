@@ -1,9 +1,9 @@
-# Tapsa 
+# Usva 
 
-Tapsa is a feature-rich file cloud with a modern REST API. 
-Privacy, accessibility and efficiency will always come first, thus tapsa is built to be highly reliable and easy to set up for anybody.
+Usva is a feature-rich file cloud with a modern REST API. 
+Privacy, accessibility and efficiency will always come first, thus usva is built to be highly reliable and easy to set up for anybody.
 
-If you have any questions or comments about tapsa's security practices, you can open an issue.
+If you have any questions or comments about usva's security practices, you can open an issue.
 
 ### Features
 
@@ -25,12 +25,12 @@ If you have any questions or comments about tapsa's security practices, you can 
 Installation is done in 3 steps: downloading source, installing dependencies and compiling it.
 
 ```sh
-% git clone https://github.com/romeq/tapsa && cd tapsa
+% git clone https://github.com/romeq/usva && cd usva
 % go get -u
 % make build
 # If everything went well,
 # binary is now compiled in current working directory.
-# You can launch it now with ./tapsa -c config_example.toml  
+# You can launch it now with ./usva -c config_example.toml  
 ```
 
 ### Configuration
@@ -44,6 +44,8 @@ Port = 8080 # the port to bind to
 TrustedProxies = ["127.0.0.1"]
 DebugMode = false # use of gin's debug mode (includes logging)
 HideRequests = false # requests should be hidden from logs
+# cors allowed origins
+AllowedOrigins = [ "example.com" ]
 
 [Server.TLS]
 Enabled = true
@@ -62,6 +64,8 @@ Smallest possible configuration looks something like below.
 [Server]
 Address = "127.0.0.1"
 Port = 8080
+# cors allowed origins
+AllowedOrigins = [ "example.com" ]
 
 [Files]
 UploadsDir = "uploads"

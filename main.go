@@ -8,11 +8,11 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/tapsa/api"
-	"github.com/romeq/tapsa/arguments"
-	"github.com/romeq/tapsa/config"
-	"github.com/romeq/tapsa/dbengine"
-	"github.com/romeq/tapsa/utils"
+	"github.com/romeq/usva/api"
+	"github.com/romeq/usva/arguments"
+	"github.com/romeq/usva/config"
+	"github.com/romeq/usva/dbengine"
+	"github.com/romeq/usva/utils"
 )
 
 type Options struct {
@@ -74,8 +74,8 @@ func requestLogger(ctx *gin.Context) {
 	ctx.Next()
 	c := time.Since(t).Milliseconds()
 
-	log.Printf("request: %s %s %d (took %dms) \n",
-		ctx.Request.Method, ctx.Request.URL, ctx.Writer.Status(), c)
+	log.Printf("request: [%s] %s %s %d (took %dms) \n",
+		ctx.RemoteIP(), ctx.Request.Method, ctx.Request.URL, ctx.Writer.Status(), c)
 }
 
 func main() {

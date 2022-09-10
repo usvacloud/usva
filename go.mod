@@ -1,4 +1,4 @@
-module github.com/romeq/tapsa
+module github.com/romeq/usva
 
 go 1.19
 

@@ -6,7 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/romeq/tapsa/utils"
+	"github.com/romeq/usva/utils"
 )
 
 var DbConnection *sqlx.DB
