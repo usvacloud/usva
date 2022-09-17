@@ -9,6 +9,9 @@ import (
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	router.NoRoute(notfound)
+	router.GET("/restrictions", func(ctx *gin.Context) {
+		restrictions(ctx, cfg)
+	})
 
 	// API
 	api := router.Group("/file")
@@ -25,6 +28,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 			uploadFile(ctx, &cfg.Files)
 		})
 	}
+}
+
+func restrictions(ctx *gin.Context, cfg *config.Config) {
+	ctx.JSON(http.StatusOK, gin.H{
+		"maxSize": cfg.Files.MaxSize,
+	})
 }
 
 func notfound(ctx *gin.Context) {
