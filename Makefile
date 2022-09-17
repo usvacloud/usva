@@ -16,6 +16,9 @@ test:
 lint:
 	golangci-lint run ./...
 
+format:
+	go fmt ./...
+
 clean:
 	rm -f $(BINARY)
 
