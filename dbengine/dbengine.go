@@ -12,14 +12,14 @@ import (
 var DbConnection *sqlx.DB
 var schema string = `
 CREATE TABLE IF NOT EXISTS files(
-	id 			INTEGER PRIMARY KEY AUTOINCREMENT,
-	filename 	VARCHAR(256) 	NOT NULL UNIQUE,
-	password 	VARCHAR(512),
+	id 			 INTEGER PRIMARY KEY AUTOINCREMENT,
+	filename 	 VARCHAR(256) 	NOT NULL UNIQUE,
+	password 	 VARCHAR(512),
 	is_encrypted BOOLEAN NOT NULL DEFAULT FALSE,
-	upload_date VARCHAR(256) 	NOT NULL,
-	file_size 	INTEGER 		NOT NULL,
-	viewcount	INTEGER			NOT NULL,
-	owner_id 	INTEGER
+	upload_date  VARCHAR(256) 	NOT NULL,
+	file_size 	 INTEGER 		NOT NULL,
+	viewcount	 INTEGER			NOT NULL,
+	owner_id 	 INTEGER
 );
 `
 
