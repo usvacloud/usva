@@ -3,25 +3,64 @@
 Documentation about endpoints and their usage
 
 | Route          | Description                  |
-| -------------- | ---------------------------- |
+| :------------- | ---------------------------- |
+| [/](#root)     | Contains all API operations  |
 | [/file](#file) | Contains all file operations |
 
 ### Request authorization
 
 In order to authorize a request, you need to set `Authorization` header to `Bearer <password>` with base64 encoded password.  
 
-Example of authorization header, where file is locked with password `usvaisbest` (this example will be used in sample requests):
+Example of authorization header, where file is locked with password `usva` (this password will be used in example requests):
 
-| Name          | Value                   | Description |
-| ------------- | ----------------------- | ----------- |
-| Authorization | Bearer dGFwc2Fpc2Jlc3QK |             |
+| Name          | Value          | Description |
+| ------------- | -------------- | ----------- |
+| Authorization | Bearer dXN2YQo |             |
 
 - If authorization fails (e.g. password is invalid), the API returns 403.
 - If authorization header doesn't exist even though it's required, the API returns HTTP 401.
 
+## <a name="root">API operations</a>
+
+Contains all API operations
+
+### Existing routes
+
+- [GET /restrictions](#restrc)
 
 
-## <a name="file">Files</a>
+
+### <a name="restrc">GET /restrictions</a>
+
+Returns API restrictions. These can be for example shown on client.
+
+#### Fields
+
+| Field name | Description                                |
+| :--------- | ------------------------------------------ |
+| maxSize    | Maximum size of uploaded file in megabytes |
+
+#### Examples
+
+Example request
+
+```sh
+curl "http://usva.local/restrictions"
+```
+
+Example response
+
+```json
+{
+    "maxSize": 20
+}
+```
+
+
+
+## <a name="file">File operations</a>
+
+Contains all file operations
 
 ### Existing routes
 
@@ -35,41 +74,41 @@ Example of authorization header, where file is locked with password `usvaisbest`
 
 **Existing file operation: possibly requires authentication**
 
-Request file's content. `filename` param is required.
+Request file's content. `filename` parameter is required.
 
 #### Examples
 
-##### Sample request
+##### Example request
 
 ```sh
 curl "http://usva.local/file?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
 	--header "Authorization: Bearer dGFwc2Fpc2Jlc3QK"
 ```
 
-##### Sample response
+##### Example response
 
-```json
-<file content>
+```
+(file content)
 ```
 
 
 
 ### <a name="get_file_info">GET /file/info</a>
 
-Request file's information. `filename` param is required.
+**Existing file operation: possibly requires authentication**
 
-##### Required headers: none
+Request file's information. `filename` parameter is required.
 
 #### Examples
 
-##### Sample request
+##### Example request
 
 ```sh
 curl "http://usva.local/file/info?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
 	--header "Authorization: Bearer dGFwc2Fpc2Jlc3QK"
 ```
 
-##### Sample response
+##### Example response
 
 ```json
 {
@@ -95,7 +134,7 @@ Uploads a file and returns it's filename on server.
 
 #### Examples
 
-##### Sample request:
+##### Example request:
 
 ```sh
 curl --location --request POST 'localhost:8080/file/upload' \
@@ -105,7 +144,7 @@ curl --location --request POST 'localhost:8080/file/upload' \
 	}'
 ```
 
-##### Sample response:
+##### Example response:
 
 ```json
 {
