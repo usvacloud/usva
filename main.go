@@ -40,6 +40,8 @@ func setuprouter(cfg config.Config) *gin.Engine {
 	r := gin.New()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: cfg.Server.AllowedOrigins,
+		AllowMethods: []string{"POST", "GET", "DELETE"},
+		AllowHeaders: []string{"Authorization"},
 	}))
 
 	r.Use(gin.Recovery())
@@ -95,9 +97,9 @@ func main() {
 	dbengine.Init(args.DatabasePath)
 	defer dbengine.DbConnection.Close()
 
-	// start server
 	log.Println("Starting server at", opts.getaddr())
 
+	// start server
 	r := setuprouter(cfg)
 	tlssettings := cfg.Server.TLS
 	if tlssettings.Enabled {
