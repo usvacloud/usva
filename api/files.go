@@ -31,6 +31,13 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	// save file
 	filename := uuid.New().String() + path.Ext(f.Filename)
 
+	if int(f.Size)/1000000 > uploadOptions.MaxSize {
+		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
+			"error": "File is too big",
+		})
+		return
+	}
+
 	// decode key as base64
 	var hash []byte
 	pwd := strings.TrimSpace(ctx.PostForm("password"))
@@ -56,12 +63,14 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 
 	// Append file metadata into database
 	err = dbengine.InsertFile(dbengine.File{
-		Filename:   filename,
-		FileSize:   int(f.Size),
-		Password:   string(hash),
-		UploadDate: time.Now().Format(time.RFC3339),
+		Filename:    filename,
+		FileSize:    int(f.Size),
+		Password:    string(hash),
+		IsEncrypted: len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
+		UploadDate:  time.Now().Format(time.RFC3339),
 	})
 	if err != nil {
+		log.Println(err)
 		setErrResponse(ctx, err)
 		return
 	}
@@ -108,6 +117,7 @@ func fileInformation(ctx *gin.Context) {
 		"uploadDate": f.UploadDate,
 		"viewCount":  f.ViewCount,
 		"locked":     pwd != "",
+		"encrypted":  f.IsEncrypted,
 	})
 }
 
@@ -130,7 +140,7 @@ func downloadFile(ctx *gin.Context, downloadOptions *config.Files) {
 		return
 	}
 
-	ctx.File(path.Join(downloadOptions.UploadsDir, filename))
+	ctx.FileAttachment(path.Join(downloadOptions.UploadsDir, filename), filename)
 }
 
 func deleteFile(ctx *gin.Context, fileOptions *config.Files) {
@@ -204,7 +214,7 @@ func setErrResponse(ctx *gin.Context, err error) {
 
 	switch err {
 	case sql.ErrNoRows:
-		errorMessage = "file not found"
+		errorMessage, status = "file not found", http.StatusNotFound
 	case bcrypt.ErrMismatchedHashAndPassword:
 		errorMessage, status = "password is invalid", http.StatusForbidden
 	case errAuthMissing:

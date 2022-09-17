@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS files(
 	id 			INTEGER PRIMARY KEY AUTOINCREMENT,
 	filename 	VARCHAR(256) 	NOT NULL UNIQUE,
 	password 	VARCHAR(512),
+	is_encrypted BOOLEAN NOT NULL DEFAULT FALSE,
 	upload_date VARCHAR(256) 	NOT NULL,
 	file_size 	INTEGER 		NOT NULL,
 	viewcount	INTEGER			NOT NULL,
@@ -23,13 +24,14 @@ CREATE TABLE IF NOT EXISTS files(
 `
 
 type File struct {
-	ID         int
-	Filename   string
-	Password   string
-	UploadDate string `db:"upload_date"`
-	FileSize   int    `db:"file_size"`
-	OwnerId    int    `db:"owner_id"`
-	ViewCount  int    `db:"viewcount"`
+	ID          int
+	Filename    string
+	Password    string
+	IsEncrypted bool
+	UploadDate  string `db:"upload_date"`
+	FileSize    int    `db:"file_size"`
+	OwnerId     int    `db:"owner_id"`
+	ViewCount   int    `db:"viewcount"`
 }
 
 func Init(datasource string) {

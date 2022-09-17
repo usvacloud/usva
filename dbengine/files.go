@@ -14,12 +14,13 @@ func InsertFile(file File) error {
 		password,
 		upload_date,
 		file_size,
+		is_encrypted,
 		viewcount,
 		owner_id
-	) VALUES(?, ?, ?, ?, ?, ?);`
+	) VALUES(?, ?, ?, ?, ?, ?, ?);`
 
 	if _, err := DbConnection.Exec(statement, file.Filename, file.Password,
-		file.UploadDate, file.FileSize,
+		file.UploadDate, file.FileSize, file.IsEncrypted,
 		file.ViewCount, file.OwnerId); err != nil {
 		return err
 	}
@@ -70,9 +71,9 @@ func GetFile(filename string) (f File, err error) {
 		return File{}, err
 	}
 
-	row := DbConnection.QueryRow("SELECT filename, upload_date, file_size, viewcount FROM files WHERE filename = ?",
+	row := DbConnection.QueryRow("SELECT filename, upload_date, is_encrypted, file_size, viewcount FROM files WHERE filename = ?",
 		filename)
-	if err = row.Scan(&f.Filename, &f.UploadDate,
+	if err = row.Scan(&f.Filename, &f.UploadDate, &f.IsEncrypted,
 		&f.FileSize, &f.ViewCount); err != nil {
 		return File{}, err
 	}
