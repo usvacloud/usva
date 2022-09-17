@@ -73,4 +73,4 @@ UploadsDir = "uploads"
 
 ## API Specification
 
-Most up-to-date API specification can be found in `APISPEC.md`
+Most up-to-date API specification can be found in [APISPEC.md](../APISPEC.md)
