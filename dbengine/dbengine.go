@@ -1,27 +1,15 @@
 package dbengine
 
 import (
-	"log"
+	"context"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jackc/pgx"
+	_ "github.com/jackc/pgx/stdlib"
 
 	"github.com/romeq/usva/utils"
 )
 
-var DbConnection *sqlx.DB
-var schema string = `
-CREATE TABLE IF NOT EXISTS files(
-	id 			 INTEGER PRIMARY KEY AUTOINCREMENT,
-	filename 	 VARCHAR(256) 	NOT NULL UNIQUE,
-	password 	 VARCHAR(512),
-	is_encrypted BOOLEAN NOT NULL DEFAULT FALSE,
-	upload_date  VARCHAR(256) 	NOT NULL,
-	file_size 	 INTEGER 		NOT NULL,
-	viewcount	 INTEGER			NOT NULL,
-	owner_id 	 INTEGER
-);
-`
+var DbConnection *pgx.Conn
 
 type File struct {
 	ID          int
@@ -34,21 +22,16 @@ type File struct {
 	ViewCount   int    `db:"viewcount"`
 }
 
-func Init(datasource string) {
-	// connect database
+func Init(port uint16, host, database, user, password string) {
 	var err error
-	DbConnection, err = sqlx.Connect("sqlite3", datasource)
+	DbConnection, err = pgx.Connect(pgx.ConnConfig{
+		Host:      host,
+		Port:      port,
+		User:      user,
+		Password:  password,
+		Database:  database,
+		TLSConfig: nil,
+	})
 	utils.Check(err)
-
-	// establishing connection and call
-	utils.Check(DbConnection.Ping())
-	migrate()
-}
-
-func migrate() {
-	if DbConnection == nil {
-		log.Fatalln("migrate function called while db is not connected")
-	}
-
-	DbConnection.MustExec(schema)
+	utils.Check(DbConnection.Ping(context.Background()))
 }
