@@ -13,7 +13,7 @@ func Check(errs ...error) {
 
 func StringOr(str1, str2 string) string {
 	if str1 != "" {
-		return str2
+		return str1
 	}
 	return str2
 }
