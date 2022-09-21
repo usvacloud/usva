@@ -1,0 +1,23 @@
+[Server]
+Address = "127.0.0.1" # address to bind to
+Port = 8080 # the port to bind to
+TrustedProxies = ["127.0.0.1"]
+DebugMode = false # use of gin's debug mode (includes logging)
+HideRequests = false # requests should be hidden from logs
+AllowedOrigins = [ "http://localhost" ] # cors allowed origins
+
+[Server.TLS]
+Enabled = false
+CertFile = "/path/to/cert"
+KeyFile = "/path/to/keyfile"
+
+[Files]
+MaxSize = 10 # maximum uploaded file size in megabytes
+UploadsDir = "uploads" # directory for uploaded files
+
+[Database]
+User  = "dev"
+Password = ""
+Host = "127.0.0.1"
+Port = 5432
+Database = "usva"
