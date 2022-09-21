@@ -1,0 +1,10 @@
+.git
+.gitignore
+tmp
+uploads
+db.db
+main
+Dockerfile*
+docker-compose*
+LICENSE
+.vscode

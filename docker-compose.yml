@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  db:
+    container_name: postgres
+    image: "postgres:14.5"
+    restart: always
+    environment:
+      POSTGRES_USER: usva
+      POSTGRES_PASSWORD: password
+    volumes:
+      - "./postgres-data:/var/lib/postgresql/data:rw"
+
+  server:
+    container_name: usva
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: usva
+      DB_PASSWORD: password
+      DB_NAME: usva
+
+    volumes:
+      - "./config.toml:/app/config.toml"
+      - "./uploads/:/app/uploads/" # replace custom upload directory from config here
