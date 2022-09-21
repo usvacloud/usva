@@ -27,9 +27,17 @@ type Files struct {
 	MaxSize    int
 	UploadsDir string
 }
+type Database struct {
+	User     string
+	Password string
+	Host     string
+	Port     int
+	Database string
+}
 type Config struct {
-	Server Server
-	Files  Files
+	Server   Server
+	Files    Files
+	Database Database
 }
 
 func ParseFromFile(f *os.File) (cfg Config) {
@@ -39,11 +47,11 @@ func ParseFromFile(f *os.File) (cfg Config) {
 	_, err = toml.Decode(string(configtoml), &cfg)
 	utils.Check(err)
 
-	cfg.EnsureRequiredValues()
+	cfg.ensureRequiredValues()
 	return cfg
 }
 
-func (c *Config) EnsureRequiredValues() {
+func (c *Config) ensureRequiredValues() {
 	ensureVal("server address", c.Server.Address)
 	ensureVal("server port", c.Server.Port)
 	ensureVal("file upload directory", c.Files.UploadsDir)
@@ -52,16 +60,24 @@ func (c *Config) EnsureRequiredValues() {
 		ensureVal("tls: certificate file", c.Server.TLS.CertFile)
 		ensureVal("tls: key file", c.Server.TLS.KeyFile)
 	}
+
+	c.Database.Host = utils.StringOr(c.Database.Host, "127.0.0.1")
+	c.Database.Database = utils.StringOr(c.Database.Database, "usva")
+	c.Database.Port = utils.IntOr(c.Database.Port, 5432)
 }
 
 func ensureVal(key string, val any) {
 	if val == nil || val == "" || val == 0 {
-		log.Fatalln("config validation failed: ", key, "is required but not present")
+		log.Fatalln(
+			"config validation failed: ", key, "is required but not present",
+		)
 	}
 }
 
 func ensureList(key string, val []string) {
 	if len(val) == 0 {
-		log.Fatalln("config validation failed: ", key, "is required but not present")
+		log.Fatalln(
+			"config validation failed: list ", key, "is required but not present",
+		)
 	}
 }

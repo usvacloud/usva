@@ -15,21 +15,26 @@ import (
 	"github.com/romeq/usva/utils"
 )
 
-type Options struct {
-	server config.Server
-}
+type Options config.Config
 
 func parseOpts(cfg config.Config, args arguments.Arguments) Options {
 	return Options{
-		server: config.Server{
-			Address: utils.StringOr(args.Address, cfg.Server.Address),
-			Port:    utils.IntOr(args.Port, cfg.Server.Port),
+		Server: config.Server{
+			Address: utils.StringOr(args.Config.Server.Address, cfg.Server.Address),
+			Port:    utils.IntOr(args.Config.Server.Port, cfg.Server.Port),
+		},
+		Database: config.Database{
+			Database: utils.StringOr(args.Config.Database.Database, cfg.Database.Database),
+			Host:     utils.StringOr(args.Config.Database.Host, cfg.Database.Host),
+			Port:     utils.IntOr(args.Config.Database.Port, cfg.Database.Port),
+			User:     utils.StringOr(args.Config.Database.User, cfg.Database.User),
+			Password: utils.StringOr(args.Config.Database.Password, cfg.Database.Password),
 		},
 	}
 }
 
 func (o *Options) getaddr() string {
-	return fmt.Sprintf("%s:%d", o.server.Address, o.server.Port)
+	return fmt.Sprintf("%s:%d", o.Server.Address, o.Server.Port)
 }
 
 func setuprouter(cfg config.Config) *gin.Engine {
@@ -94,7 +99,13 @@ func main() {
 
 	// runtime options
 	opts := parseOpts(cfg, args)
-	dbengine.Init(args.DatabasePath)
+	dbengine.Init(
+		uint16(opts.Database.Port),
+		opts.Database.Host,
+		opts.Database.Database,
+		opts.Database.User,
+		opts.Database.Password,
+	)
 	defer dbengine.DbConnection.Close()
 
 	log.Println("Starting server at", opts.getaddr())
