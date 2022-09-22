@@ -23,7 +23,6 @@ If you have any questions or comments about usva's security practices, you can o
 - Downloading and deleting a file
 
 
-
 ## Installation and usage
 
 Installation is done in 3 steps: downloading source, installing dependencies and compiling it.
@@ -44,7 +43,6 @@ Installation is done in 3 steps: downloading source, installing dependencies and
 
 % make run # requires setup (see below)
 ```
-
 
 
 ## Configuration and setup
@@ -69,15 +67,10 @@ SV_PORT=8080 # Exposed port, default = 8080
 ```shell
 % DB_HOST="127.0.0.1" \ # PostgreSQL server host
 	DB_PORT=5432 \ # PostgreSQL server port
-	DB_USERNAME="usva" \ # Username to log in with, required
-	DB_PASSWORD="password" \ # Password to log in with, required
+	DB_USERNAME="usva" \ # Username to log in with
+	DB_PASSWORD="password" \ # Password to log in with
 	DB_NAME="usva" # Database name for usva
 	make migrateup # Run migrations
-	
-# or with only required options
-% DB_USERNAME="usva" \
-	DB_PASSWORD="password" \
-	make migrateup
 ```
 
 ### Server configuration

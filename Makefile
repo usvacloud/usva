@@ -18,13 +18,13 @@ migratesetup:
 migrateup:
 	$(GOPATH)/bin/migrate \
 		-source file://migrations \
-		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST:-127.0.0.1):$(DB_PORT:-5432)/$(DB_NAME:-usva)?sslmode=disable" \
+		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
 		up
 
 migratedown:
 	$(GOPATH)/bin/migrate \
 		-source file://migrations \
-		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST:-127.0.0.1):$(DB_PORT:-5432)/$(DB_NAME:-usva)?sslmode=disable" \
+		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
 		down
 
 run:
