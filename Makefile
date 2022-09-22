@@ -3,7 +3,6 @@ GO			= go
 GOPATH 		= $(shell go env GOPATH)
 BINARY		= usva
 identifier	= usva
-BUILDDIR	= ${BUILDDIR:?target}
 CGO_ENABLED ?= 0
 
 
@@ -16,22 +15,25 @@ setup: clean
 migratesetup:
 	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
-migrateup: 
+migrateup:
 	$(GOPATH)/bin/migrate \
 		-source file://migrations \
-		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
+		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST:-127.0.0.1):$(DB_PORT:-5432)/$(DB_NAME:-usva)?sslmode=disable" \
 		up
 
-migratedown: 
+migratedown:
 	$(GOPATH)/bin/migrate \
 		-source file://migrations \
-		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
+		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST:-127.0.0.1):$(DB_PORT:-5432)/$(DB_NAME:-usva)?sslmode=disable" \
 		down
 
-run: migrateup
-	./$(BINARY) -c config.toml
+run:
+	./$(BINARY) -c ./config.toml
 
-build: 
+run-docker:
+	sudo docker-compose run --service-ports --rm -d server
+
+build:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
 
 test:
