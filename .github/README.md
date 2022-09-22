@@ -69,10 +69,15 @@ SV_PORT=8080 # Exposed port, default = 8080
 ```shell
 % DB_HOST="127.0.0.1" \ # PostgreSQL server host
 	DB_PORT=5432 \ # PostgreSQL server port
-	DB_USERNAME="usva" \ # Username to log in with *
-	DB_PASSWORD="password" \ # Password to log in with *
+	DB_USERNAME="usva" \ # Username to log in with, required
+	DB_PASSWORD="password" \ # Password to log in with, required
 	DB_NAME="usva" # Database name for usva
 	make migrateup # Run migrations
+	
+# or with only required options
+% DB_USERNAME="usva" \
+	DB_PASSWORD="password" \
+	make migrateup
 ```
 
 ### Server configuration
@@ -106,7 +111,7 @@ Database = "usva"
 ```
 
 You should note, though, that only a few fields from above will be required. 
-Smallest possible configuration looks something like below.
+Shortest possible configuration looks something like below.
 
 ```toml
 [Server]
