@@ -32,8 +32,8 @@ Installation is done in 3 steps: downloading source, installing dependencies and
 
 ```sh
 % git clone https://github.com/romeq/usva && cd usva
-# after configuration (see below)
-% make run-docker
+
+% make run-docker # requires configuration (see below)
 ```
 
 #### Without docker
@@ -41,8 +41,8 @@ Installation is done in 3 steps: downloading source, installing dependencies and
 ```sh
 % git clone https://github.com/romeq/usva && cd usva
 % make setup build migratesetup 
-# after setup (see below)
-% make run 
+
+% make run # requires setup (see below)
 ```
 
 
