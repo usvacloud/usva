@@ -21,3 +21,5 @@ db.db
 __debug*
 reset.sh
 usva
+
+postgres-data
