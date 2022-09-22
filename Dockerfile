@@ -7,5 +7,8 @@ RUN go mod download && go mod verify
 
 COPY . .
 
+EXPOSE 8080
+
 RUN make setup build migratesetup
+
 CMD ["make", "migrateup", "run"]
