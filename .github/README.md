@@ -36,7 +36,7 @@ Installation is done in 3 steps: downloading source, installing dependencies and
 % make run-docker # requires configuration (see below)
 ```
 
-#### Without docker
+#### Without Docker
 
 ```sh
 % git clone https://github.com/romeq/usva && cd usva
@@ -82,12 +82,18 @@ SV_PORT=8080 # Exposed port, default = 8080
 
 ### Server configuration
 
+#### Note for Docker users
+Docker image uses config.toml for the configuration. By default this file is 
+shared between the host and the container.
+
+#### Configuration options
+
 Full configuration will look something near following: 
 
 ```toml
 [Server]
 Address = "127.0.0.1" # address to bind to
-Port = 8080 # the port to bind to. don't use with docker.
+Port = 8080 # the port to bind to. don't use with Docker.
 TrustedProxies = ["127.0.0.1"]
 DebugMode = false # use of gin's debug mode (includes logging)
 HideRequests = false # requests should be hidden from logs
