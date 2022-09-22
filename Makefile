@@ -33,6 +33,9 @@ run:
 run-docker:
 	sudo docker-compose run --service-ports --rm -d server
 
+run-docker-nodaemon:
+	sudo docker-compose run --service-ports --rm server
+
 build:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
 
