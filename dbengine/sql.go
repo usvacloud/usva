@@ -6,7 +6,7 @@ SELECT password
 	WHERE filename = ?;`
 
 const getFileQuery = `
-SELECT filename, upload_date, is_encrypted, file_size, viewcount
+SELECT filename, upload_date, is_encrypted, viewcount
 	FROM files 
 	WHERE filename = ?`
 
@@ -21,7 +21,6 @@ INSERT INTO files(
 	filename,
 	password,
 	upload_date,
-	file_size,
 	is_encrypted,
 	viewcount,
 	owner_id

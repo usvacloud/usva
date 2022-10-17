@@ -1,42 +1,33 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/config"
 )
 
-func SetupRoutes(router *gin.Engine, cfg *config.Config) {
-	router.NoRoute(notfound)
-	router.GET("/restrictions", func(ctx *gin.Context) {
-		restrictions(ctx, cfg)
-	})
+var routeSetup *config.Config
 
-	// API
-	api := router.Group("/file")
-	{
-		api.GET("/info", fileInformation)
-		api.GET("/", func(ctx *gin.Context) {
-			downloadFile(ctx, &cfg.Files)
-		})
-
-		api.DELETE("/", func(ctx *gin.Context) {
-			deleteFile(ctx, &cfg.Files)
-		})
-		api.POST("/upload", func(ctx *gin.Context) {
-			uploadFile(ctx, &cfg.Files)
-		})
+func initFilesRoute(fn func(ctx *gin.Context, files *config.Files)) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		fn(ctx, &routeSetup.Files)
 	}
 }
 
-func restrictions(ctx *gin.Context, cfg *config.Config) {
-	ctx.JSON(http.StatusOK, gin.H{
-		"maxSize": cfg.Files.MaxSize,
-	})
-}
+func SetupRoutes(router *gin.Engine, cfg *config.Config) {
+	routeSetup = cfg
 
-func notfound(ctx *gin.Context) {
-	ctx.AbortWithStatus(http.StatusNotFound)
-	ctx.File("public/404.html")
+	// Generic handlers
+	router.NoRoute(notFoundHandler)
+	router.GET("/restrictions", func(ctx *gin.Context) {
+		restrictionsHandler(ctx, cfg)
+	})
+
+	// Files API
+	api := router.Group("/file")
+	{
+		api.GET("/info", initFilesRoute(fileInformation))
+		api.GET("/", initFilesRoute(downloadFile))
+		api.DELETE("/", initFilesRoute(deleteFile))
+		api.POST("/upload", initFilesRoute(uploadFile))
+	}
 }

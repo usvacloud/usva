@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/romeq/usva/config"
 	"github.com/romeq/usva/dbengine"
+	"github.com/romeq/usva/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -64,7 +65,6 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	// Append file metadata into database
 	err = dbengine.InsertFile(dbengine.File{
 		Filename:    filename,
-		FileSize:    int(f.Size),
 		Password:    string(hash),
 		IsEncrypted: len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
 		UploadDate:  time.Now().Format(time.RFC3339),
@@ -87,7 +87,7 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	})
 }
 
-func fileInformation(ctx *gin.Context) {
+func fileInformation(ctx *gin.Context, uploadInformation *config.Files) {
 	filename, filenameGiven := ctx.GetQuery("filename")
 	if !filenameGiven {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
@@ -109,11 +109,18 @@ func fileInformation(ctx *gin.Context) {
 	pwd, err := dbengine.GetPasswordHash(filename)
 	if err != nil {
 		setErrResponse(ctx, err)
+		return
+	}
+
+	filesize, err := utils.FileSize(path.Join(uploadInformation.UploadsDir, filename))
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"filename":   f.Filename,
-		"size":       f.FileSize,
+		"size":       filesize,
 		"uploadDate": f.UploadDate,
 		"viewCount":  f.ViewCount,
 		"locked":     pwd != "",
@@ -121,7 +128,7 @@ func fileInformation(ctx *gin.Context) {
 	})
 }
 
-func downloadFile(ctx *gin.Context, downloadOptions *config.Files) {
+func downloadFile(ctx *gin.Context, uploadInformation *config.Files) {
 	filename, filenameGiven := ctx.GetQuery("filename")
 	if !filenameGiven {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
@@ -140,7 +147,7 @@ func downloadFile(ctx *gin.Context, downloadOptions *config.Files) {
 		return
 	}
 
-	ctx.FileAttachment(path.Join(downloadOptions.UploadsDir, filename), filename)
+	ctx.FileAttachment(path.Join(uploadInformation.UploadsDir, filename), filename)
 }
 
 func deleteFile(ctx *gin.Context, fileOptions *config.Files) {
@@ -171,6 +178,7 @@ func deleteFile(ctx *gin.Context, fileOptions *config.Files) {
 	})
 }
 
+// Functions to help with most common tasks
 func authorizeRequest(ctx *gin.Context, filename string) (success bool) {
 	pwdhash, err := dbengine.GetPasswordHash(filename)
 	if err != nil {

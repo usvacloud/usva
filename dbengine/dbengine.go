@@ -17,7 +17,6 @@ type File struct {
 	Password    string
 	IsEncrypted bool
 	UploadDate  string `db:"upload_date"`
-	FileSize    int    `db:"file_size"`
 	OwnerId     int    `db:"owner_id"`
 	ViewCount   int    `db:"viewcount"`
 }

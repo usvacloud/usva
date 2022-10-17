@@ -4,7 +4,7 @@ package dbengine
 // from given File struct
 func InsertFile(file File) error {
 	if _, err := DbConnection.Exec(insertFileQuery, file.Filename, file.Password,
-		file.UploadDate, file.FileSize, file.IsEncrypted,
+		file.UploadDate, file.IsEncrypted,
 		file.ViewCount, file.OwnerId); err != nil {
 		return err
 	}
@@ -38,13 +38,12 @@ fields will remain empty:
   - Filename
   - UploadDate
   - IsEncrypted
-  - FileSize
   - ViewCount
 */
 func GetFile(filename string) (f File, err error) {
 	row := DbConnection.QueryRow(getFileQuery, filename)
 	if err = row.Scan(&f.Filename, &f.UploadDate, &f.IsEncrypted,
-		&f.FileSize, &f.ViewCount); err != nil {
+		&f.ViewCount); err != nil {
 		return File{}, err
 	}
 
