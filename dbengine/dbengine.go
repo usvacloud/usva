@@ -12,13 +12,13 @@ import (
 var DbConnection *pgx.Conn
 
 type File struct {
-	ID          int
-	Filename    string
-	Password    string
-	IsEncrypted bool
-	UploadDate  string `db:"upload_date"`
-	OwnerId     int    `db:"owner_id"`
-	ViewCount   int    `db:"viewcount"`
+	IncrementalId int    `database:"id"`
+	Title         string `database:"title"`
+	PasswordHash  string `database:"passwdhash"`
+	FileUUID      string `database:"file_uuid"`
+	IsEncrypted   bool   `database:"isencrypted"`
+	UploadDate    string `database:"upload_date"`
+	ViewCount     int    `database:"viewcount"`
 }
 
 func Init(port uint16, host, database, user, password string) {

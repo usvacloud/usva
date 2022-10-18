@@ -1,32 +1,26 @@
 package dbengine
 
 const getPasswordQuery = `
-SELECT password
+SELECT passwdhash
 	FROM files
-	WHERE filename = ?;`
+	WHERE file_uuid = ?;`
 
 const getFileQuery = `
-SELECT filename, upload_date, is_encrypted, viewcount
+SELECT file_uuid, upload_date, isencrypted, viewcount
 	FROM files 
-	WHERE filename = ?`
+	WHERE file_uuid = ?;`
 
 const incrementFileViewCountQuery = `
 UPDATE files
 	SET viewcount = viewcount + 1
-	WHERE filename = ?
+	WHERE file_uuid = ?;
 `
 
 const insertFileQuery = `
-INSERT INTO files(
-	filename,
-	password,
-	upload_date,
-	is_encrypted,
-	viewcount,
-	owner_id
-) VALUES(?, ?, ?, ?, ?, ?, ?);
+INSERT INTO files(file_uuid, title, passwdhash, upload_date, isencrypted, viewcount)
+VALUES($1, $2, $3, $4, $5, 0)
 `
 const deleteFileQuery = `
 DELETE FROM files
-	WHERE filename = ?;
+	WHERE file_uuid = ?;
 `

@@ -3,9 +3,8 @@ package dbengine
 // InsertFile creates a new record on file database
 // from given File struct
 func InsertFile(file File) error {
-	if _, err := DbConnection.Exec(insertFileQuery, file.Filename, file.Password,
-		file.UploadDate, file.IsEncrypted,
-		file.ViewCount, file.OwnerId); err != nil {
+	if _, err := DbConnection.Exec(insertFileQuery, file.FileUUID, file.Title,
+		file.PasswordHash, file.UploadDate, file.IsEncrypted); err != nil {
 		return err
 	}
 
@@ -42,7 +41,7 @@ fields will remain empty:
 */
 func GetFile(filename string) (f File, err error) {
 	row := DbConnection.QueryRow(getFileQuery, filename)
-	if err = row.Scan(&f.Filename, &f.UploadDate, &f.IsEncrypted,
+	if err = row.Scan(&f.FileUUID, &f.UploadDate, &f.IsEncrypted,
 		&f.ViewCount); err != nil {
 		return File{}, err
 	}

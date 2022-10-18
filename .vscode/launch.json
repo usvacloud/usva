@@ -9,8 +9,8 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${fileDirname}",
-            "args": ["-c", "tmp/config.toml", "-d", "db.db"] 
+            "program": "${fileDirname}/..",
+            "args": ["-c", "config.toml"] 
         }
     ]
 }

@@ -32,6 +32,7 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	// save file
 	filename := uuid.New().String() + path.Ext(f.Filename)
 
+	// FIXME: process rather as bytes
 	if int(f.Size)/1000000 > uploadOptions.MaxSize {
 		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
 			"error": "File is too big",
@@ -39,7 +40,6 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 		return
 	}
 
-	// decode key as base64
 	var hash []byte
 	pwd := strings.TrimSpace(ctx.PostForm("password"))
 	if len(pwd) > 0 {
@@ -52,7 +52,6 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 		}
 		decodedkey = []byte(strings.TrimSpace(string(decodedkey)))
 
-		// generate the password hash
 		if len(decodedkey) > 0 {
 			hash, err = bcrypt.GenerateFromPassword(decodedkey, 12)
 			if err != nil {
@@ -64,10 +63,10 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 
 	// Append file metadata into database
 	err = dbengine.InsertFile(dbengine.File{
-		Filename:    filename,
-		Password:    string(hash),
-		IsEncrypted: len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
-		UploadDate:  time.Now().Format(time.RFC3339),
+		FileUUID:     filename,
+		PasswordHash: string(hash),
+		IsEncrypted:  len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
+		UploadDate:   time.Now().Format(time.RFC3339),
 	})
 	if err != nil {
 		log.Println(err)
@@ -77,6 +76,7 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 
 	err = ctx.SaveUploadedFile(f, path.Join(uploadOptions.UploadsDir, filename))
 	if err != nil {
+		dbengine.DeleteFile(filename)
 		setErrResponse(ctx, err)
 		return
 	}
@@ -119,7 +119,7 @@ func fileInformation(ctx *gin.Context, uploadInformation *config.Files) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"filename":   f.Filename,
+		"filename":   f.FileUUID,
 		"size":       filesize,
 		"uploadDate": f.UploadDate,
 		"viewCount":  f.ViewCount,
@@ -234,4 +234,8 @@ func setErrResponse(ctx *gin.Context, err error) {
 	ctx.AbortWithStatusJSON(status, gin.H{
 		"error": errorMessage,
 	})
+}
+
+func try(t any) {
+	return
 }
