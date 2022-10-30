@@ -7,27 +7,21 @@ import (
 
 var routeSetup *config.Config
 
-func initFilesRoute(fn func(ctx *gin.Context, files *config.Files)) func(ctx *gin.Context) {
-	return func(ctx *gin.Context) {
-		fn(ctx, &routeSetup.Files)
-	}
-}
-
 func SetupRoutes(router *gin.Engine, cfg *config.Config) {
+	router.NoRoute(notFoundHandler)
 	routeSetup = cfg
 
-	// Generic handlers
-	router.NoRoute(notFoundHandler)
+	// General handlers
 	router.GET("/restrictions", func(ctx *gin.Context) {
 		restrictionsHandler(ctx, cfg)
 	})
 
 	// Files API
-	api := router.Group("/file")
+	file := router.Group("/file")
 	{
-		api.GET("/info", initFilesRoute(fileInformation))
-		api.GET("/", initFilesRoute(downloadFile))
-		api.DELETE("/", initFilesRoute(deleteFile))
-		api.POST("/upload", initFilesRoute(uploadFile))
+		file.GET("/info", initFilesRoute(fileInformation))
+		file.GET("/", initFilesRoute(downloadFile))
+		file.DELETE("/", initFilesRoute(deleteFile))
+		file.POST("/upload", initFilesRoute(uploadFile))
 	}
 }
