@@ -20,6 +20,10 @@ func DeleteFile(filename string) error {
 	return nil
 }
 
+func TryDeleteFile(filename string) {
+	_ = DeleteFile(filename)
+}
+
 // GetPasswordHash returns password field from database
 func GetPasswordHash(filename string) (pwd string, err error) {
 	row := DbConnection.QueryRow(getPasswordQuery, filename)
@@ -35,13 +39,14 @@ metadata from database on successfull request
 Note: only following fields are included, thus any other
 fields will remain empty:
   - Filename
+  - Title
   - UploadDate
   - IsEncrypted
   - ViewCount
 */
 func GetFile(filename string) (f File, err error) {
-	row := DbConnection.QueryRow(getFileQuery, filename)
-	if err = row.Scan(&f.FileUUID, &f.UploadDate, &f.IsEncrypted,
+	row := DbConnection.QueryRow(getFileInformationQuery, filename)
+	if err = row.Scan(&f.FileUUID, &f.Title, &f.UploadDate, &f.IsEncrypted,
 		&f.ViewCount); err != nil {
 		return File{}, err
 	}
