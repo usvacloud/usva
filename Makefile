@@ -1,5 +1,3 @@
-include .env
-
 SHELL 		= /bin/sh
 GO			= go
 GOPATH 		= $(shell go env GOPATH)
