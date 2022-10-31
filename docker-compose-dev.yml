@@ -12,6 +12,3 @@ services:
 
     ports:
       - "${SV_PORT:-5432}:5432"
-
-    expose: 
-      - "${SV_PORT:-5432}:5432"
