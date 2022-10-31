@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  db:
+    image: "postgres:14.5"
+    restart: always
+
+    environment:
+      PGPORT: ${DB_PORT:-5432}
+      POSTGRES_USER: ${DB_USERNAME:-usva_tests}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-testrunner}
+
+    ports:
+      - "${SV_PORT:-5432}:5432"
+
+    expose: 
+      - "${SV_PORT:-5432}:5432"

@@ -2,7 +2,8 @@ package utils
 
 import "log"
 
-// Check logs error and exits program
+// Check will iterate through it's arguments,
+// log the first error and exit the program with log.Fatalf()
 func Check(errs ...error) {
 	for _, err := range errs {
 		if err != nil {
@@ -11,6 +12,8 @@ func Check(errs ...error) {
 	}
 }
 
+// StringOr will return the first argument which is not an
+// empty string
 func StringOr(str1, str2 string) string {
 	if str1 != "" {
 		return str1
@@ -19,7 +22,7 @@ func StringOr(str1, str2 string) string {
 }
 
 func IntOr(int1, int2 int) int {
-	if int1 > 0 {
+	if int1 != 0 {
 		return int1
 	}
 	return int2
