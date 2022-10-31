@@ -6,12 +6,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
-        with: 
+        with:
           go-version: 1.19
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3.2.0
 
       - name: Unit Testing
-        run: make test
+        run: make migratesetup test
       - name: Building
         run: make build
