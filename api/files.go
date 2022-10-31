@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,6 +22,12 @@ import (
 
 var errAuthMissing = errors.New("missing authentication in protected file")
 
+func initFilesRoute(fn func(ctx *gin.Context, files *config.Files)) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		fn(ctx, &routeSetup.Files)
+	}
+}
+
 func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	// retrieve file from request
 	f, err := ctx.FormFile("file")
@@ -29,10 +36,9 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 		return
 	}
 
-	// save file
+	// generate name for the uploaded file
 	filename := uuid.New().String() + path.Ext(f.Filename)
 
-	// FIXME: process rather as bytes
 	if int(f.Size)/1000000 > uploadOptions.MaxSize {
 		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
 			"error": "File is too big",
@@ -64,19 +70,25 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	// Append file metadata into database
 	err = dbengine.InsertFile(dbengine.File{
 		FileUUID:     filename,
+		Title:        ctx.Request.FormValue("title"),
 		PasswordHash: string(hash),
 		IsEncrypted:  len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
 		UploadDate:   time.Now().Format(time.RFC3339),
 	})
 	if err != nil {
-		log.Println(err)
 		setErrResponse(ctx, err)
 		return
 	}
 
-	err = ctx.SaveUploadedFile(f, path.Join(uploadOptions.UploadsDir, filename))
+	abspath, err := filepath.Abs(uploadOptions.UploadsDir)
 	if err != nil {
-		dbengine.DeleteFile(filename)
+		setErrResponse(ctx, err)
+		return
+	}
+
+	err = ctx.SaveUploadedFile(f, path.Join(abspath, filename))
+	if err != nil {
+		dbengine.TryDeleteFile(filename)
 		setErrResponse(ctx, err)
 		return
 	}
@@ -87,6 +99,7 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	})
 }
 
+// => /file/info?filename=<uuid>
 func fileInformation(ctx *gin.Context, uploadInformation *config.Files) {
 	filename, filenameGiven := ctx.GetQuery("filename")
 	if !filenameGiven {
@@ -121,6 +134,7 @@ func fileInformation(ctx *gin.Context, uploadInformation *config.Files) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"filename":   f.FileUUID,
 		"size":       filesize,
+		"title":      f.Title,
 		"uploadDate": f.UploadDate,
 		"viewCount":  f.ViewCount,
 		"locked":     pwd != "",
@@ -217,6 +231,7 @@ func parseHeaderPassword(ctx *gin.Context) (string, error) {
 	return string(p), nil
 }
 
+// helper for providing standard error messages in return
 func setErrResponse(ctx *gin.Context, err error) {
 	errorMessage, status := "request failed", http.StatusBadRequest
 
@@ -234,8 +249,4 @@ func setErrResponse(ctx *gin.Context, err error) {
 	ctx.AbortWithStatusJSON(status, gin.H{
 		"error": errorMessage,
 	})
-}
-
-func try(t any) {
-	return
 }
