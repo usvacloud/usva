@@ -76,7 +76,7 @@ SV_PORT=8080 # Exposed port, default = 8080
 ### Server configuration
 
 #### Note for Docker users
-Docker image uses config.toml for the configuration. By default this file is 
+Docker image uses config.toml for the server's configuration. By default this file is 
 shared between the host and the container.
 
 #### Configuration options
@@ -124,7 +124,6 @@ UploadsDir = "uploads"
 [Database]
 User = "user"
 ```
-
 
 
 ## API Specification
