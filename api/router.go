@@ -8,10 +8,10 @@ import (
 var routeSetup *config.Config
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config) {
-	router.NoRoute(notFoundHandler)
 	routeSetup = cfg
 
 	// General handlers
+	router.NoRoute(notFoundHandler)
 	router.GET("/restrictions", func(ctx *gin.Context) {
 		restrictionsHandler(ctx, cfg)
 	})
@@ -23,5 +23,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 		file.GET("/", initFilesRoute(downloadFile))
 		file.DELETE("/", initFilesRoute(deleteFile))
 		file.POST("/upload", initFilesRoute(uploadFile))
+	}
+
+	// Feedback
+	feedback := router.Group("/feedback")
+	{
+		feedback.GET("/", getFeedback)
+		feedback.POST("/", addFeedback)
 	}
 }

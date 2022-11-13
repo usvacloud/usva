@@ -1,5 +1,6 @@
 package dbengine
 
+// File related queries
 const getPasswordQuery = `
 SELECT passwdhash
 	FROM files
@@ -17,8 +18,16 @@ UPDATE files
 
 const insertFileQuery = `
 INSERT INTO files(file_uuid, title, passwdhash, upload_date, isencrypted, viewcount)
-	VALUES($1, $2, $3, $4, $5, 0)
-`
+	VALUES($1, $2, $3, $4, $5, 0)`
+
 const deleteFileQuery = `
 DELETE FROM files
 	WHERE file_uuid = $1;`
+
+// Feedback related queries
+const getFeedbacksQuery = `
+SELECT comment, boxes FROM feedbacks;`
+
+const addFeedbackQuery = `
+INSERT INTO feedbacks(comment, boxes)
+	VALUES($1, $2)`

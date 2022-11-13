@@ -1,0 +1,9 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS feedbacks(
+	id			SERIAL 		PRIMARY KEY,
+	comment 	VARCHAR(256),
+	boxes 		VARCHAR(128) NOT NULL
+);
+
+COMMIT;
