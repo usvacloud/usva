@@ -17,6 +17,7 @@ type File struct {
 	PasswordHash  string `database:"passwdhash"`
 	FileUUID      string `database:"file_uuid"`
 	IsEncrypted   bool   `database:"isencrypted"`
+	Uploader      string `database:"uploader"`
 	UploadDate    string `database:"upload_date"`
 	ViewCount     int    `database:"viewcount"`
 }

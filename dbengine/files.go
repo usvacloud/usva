@@ -3,7 +3,7 @@ package dbengine
 // InsertFile creates a new record on file database
 // from given File struct
 func InsertFile(file File) error {
-	if _, err := DbConnection.Exec(insertFileQuery, file.FileUUID, file.Title,
+	if _, err := DbConnection.Exec(insertFileQuery, file.FileUUID, file.Title, file.Uploader,
 		file.PasswordHash, file.UploadDate, file.IsEncrypted); err != nil {
 		return err
 	}
