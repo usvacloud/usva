@@ -4,6 +4,10 @@ GOPATH 		= $(shell go env GOPATH)
 BINARY		= usva
 CGO_ENABLED ?= 0
 
+DB_NAME ?= usva
+DB_USERNAME ?= dev
+DB_HOST ?= localhost
+DB_PORT ?= 5432
 DB_NAME_TESTS	?= usva_tests
 DB_USERNAME_TESTS ?= usva_tests
 DB_PASSWORD_TESTS ?= testrunner
