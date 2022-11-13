@@ -39,7 +39,7 @@ func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
 	// generate name for the uploaded file
 	filename := uuid.New().String() + path.Ext(f.Filename)
 
-	if int(f.Size)/1000000 > uploadOptions.MaxSize {
+	if uploadOptions.MaxSize > 0 && int(f.Size)/1000000 > uploadOptions.MaxSize {
 		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
 			"error": "File is too big",
 		})
@@ -242,6 +242,8 @@ func setErrResponse(ctx *gin.Context, err error) {
 		errorMessage, status = "password is invalid", http.StatusForbidden
 	case errAuthMissing:
 		errorMessage, status = err.Error(), http.StatusUnauthorized
+	case errEmptyResponse:
+		errorMessage, status = err.Error(), http.StatusNoContent
 	default:
 		log.Println("error: ", err.Error())
 	}

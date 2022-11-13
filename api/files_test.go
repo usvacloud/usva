@@ -65,7 +65,7 @@ func Test_uploadFile(t *testing.T) {
 				fileData: "hello",
 				maxSize:  -1,
 			},
-			expectedCode:  413,
+			expectedCode:  200,
 			verifySucceed: false,
 		},
 	}
