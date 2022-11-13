@@ -24,8 +24,9 @@ type Server struct {
 	TLS            TLS
 }
 type Files struct {
-	MaxSize    int
-	UploadsDir string
+	MaxSingleUploadSize int64
+	MaxUploadSizePerDay int64
+	UploadsDir          string
 }
 type Database struct {
 	User     string

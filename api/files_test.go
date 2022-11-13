@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/romeq/usva/api/middleware"
 	"github.com/romeq/usva/config"
 	"github.com/romeq/usva/dbengine"
 	"github.com/stretchr/testify/assert"
@@ -77,10 +78,11 @@ func Test_uploadFile(t *testing.T) {
 		}{}
 
 		c, r := prepareMultipartBody(t, tt.payload.fileData)
-		uploadFile(c, &config.Files{
-			MaxSize:    int(tt.payload.maxSize),
-			UploadsDir: "../test-uploads/",
+		handler := uploadFile(&middleware.Ratelimiter{}, &config.Files{
+			MaxSingleUploadSize: int64(tt.payload.maxSize),
+			UploadsDir:          "../test-uploads/",
 		})
+		handler(c)
 
 		// make sure the test ran correctly
 		assert.EqualValues(t, tt.expectedCode, r.Code)

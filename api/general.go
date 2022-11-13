@@ -14,7 +14,7 @@ var (
 
 func restrictionsHandler(ctx *gin.Context, cfg *config.Config) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"maxSize": cfg.Files.MaxSize,
+		"maxSize": cfg.Files.MaxSingleUploadSize,
 	})
 }
 

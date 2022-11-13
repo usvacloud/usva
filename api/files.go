@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/romeq/usva/api/middleware"
 	"github.com/romeq/usva/config"
 	"github.com/romeq/usva/dbengine"
 	"github.com/romeq/usva/utils"
@@ -22,81 +23,89 @@ import (
 
 var errAuthMissing = errors.New("missing authentication in protected file")
 
-func initFilesRoute(fn func(ctx *gin.Context, files *config.Files)) func(ctx *gin.Context) {
+func initFilesRoute(fn func(ctx *gin.Context, files *config.Files)) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		fn(ctx, &routeSetup.Files)
 	}
 }
 
-func uploadFile(ctx *gin.Context, uploadOptions *config.Files) {
-	// retrieve file from request
-	f, err := ctx.FormFile("file")
-	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
-
-	// generate name for the uploaded file
-	filename := uuid.New().String() + path.Ext(f.Filename)
-
-	if uploadOptions.MaxSize > 0 && int(f.Size)/1000000 > uploadOptions.MaxSize {
-		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
-			"error": "File is too big",
-		})
-		return
-	}
-
-	var hash []byte
-	pwd := strings.TrimSpace(ctx.PostForm("password"))
-	if len(pwd) > 0 {
-		decodedkey, err := base64.RawStdEncoding.DecodeString(pwd)
+func uploadFile(lmt *middleware.Ratelimiter, uploadOptions *config.Files) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// retrieve file from request
+		f, err := ctx.FormFile("file")
 		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error": "Failed to decode key as base64",
+			setErrResponse(ctx, err)
+			return
+		}
+
+		// generate name for the uploaded file
+		filename := uuid.New().String() + path.Ext(f.Filename)
+
+		if uploadOptions.MaxSingleUploadSize > 0 && f.Size > uploadOptions.MaxSingleUploadSize {
+			ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
+				"error": "File is too big",
 			})
 			return
 		}
-		decodedkey = []byte(strings.TrimSpace(string(decodedkey)))
 
-		if len(decodedkey) > 0 {
-			hash, err = bcrypt.GenerateFromPassword(decodedkey, 12)
+		var hash []byte
+		pwd := strings.TrimSpace(ctx.PostForm("password"))
+		if len(pwd) > 0 {
+			decodedkey, err := base64.RawStdEncoding.DecodeString(pwd)
 			if err != nil {
-				setErrResponse(ctx, err)
+				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error": "Failed to decode key as base64",
+				})
 				return
 			}
+			decodedkey = []byte(strings.TrimSpace(string(decodedkey)))
+
+			if len(decodedkey) > 0 {
+				hash, err = bcrypt.GenerateFromPassword(decodedkey, 12)
+				if err != nil {
+					setErrResponse(ctx, err)
+					return
+				}
+			}
 		}
-	}
 
-	// Append file metadata into database
-	err = dbengine.InsertFile(dbengine.File{
-		FileUUID:     filename,
-		Title:        ctx.Request.FormValue("title"),
-		PasswordHash: string(hash),
-		IsEncrypted:  len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
-		UploadDate:   time.Now().Format(time.RFC3339),
-	})
-	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
+		// Append file metadata into database
+		apiid := ctx.Writer.Header().Get("Api-Identifier")
+		err = dbengine.InsertFile(dbengine.File{
+			FileUUID:     filename,
+			Title:        ctx.Request.FormValue("title"),
+			PasswordHash: string(hash),
+			Uploader:     apiid,
+			IsEncrypted:  len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
+			UploadDate:   time.Now().Format(time.RFC3339),
+		})
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
 
-	abspath, err := filepath.Abs(uploadOptions.UploadsDir)
-	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
+		abspath, err := filepath.Abs(uploadOptions.UploadsDir)
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
 
-	err = ctx.SaveUploadedFile(f, path.Join(abspath, filename))
-	if err != nil {
-		dbengine.TryDeleteFile(filename)
-		setErrResponse(ctx, err)
-		return
-	}
+		err = ctx.SaveUploadedFile(f, path.Join(abspath, filename))
+		if err != nil {
+			dbengine.TryDeleteFile(filename)
+			setErrResponse(ctx, err)
+			return
+		}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"message":  "file uploaded",
-		"filename": filename,
-	})
+		lmt.AppendClientUploads(apiid, middleware.ClientUpload{
+			Size: f.Size,
+			Time: time.Now(),
+		})
+		ctx.JSON(http.StatusOK, gin.H{
+			"message":  "file uploaded",
+			"filename": filename,
+		})
+	}
 }
 
 // => /file/info?filename=<uuid>

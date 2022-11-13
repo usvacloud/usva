@@ -80,7 +80,7 @@ preparetests:
 
 
 tests-cleanup:
-	@- rm -r test-uploads
+	@- rm -r test-uploads postgres-tests
 	@- make migratedown-tests
 
 	@- docker-compose -f docker-compose-dev.yml down

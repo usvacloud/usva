@@ -37,7 +37,7 @@ func (o *Options) getaddr() string {
 	return fmt.Sprintf("%s:%d", o.Server.Address, o.Server.Port)
 }
 
-func setuprouter(cfg config.Config) *gin.Engine {
+func setupEngine(cfg config.Config) *gin.Engine {
 	if !cfg.Server.DebugMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -54,7 +54,12 @@ func setuprouter(cfg config.Config) *gin.Engine {
 		r.Use(requestLogger)
 	}
 
-	api.SetupRoutes(r, &cfg)
+	api.SetupRoutes(r, &cfg, api.Ratelimits{
+		HardLimit: api.Limits{
+			AllowedRequests: 30,
+			Time:            time.Hour * time.Duration(24),
+		},
+	})
 	utils.Check(r.SetTrustedProxies(cfg.Server.TrustedProxies))
 
 	return r
@@ -81,8 +86,8 @@ func requestLogger(ctx *gin.Context) {
 	ctx.Next()
 	c := time.Since(t).Milliseconds()
 
-	log.Printf("request: [%s] %s %s %d (took %dms) \n",
-		ctx.RemoteIP(), ctx.Request.Method, ctx.Request.URL, ctx.Writer.Status(), c)
+	log.Printf("request: %s %s %d (took %dms) \n",
+		ctx.Request.Method, ctx.Request.URL, ctx.Writer.Status(), c)
 }
 
 func main() {
@@ -111,7 +116,7 @@ func main() {
 	log.Println("Starting server at", opts.getaddr())
 
 	// start server
-	r := setuprouter(cfg)
+	r := setupEngine(cfg)
 	tlssettings := cfg.Server.TLS
 	if tlssettings.Enabled {
 		utils.Check(r.RunTLS(opts.getaddr(), tlssettings.KeyFile, tlssettings.CertFile))
