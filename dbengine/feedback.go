@@ -1,7 +1,5 @@
 package dbengine
 
-import "log"
-
 type Feedback struct {
 	Comment string `json:"comment"`
 	Boxes   string `json:"boxes"`
@@ -21,7 +19,6 @@ func GetFeedbacks() (feedbacks []Feedback, err error) {
 			continue
 		}
 
-		log.Println(row)
 		feedbacks = append(feedbacks, row)
 	}
 
