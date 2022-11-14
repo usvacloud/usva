@@ -82,19 +82,14 @@ func (limiterBase *Ratelimiter) AppendClientUploads(identifier string, upload Cl
 	*client.Uploads = append(*client.Uploads, &upload)
 }
 
-// Remove clients that have not made any requests since their existing limits expired.
-// TODO: This can also take a bit of memory as a new array is created and appended.
+// Remove clients that have full ratelimit capacity.
+// TODO: This can also take quite a bit of memory as a new array is created and appended.
 // fix is possible via removing the clients straight from the Clients struct
 func (limiterBase *Ratelimiter) Clean() {
 	clients := safeListAccess(limiterBase.Clients)
 	nl := []*Client{}
 	for _, client := range *clients {
-		timeExpired := *client.Limiter.ReserveN(time.Now(), client.Limiter.Burst())
-
-		// e.x. 2h since expire date, 3h since last request  => yes
-		// e.x. -2h since expire date, 4h since last request => no
-		if timeExpired.Delay() > time.Since(client.LastRequest) {
-			timeExpired.Cancel()
+		if client.Limiter.Burst() > int(client.Limiter.Tokens()) {
 			nl = append(nl, client)
 		}
 	}
@@ -108,24 +103,21 @@ func (limiterBase *Ratelimiter) Clean() {
 // TODO: Optimize for larger scale
 func (limiterBase *Ratelimiter) RestrictRequests(count int, per time.Duration) gin.HandlerFunc {
 	if count == 0 {
-		return func(ctx *gin.Context) {}
+		return func(ctx *gin.Context) {
+			ctx.Next()
+		}
 	}
 	return func(ctx *gin.Context) {
 		rawip := []byte(ctx.ClientIP())
 		ip := hex.EncodeToString(sha256.New().Sum(rawip))
 
 		found, client := limiterBase.getClientByIdentifierOrCreate(ip)
-		client.LastRequest = time.Now()
 		if !found {
 			client.Limiter = rate.NewLimiter(rate.Every(per), count)
 		}
 
-		setResponseHeaders(
-			ctx,
-			count,
-			int(client.Limiter.Tokens()),
-			int(per.Seconds()),
-		)
+		setResponseHeaders(ctx, count, int(client.Limiter.Tokens()), int(per.Seconds()))
+		client.LastRequest = time.Now()
 		if client.Limiter.Allow() {
 			ctx.Next()
 		} else {

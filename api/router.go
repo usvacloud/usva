@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,7 @@ func SetupRouteHandlers(router *gin.Engine, cfg *config.Config, ratelimits Ratel
 
 	// Declare ratelimiters
 	requestLimiter := ratelimits.Ratelimiter
+	go initCleanupRoutine(requestLimiter)
 
 	queryLimit := requestLimiter.RestrictRequests(
 		ratelimits.QueryLimit.AllowedRequests,
@@ -65,5 +67,19 @@ func SetupRouteHandlers(router *gin.Engine, cfg *config.Config, ratelimits Ratel
 	{
 		feedback.GET("/", getFeedback)
 		feedback.POST("/", hardLimiter, addFeedback)
+	}
+}
+
+func initCleanupRoutine(rt *middleware.Ratelimiter) {
+	if rt == nil {
+		log.Println("initCleanupRoutine: rt is nil")
+		return
+	}
+
+	for {
+		<-time.After(time.Hour)
+		if time.Since(rt.LastCleanup) > time.Duration(24)*time.Hour {
+			rt.Clean()
+		}
 	}
 }
