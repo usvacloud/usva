@@ -46,28 +46,28 @@ func Test_uploadFile(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		payload       payload
-		expectedCode  int
-		verifySucceed bool
+		name               string
+		payload            payload
+		expectedCode       int
+		verifyResponseJSON bool
 	}{
 		{
 			name: "test1",
 			payload: payload{
 				fileData: "hello",
-				maxSize:  1,
+				maxSize:  8,
 			},
-			expectedCode:  200,
-			verifySucceed: true,
+			expectedCode:       200,
+			verifyResponseJSON: true,
 		},
 		{
 			name: "test2",
 			payload: payload{
 				fileData: "hello",
-				maxSize:  -1,
+				maxSize:  2,
 			},
-			expectedCode:  200,
-			verifySucceed: false,
+			expectedCode:       413,
+			verifyResponseJSON: false,
 		},
 	}
 
@@ -87,7 +87,7 @@ func Test_uploadFile(t *testing.T) {
 		// make sure the test ran correctly
 		assert.EqualValues(t, tt.expectedCode, r.Code)
 
-		if tt.verifySucceed {
+		if tt.verifyResponseJSON {
 			e := json.Unmarshal(r.Body.Bytes(), &responseStruct)
 			if e != nil {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)

@@ -28,7 +28,7 @@ type Ratelimiter struct {
 	LastReset time.Time
 }
 
-func valueOf[T *Client | *ClientUpload, L *[]T](f L) L {
+func safeListAccess[T *Client | *ClientUpload, L *[]T](f L) L {
 	if f == nil {
 		return &[]T{}
 	}
@@ -37,17 +37,18 @@ func valueOf[T *Client | *ClientUpload, L *[]T](f L) L {
 
 func NewRatelimiter() *Ratelimiter {
 	return &Ratelimiter{
-		Clients: &[](*Client){},
+		Clients:   &[](*Client){},
+		LastReset: time.Now(),
 	}
 }
 
 func (limiterBase *Ratelimiter) addClient(client *Client) {
-	*limiterBase.Clients = append(*limiterBase.Clients, client)
+	newValue := append(*safeListAccess(limiterBase.Clients), client)
+	limiterBase.Clients = &newValue
 }
 
 func (limiterBase *Ratelimiter) getClientByIdentifier(identifier string) (safe bool, client *Client) {
-	clients := valueOf(limiterBase.Clients)
-	for _, client := range *clients {
+	for _, client := range *safeListAccess(limiterBase.Clients) {
 		if client.Identifier == identifier {
 			return true, client
 		}
@@ -78,7 +79,7 @@ func (limiterBase *Ratelimiter) AppendClientUploads(identifier string, upload Cl
 // TODO: This can also take a bit of memory as a new array is created and appended.
 // fix is possible via removing the clients straight from the Clients struct
 func (limiterBase *Ratelimiter) Clean() {
-	clients := valueOf(limiterBase.Clients)
+	clients := safeListAccess(limiterBase.Clients)
 	activeClients := &[](*Client){}
 	for _, client := range *clients {
 		if time.Since(client.LastRequest) > client.Limiter.Reserve().Delay() {
@@ -120,6 +121,11 @@ func (limiterBase *Ratelimiter) LimitDependsBodySize(
 	duration time.Duration,
 	allowedData int64,
 ) gin.HandlerFunc {
+	if limiterBase == nil {
+		return func(ctx *gin.Context) {
+			ctx.Next()
+		}
+	}
 	return func(ctx *gin.Context) {
 		if allowedData == 0 {
 			ctx.Next()
