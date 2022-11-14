@@ -94,7 +94,7 @@ func (limiterBase *Ratelimiter) Clean() {
 		}
 	}
 
-	clients = &nl
+	*clients = nl
 	limiterBase.LastCleanup = time.Now()
 }
 
