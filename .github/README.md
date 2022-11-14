@@ -1,6 +1,6 @@
-# Usva 
+# Usva
 
-Usva is a feature-rich file cloud with a modern REST API. 
+Usva is a feature-rich file cloud with a modern REST API.
 Privacy, accessibility and efficiency will always come first, thus usva is built to be highly reliable and easy to set up for anybody.
 
 If you have any questions or comments about usva's security practices, you can open an issue.
@@ -14,6 +14,7 @@ If you have any questions or comments about usva's security practices, you can o
 - Really easy configuration and setup with zero hassle
 - Source code is always free to download.
 - Option for disabling all request logging to enhance privacy on client
+- Ratelimits
 
 ##### For client
 
@@ -21,7 +22,6 @@ If you have any questions or comments about usva's security practices, you can o
 - Endpoint for viewing file's metadata
 - Endpoint for viewing file's content
 - Downloading and deleting a file
-
 
 ## Installation and usage
 
@@ -39,17 +39,17 @@ Installation is done in 3 steps: downloading source, installing dependencies and
 
 ```sh
 % git clone https://github.com/romeq/usva && cd usva
-% make setup build migratesetup 
+% make setup build migratesetup
 
 % make run # requires setup (see below)
 ```
-
 
 ## Configuration and setup
 
 ### Configuration and migrations using Docker
 
-Migrations are automatically ran when server is started. Define following values in `.env`:
+Migrations are automatically ran when server is started with docker.
+Define following values in `.env`:
 
 ```shell
 # Required
@@ -76,40 +76,16 @@ SV_PORT=8080 # Exposed port, default = 8080
 ### Server configuration
 
 #### Note for Docker users
-Docker image uses config.toml for the server's configuration. By default this file is 
+
+Docker image uses config.toml for the server's configuration. By default this file is
 shared between the host and the container.
 
 #### Configuration options
 
-Full configuration will look something near following: 
+Full configuration can be found in `config-example.toml`, thus we suggest for you to use
+a modified copy of that file as server's configuration.
 
-```toml
-[Server]
-Address = "127.0.0.1" # address to bind to
-Port = 8080 # the port to bind to. don't use with Docker.
-TrustedProxies = ["127.0.0.1"]
-DebugMode = false # use of gin's debug mode (includes logging)
-HideRequests = false # requests should be hidden from logs
-AllowedOrigins = [ "https://example.com" ] # cors allowed origins
-
-[Server.TLS]
-Enabled = true
-CertFile = "/path/to/cert"
-KeyFile = "/path/to/keyfile"
-
-[Files]
-MaxSize = 10 # maximum uploaded file size in megabytes
-UploadsDir = "uploads" # directory for uploaded files
-
-[Database]
-User = "user"
-Password = "password"
-Host = "127.0.0.1"
-Port = 5432
-Database = "usva"
-```
-
-You should note, though, that only a few fields from above will be required. 
+You should note, though, that only a few fields from above will be required.
 Shortest possible configuration looks something like below.
 
 ```toml
@@ -124,7 +100,6 @@ UploadsDir = "uploads"
 [Database]
 User = "user"
 ```
-
 
 ## API Specification
 
