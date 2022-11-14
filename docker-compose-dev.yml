@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-testrunner}
 
     ports:
-      - "${DB_PORT:-5432}:${SV_PORT:-5432}"
+      - "${DB_PORT:-5432}:${DB_PORT:-5432}"
 
     expose:
       - "${DB_PORT:-5432}"
