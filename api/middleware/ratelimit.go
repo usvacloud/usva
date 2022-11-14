@@ -3,6 +3,7 @@ package middleware
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -24,8 +25,8 @@ type Client struct {
 }
 
 type Ratelimiter struct {
-	Clients   *[](*Client)
-	LastReset time.Time
+	Clients     *[](*Client)
+	LastCleanup time.Time
 }
 
 func safeListAccess[T *Client | *ClientUpload, L *[]T](f L) L {
@@ -37,14 +38,20 @@ func safeListAccess[T *Client | *ClientUpload, L *[]T](f L) L {
 
 func NewRatelimiter() *Ratelimiter {
 	return &Ratelimiter{
-		Clients:   &[](*Client){},
-		LastReset: time.Now(),
+		Clients:     &[](*Client){},
+		LastCleanup: time.Now(),
 	}
 }
 
 func (limiterBase *Ratelimiter) addClient(client *Client) {
 	newValue := append(*safeListAccess(limiterBase.Clients), client)
 	limiterBase.Clients = &newValue
+}
+
+func setResponseHeaders(ctx *gin.Context, limit, remaining, toreset int) {
+	ctx.Header("RateLimit-Limit", fmt.Sprint(limit))
+	ctx.Header("RateLimit-Remaining", fmt.Sprint(remaining))
+	ctx.Header("RateLimit-Reset", fmt.Sprint(toreset))
 }
 
 func (limiterBase *Ratelimiter) getClientByIdentifier(identifier string) (safe bool, client *Client) {
@@ -88,7 +95,7 @@ func (limiterBase *Ratelimiter) Clean() {
 	}
 
 	limiterBase.Clients = activeClients
-	limiterBase.LastReset = time.Now()
+	limiterBase.LastCleanup = time.Now()
 }
 
 // Limit returns a middleware to create a new ratelimiter for each IP.
@@ -103,9 +110,14 @@ func (limiterBase *Ratelimiter) Limit(count int, per time.Duration) gin.HandlerF
 		client.LastRequest = time.Now()
 		if !found {
 			client.Limiter = rate.NewLimiter(rate.Every(per), count)
-			return
 		}
 
+		setResponseHeaders(
+			ctx,
+			count,
+			int(client.Limiter.Tokens()),
+			int(per.Seconds()),
+		)
 		if client.Limiter.Allow() {
 			ctx.Next()
 		} else {
