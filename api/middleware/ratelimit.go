@@ -82,26 +82,34 @@ func (limiterBase *Ratelimiter) AppendClientUploads(identifier string, upload Cl
 	*client.Uploads = append(*client.Uploads, &upload)
 }
 
-// Remove clients that have not made any requests since their limits expired
+// Remove clients that have not made any requests since their existing limits expired.
 // TODO: This can also take a bit of memory as a new array is created and appended.
 // fix is possible via removing the clients straight from the Clients struct
 func (limiterBase *Ratelimiter) Clean() {
 	clients := safeListAccess(limiterBase.Clients)
-	activeClients := &[](*Client){}
+	nl := []*Client{}
 	for _, client := range *clients {
-		if time.Since(client.LastRequest) > client.Limiter.Reserve().Delay() {
-			*activeClients = append(*activeClients, client)
+		timeExpired := *client.Limiter.ReserveN(time.Now(), client.Limiter.Burst())
+
+		// e.x. 2h since expire date, 3h since last request  => yes
+		// e.x. -2h since expire date, 4h since last request => no
+		if timeExpired.Delay() > time.Since(client.LastRequest) {
+			timeExpired.Cancel()
+			nl = append(nl, client)
 		}
 	}
 
-	limiterBase.Clients = activeClients
+	clients = &nl
 	limiterBase.LastCleanup = time.Now()
 }
 
-// Limit returns a middleware to create a new ratelimiter for each IP.
+// RestrictRequests returns a middleware to create a new ratelimiter for each IP.
 // This can take a lot of memory with higher use, though.
 // TODO: Optimize for larger scale
-func (limiterBase *Ratelimiter) Limit(count int, per time.Duration) gin.HandlerFunc {
+func (limiterBase *Ratelimiter) RestrictRequests(count int, per time.Duration) gin.HandlerFunc {
+	if count == 0 {
+		return func(ctx *gin.Context) {}
+	}
 	return func(ctx *gin.Context) {
 		rawip := []byte(ctx.ClientIP())
 		ip := hex.EncodeToString(sha256.New().Sum(rawip))
@@ -126,14 +134,14 @@ func (limiterBase *Ratelimiter) Limit(count int, per time.Duration) gin.HandlerF
 	}
 }
 
-// Allow a certain amount of data in specific duration
-// LimitDependsBodySize checks the history of a client and
-// limits their access based on found data
-func (limiterBase *Ratelimiter) LimitDependsBodySize(
+// RestrictUploads checks the history of a client and
+// limits their access based on found data.
+// Allows a certain amount of data in specific duration.
+func (limiterBase *Ratelimiter) RestrictUploads(
 	duration time.Duration,
 	allowedData int64,
 ) gin.HandlerFunc {
-	if limiterBase == nil {
+	if allowedData == 0 {
 		return func(ctx *gin.Context) {
 			ctx.Next()
 		}

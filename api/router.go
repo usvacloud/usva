@@ -14,27 +14,29 @@ type Limits struct {
 	AllowedRequests int
 	Time            time.Duration
 }
+
 type Ratelimits struct {
-	HardLimit Limits
+	HardLimit   Limits
+	QueryLimit  Limits
+	Ratelimiter *middleware.Ratelimiter
 }
 
-func SetupRoutes(router *gin.Engine, cfg *config.Config, ratelimits Ratelimits) {
+func SetupRouteHandlers(router *gin.Engine, cfg *config.Config, ratelimits Ratelimits) {
 	routeSetup = cfg
-	requestLimiter := middleware.NewRatelimiter()
-	hardLimiter := requestLimiter.Limit(
+
+	// Declare ratelimiters
+	requestLimiter := ratelimits.Ratelimiter
+
+	queryLimit := requestLimiter.RestrictRequests(
+		ratelimits.QueryLimit.AllowedRequests,
+		ratelimits.QueryLimit.Time)
+
+	hardLimiter := requestLimiter.RestrictRequests(
 		ratelimits.HardLimit.AllowedRequests,
-		ratelimits.HardLimit.Time,
-	)
+		ratelimits.HardLimit.Time)
 
-	// Middleware
+	// Middleware/general stuff
 	router.Use(middleware.IdentifierHeader)
-	router.Use(func(ctx *gin.Context) {
-		if time.Since(requestLimiter.LastReset) > time.Duration(24)*time.Hour {
-			go requestLimiter.Clean()
-		}
-	})
-
-	// General handlers
 	router.NoRoute(notFoundHandler)
 	router.GET("/restrictions", func(ctx *gin.Context) {
 		restrictionsHandler(ctx, cfg)
@@ -44,14 +46,14 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, ratelimits Ratelimits) 
 	file := router.Group("/file")
 	{
 		// Routes
-		file.GET("/info", initFilesRoute(fileInformation))
-		file.GET("/", initFilesRoute(downloadFile))
-		file.DELETE("/", initFilesRoute(deleteFile))
+		file.GET("/info", queryLimit, initFilesRoute(fileInformation))
+		file.GET("/", queryLimit, initFilesRoute(downloadFile))
+		file.DELETE("/", queryLimit, initFilesRoute(deleteFile))
 		file.POST(
 			"/upload",
-			requestLimiter.Limit(1, time.Second*time.Duration(2)),
-			requestLimiter.LimitDependsBodySize(
-				time.Hour*time.Duration(24),
+			hardLimiter,
+			requestLimiter.RestrictUploads(
+				time.Duration(24)*time.Hour,
 				cfg.Files.MaxUploadSizePerDay,
 			),
 			uploadFile(requestLimiter, &cfg.Files),
@@ -60,7 +62,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, ratelimits Ratelimits) 
 
 	// Feedback
 	feedback := router.Group("/feedback")
-	feedback.Use(hardLimiter)
 	{
 		feedback.GET("/", getFeedback)
 		feedback.POST("/", hardLimiter, addFeedback)
