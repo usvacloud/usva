@@ -58,8 +58,8 @@ func setupEngine(cfg config.Config) *gin.Engine {
 
 	api.SetupRouteHandlers(r, &cfg, api.Ratelimits{
 		HardLimit: api.Limits{
-			AllowedRequests: 10,
-			Time:            time.Hour,
+			AllowedRequests: 5,
+			Time:            time.Hour / 4,
 		},
 		QueryLimit:  api.Limits{},
 		Ratelimiter: requestLimiter,
