@@ -9,6 +9,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/api"
+	"github.com/romeq/usva/api/middleware"
 	"github.com/romeq/usva/arguments"
 	"github.com/romeq/usva/config"
 	"github.com/romeq/usva/dbengine"
@@ -41,7 +42,6 @@ func setupEngine(cfg config.Config) *gin.Engine {
 	if !cfg.Server.DebugMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
-
 	r := gin.New()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: cfg.Server.AllowedOrigins,
@@ -49,16 +49,20 @@ func setupEngine(cfg config.Config) *gin.Engine {
 		AllowHeaders: []string{"Authorization"},
 	}))
 
+	requestLimiter := middleware.NewRatelimiter()
+
 	r.Use(gin.Recovery())
 	if !cfg.Server.HideRequests {
 		r.Use(requestLogger)
 	}
 
-	api.SetupRoutes(r, &cfg, api.Ratelimits{
+	api.SetupRouteHandlers(r, &cfg, api.Ratelimits{
 		HardLimit: api.Limits{
-			AllowedRequests: 30,
-			Time:            time.Hour * time.Duration(24),
+			AllowedRequests: 10,
+			Time:            time.Hour,
 		},
+		QueryLimit:  api.Limits{},
+		Ratelimiter: requestLimiter,
 	})
 	utils.Check(r.SetTrustedProxies(cfg.Server.TrustedProxies))
 
