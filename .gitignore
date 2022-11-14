@@ -26,3 +26,4 @@ config-local.toml
 config.toml
 
 postgres-data
+main
