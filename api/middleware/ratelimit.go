@@ -8,20 +8,42 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/time/rate"
 )
+
+type RequestHandler struct {
+	nextReset     time.Time
+	tokens        int16
+	maximumTokens int16
+}
+
+func NewHandler(requestCount int16, saveDuration time.Duration) *RequestHandler {
+	return &RequestHandler{
+		nextReset:     time.Now().Add(saveDuration),
+		tokens:        requestCount,
+		maximumTokens: requestCount,
+	}
+}
+
+func (hand *RequestHandler) UseToken(count int16) bool {
+	ok := hand.tokens >= count
+	if ok {
+		hand.tokens -= count
+	}
+	return ok
+}
+func (hand *RequestHandler) ResetTokens() {
+	hand.tokens = hand.maximumTokens
+}
 
 type ClientUpload struct {
 	Size int64
 	Time time.Time
 }
-type ClientUploads []*ClientUpload
-
 type Client struct {
 	Identifier  string
-	Limiter     *rate.Limiter
+	handler     *RequestHandler
 	LastRequest time.Time
-	Uploads     *ClientUploads
+	Uploads     *[]*ClientUpload
 }
 
 type Ratelimiter struct {
@@ -48,7 +70,7 @@ func (limiterBase *Ratelimiter) addClient(client *Client) {
 	limiterBase.Clients = &newValue
 }
 
-func setResponseHeaders(ctx *gin.Context, limit, remaining, toreset int) {
+func setResponseHeaders(ctx *gin.Context, limit, remaining, toreset int16) {
 	ctx.Header("RateLimit-Limit", fmt.Sprint(limit))
 	ctx.Header("RateLimit-Remaining", fmt.Sprint(remaining))
 	ctx.Header("RateLimit-Reset", fmt.Sprint(toreset))
@@ -68,8 +90,8 @@ func (limiterBase *Ratelimiter) getClientByIdentifierOrCreate(identifier string)
 	if !found {
 		client = &Client{
 			Identifier:  identifier,
-			Uploads:     &ClientUploads{},
-			Limiter:     &rate.Limiter{},
+			Uploads:     &[]*ClientUpload{},
+			handler:     &RequestHandler{},
 			LastRequest: time.Now(),
 		}
 		limiterBase.addClient(client)
@@ -89,7 +111,7 @@ func (limiterBase *Ratelimiter) Clean() {
 	clients := safeListAccess(limiterBase.Clients)
 	nl := []*Client{}
 	for _, client := range *clients {
-		if client.Limiter.Burst() > int(client.Limiter.Tokens()) {
+		if client.handler.maximumTokens > client.handler.tokens {
 			nl = append(nl, client)
 		}
 	}
@@ -101,7 +123,7 @@ func (limiterBase *Ratelimiter) Clean() {
 // RestrictRequests returns a middleware to create a new ratelimiter for each IP.
 // This can take a lot of memory with higher use, though.
 // TODO: Optimize for larger scale
-func (limiterBase *Ratelimiter) RestrictRequests(count int, per time.Duration) gin.HandlerFunc {
+func (limiterBase *Ratelimiter) RestrictRequests(count int16, per time.Duration) gin.HandlerFunc {
 	if count == 0 {
 		return func(ctx *gin.Context) {
 			ctx.Next()
@@ -113,16 +135,21 @@ func (limiterBase *Ratelimiter) RestrictRequests(count int, per time.Duration) g
 
 		found, client := limiterBase.getClientByIdentifierOrCreate(ip)
 		if !found {
-			client.Limiter = rate.NewLimiter(rate.Every(per), count)
+			client.handler = NewHandler(count, per)
 		}
 
-		setResponseHeaders(ctx, count, int(client.Limiter.Tokens()), int(per.Seconds()))
-		client.LastRequest = time.Now()
-		if client.Limiter.Allow() {
+		if client.handler.nextReset.Before(time.Now()) {
+			time.AfterFunc(per, client.handler.ResetTokens)
+			client.handler.nextReset = time.Now().Add(per)
+		}
+
+		setResponseHeaders(ctx, count, client.handler.tokens, int16(per.Seconds()))
+		if client.handler.UseToken(1) {
 			ctx.Next()
 		} else {
 			ctx.AbortWithStatus(http.StatusTooManyRequests)
 		}
+		client.LastRequest = time.Now()
 	}
 }
 

@@ -12,7 +12,7 @@ import (
 var routeSetup *config.Config
 
 type Limits struct {
-	AllowedRequests int
+	AllowedRequests int16
 	Time            time.Duration
 }
 
