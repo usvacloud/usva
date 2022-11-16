@@ -71,8 +71,8 @@ test: preparetests
 
 preparetests:
 	- mkdir test-uploads postgres-tests 2>/dev/null
-	- [ "${START_TEST_DOCKER}" = "1" ] 
-		&& docker-compose -f docker-compose-dev.yml up -d
+	- [ "${START_TEST_DOCKER}" = "1" ] \
+		&& docker-compose -f docker-compose-dev.yml up -d \
 		&& sleep 3
 	make migrateup-tests
 
