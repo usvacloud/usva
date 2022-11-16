@@ -49,10 +49,6 @@ db-create:
 	 psql "postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/" \
 		-q -c "CREATE DATABASE $(DB_NAME) OWNER postgres ENCODING UTF8;"
 
-db-create-tests:
-	- psql "postgresql://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/" \
-		-q -c "CREATE DATABASE $(DB_NAME_TESTS) OWNER $(DB_USERNAME_TESTS) ENCODING UTF8;"
-
 run:
 	@./$(BINARY) -c ./config.toml
 
@@ -76,7 +72,7 @@ preparetests:
 	@- mkdir test-uploads postgres-tests 2>/dev/null
 	@ docker-compose -f docker-compose-dev.yml up -d
 	@ sleep 1
-	@ make db-create-tests migrateup-tests
+	@ make migrateup-tests
 
 
 tests-cleanup:
