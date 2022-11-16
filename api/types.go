@@ -1,9 +1,5 @@
 package api
 
-// API-package is designed to be very modular and independant of other usva's
-// packages. It exports the handlers used to handle all existing operations.
-// The point of this action was to make using usva as a library possible.
-
 // Limits-struct is primarily used to configure the ratelimiting functionality
 type Limits struct {
 	AllowedRequests int16 // Requests to allow
