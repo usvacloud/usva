@@ -15,7 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/romeq/usva/api/middleware"
-	"github.com/romeq/usva/config"
 	"github.com/romeq/usva/dbengine"
 	"github.com/romeq/usva/utils"
 	"golang.org/x/crypto/bcrypt"
@@ -23,13 +22,7 @@ import (
 
 var errAuthMissing = errors.New("missing authentication in protected file")
 
-func initFilesRoute(fn func(ctx *gin.Context, files *config.Files)) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		fn(ctx, &routeSetup.Files)
-	}
-}
-
-func uploadFile(lmt *middleware.Ratelimiter, uploadOptions *config.Files) gin.HandlerFunc {
+func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// retrieve file from request
 		f, err := ctx.FormFile("file")
@@ -109,96 +102,104 @@ func uploadFile(lmt *middleware.Ratelimiter, uploadOptions *config.Files) gin.Ha
 }
 
 // => /file/info?filename=<uuid>
-func fileInformation(ctx *gin.Context, uploadInformation *config.Files) {
-	filename, filenameGiven := ctx.GetQuery("filename")
-	if !filenameGiven {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "Filename not given",
+func FileInformation(uploadInformation *APIConfiguration) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		filename, filenameGiven := ctx.GetQuery("filename")
+		if !filenameGiven {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "Filename not given",
+			})
+			return
+		}
+
+		if !authorizeRequest(ctx, filename) {
+			return
+		}
+
+		f, err := dbengine.GetFile(filename)
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		pwd, err := dbengine.GetPasswordHash(filename)
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		filesize, err := utils.FileSize(path.Join(uploadInformation.UploadsDir, filename))
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"filename":   f.FileUUID,
+			"size":       filesize,
+			"title":      f.Title,
+			"uploadDate": f.UploadDate,
+			"viewCount":  f.ViewCount,
+			"locked":     pwd != "",
+			"encrypted":  f.IsEncrypted,
 		})
-		return
-	}
 
-	if !authorizeRequest(ctx, filename) {
-		return
 	}
-
-	f, err := dbengine.GetFile(filename)
-	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
-
-	pwd, err := dbengine.GetPasswordHash(filename)
-	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
-
-	filesize, err := utils.FileSize(path.Join(uploadInformation.UploadsDir, filename))
-	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"filename":   f.FileUUID,
-		"size":       filesize,
-		"title":      f.Title,
-		"uploadDate": f.UploadDate,
-		"viewCount":  f.ViewCount,
-		"locked":     pwd != "",
-		"encrypted":  f.IsEncrypted,
-	})
 }
 
-func downloadFile(ctx *gin.Context, uploadInformation *config.Files) {
-	filename, filenameGiven := ctx.GetQuery("filename")
-	if !filenameGiven {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "filename not given",
-		})
-		return
-	}
+func DownloadFile(uploadInformation *APIConfiguration) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		filename, filenameGiven := ctx.GetQuery("filename")
+		if !filenameGiven {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "filename not given",
+			})
+			return
+		}
 
-	if !authorizeRequest(ctx, filename) {
-		return
-	}
+		if !authorizeRequest(ctx, filename) {
+			return
+		}
 
-	err := dbengine.IncrementFileViewCount(filename)
-	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
+		err := dbengine.IncrementFileViewCount(filename)
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
 
-	ctx.FileAttachment(path.Join(uploadInformation.UploadsDir, filename), filename)
+		ctx.FileAttachment(path.Join(uploadInformation.UploadsDir, filename), filename)
+	}
 }
 
-func deleteFile(ctx *gin.Context, fileOptions *config.Files) {
-	filename, filenameGiven := ctx.GetQuery("filename")
-	if !filenameGiven {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "filename not given",
+func DeleteFile(fileOptions *APIConfiguration) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		filename, filenameGiven := ctx.GetQuery("filename")
+		if !filenameGiven {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "filename not given",
+			})
+			return
+		}
+
+		if !authorizeRequest(ctx, filename) {
+			return
+		}
+
+		if err := os.Remove(path.Join(fileOptions.UploadsDir, filename)); err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		if err := dbengine.DeleteFile(filename); err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "file deleted!",
 		})
-		return
 	}
-
-	if !authorizeRequest(ctx, filename) {
-		return
-	}
-
-	if err := os.Remove(path.Join(fileOptions.UploadsDir, filename)); err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
-
-	if err := dbengine.DeleteFile(filename); err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "file deleted!",
-	})
 }
 
 // Functions to help with most common tasks

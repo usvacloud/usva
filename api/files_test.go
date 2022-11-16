@@ -11,7 +11,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/api/middleware"
-	"github.com/romeq/usva/config"
 	"github.com/romeq/usva/dbengine"
 	"github.com/stretchr/testify/assert"
 )
@@ -78,7 +77,7 @@ func Test_uploadFile(t *testing.T) {
 		}{}
 
 		c, r := prepareMultipartBody(t, tt.payload.fileData)
-		handler := uploadFile(&middleware.Ratelimiter{}, &config.Files{
+		handler := UploadFile(&middleware.Ratelimiter{}, &APIConfiguration{
 			MaxSingleUploadSize: int64(tt.payload.maxSize),
 			UploadsDir:          "../test-uploads/",
 		})

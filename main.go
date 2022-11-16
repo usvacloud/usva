@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/api"
 	"github.com/romeq/usva/api/middleware"
 	"github.com/romeq/usva/arguments"
 	"github.com/romeq/usva/config"
@@ -24,16 +23,8 @@ func parseOpts(cfg config.Config, args arguments.Arguments) Options {
 			Address: utils.StringOr(args.Config.Server.Address, cfg.Server.Address),
 			Port:    utils.IntOr(args.Config.Server.Port, cfg.Server.Port),
 		},
-		Database: config.Database{
-			Database: utils.StringOr(args.Config.Database.Database, cfg.Database.Database),
-			Host:     utils.StringOr(args.Config.Database.Host, cfg.Database.Host),
-			Port:     utils.IntOr(args.Config.Database.Port, cfg.Database.Port),
-			User:     utils.StringOr(args.Config.Database.User, cfg.Database.User),
-			Password: utils.StringOr(args.Config.Database.Password, cfg.Database.Password),
-		},
 	}
 }
-
 func (o *Options) getaddr() string {
 	return fmt.Sprintf("%s:%d", o.Server.Address, o.Server.Port)
 }
@@ -43,34 +34,24 @@ func setupEngine(cfg config.Config) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
+
+	// setup primary middleware
+	SetupRouteHandlers(r, middleware.NewRatelimiter(), &cfg)
+
+	// setup other required middleware
+	r.Use(gin.Recovery())
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: cfg.Server.AllowedOrigins,
 		AllowMethods: []string{"POST", "GET", "DELETE"},
 		AllowHeaders: []string{"Authorization"},
 	}))
-
-	requestLimiter := middleware.NewRatelimiter()
-
-	r.Use(gin.Recovery())
 	if !cfg.Server.HideRequests {
 		r.Use(requestLogger)
 	}
 
-	api.SetupRouteHandlers(r, &cfg, api.Ratelimits{
-		HardLimit: api.Limits{
-			AllowedRequests: 5,
-			Time:            time.Hour / 4,
-		},
-		QueryLimit:  api.Limits{},
-		Ratelimiter: requestLimiter,
-	})
 	utils.Check(r.SetTrustedProxies(cfg.Server.TrustedProxies))
 
 	return r
-}
-
-func setuplogger() {
-	log.SetFlags(log.Ltime | log.Ldate | log.Lshortfile)
 }
 
 func setLogWriter(file string) *os.File {
@@ -95,7 +76,7 @@ func requestLogger(ctx *gin.Context) {
 }
 
 func main() {
-	setuplogger()
+	log.SetFlags(log.Ltime | log.Ldate | log.Lshortfile)
 
 	// arguments
 	args := arguments.Parse()
@@ -107,14 +88,9 @@ func main() {
 	cfg := config.ParseFromFile(cfgHandle)
 
 	// runtime options
-	opts := parseOpts(cfg, args)
-	dbengine.Init(
-		uint16(opts.Database.Port),
-		opts.Database.Host,
-		opts.Database.Database,
-		opts.Database.User,
-		opts.Database.Password,
-	)
+	opts := parseOpts(cfg, *args)
+	odb := cfg.Database
+	dbengine.Init(uint16(odb.Port), odb.Host, odb.Database, odb.User, odb.Password)
 	defer dbengine.DbConnection.Close()
 
 	log.Println("Starting server at", opts.getaddr())
