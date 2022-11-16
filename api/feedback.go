@@ -36,7 +36,7 @@ func AddFeedback() gin.HandlerFunc {
 
 func GetFeedback() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		dbFeedbacks, e := dbengine.GetFeedbacks()
+		dbFeedbacks, e := dbengine.GetFeedbacks(10)
 		if e != nil {
 			setErrResponse(ctx, e)
 			return
