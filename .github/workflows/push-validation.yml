@@ -4,37 +4,23 @@ jobs:
   validity-test:
     runs-on: ubuntu-latest
 
-    # Service containers to run with `container-job`
-    services:
-      # Label used to access the service container
-      postgres:
-        # Docker Hub image
-        image: postgres
-        env:
-          POSTGRES_USER: usva_tests
-          POSTGRES_PASSWORD: testsrunner
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - name: Check out the repository code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
         with:
           go-version: 1.19
 
-      - name: Run golangci-lint
+      - name: Run linter
         uses: golangci/golangci-lint-action@v3.2.0
 
-      - name: Unit Testing
-        run: START_TEST_DOCKER=0 make migratesetup test
-        env:
-          DB_USERNAME_TESTS: usva_tests
-          DB_PASSWORD_TESTS: testsrunner
-          DB_NAME_TESTS: usva_tests
+      - name: Database migrations
+        run: make migratesetup preparetests
+
+      - name: Unit testing
+        run: make test
 
       - name: Building
         run: make build
