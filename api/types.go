@@ -2,8 +2,8 @@ package api
 
 // Limits-struct is primarily used to configure the ratelimiting functionality
 type Limits struct {
-	AllowedRequests int16 // Requests to allow
-	ResetTime       int32 // Time to next reset in seconds
+	Requests int16 // Requests to allow
+	Time     int32 // Time to next reset in seconds
 }
 
 type Ratelimits struct {
