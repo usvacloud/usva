@@ -6,7 +6,7 @@ CGO_ENABLED ?= 0
 
 DB_NAME ?= usva
 DB_USERNAME ?= dev
-DB_HOST ?= localhost
+DB_HOST ?= 127.0.0.1
 DB_PORT ?= 5432
 DB_NAME_TESTS	?= usva_tests
 DB_USERNAME_TESTS ?= usva_tests
@@ -46,11 +46,11 @@ migratedown-tests:
 		down -all
 
 db-create:
-	@ psql "postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/" \
+	 psql "postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/" \
 		-q -c "CREATE DATABASE $(DB_NAME) OWNER postgres ENCODING UTF8;"
 
 db-create-tests:
-	@- psql "postgresql://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/" \
+	- psql "postgresql://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/" \
 		-q -c "CREATE DATABASE $(DB_NAME_TESTS) OWNER $(DB_USERNAME_TESTS) ENCODING UTF8;"
 
 run:

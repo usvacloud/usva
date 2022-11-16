@@ -7,11 +7,14 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/api/middleware"
 	"github.com/romeq/usva/dbengine"
+	"github.com/romeq/usva/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +40,18 @@ func prepareMultipartBody(t *testing.T, text string) (*gin.Context, *httptest.Re
 func Test_uploadFile(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 
-	dbengine.Init(5432, "127.0.0.1", "usva_tests", "usva_tests", "testrunner")
+	a, err := strconv.Atoi(os.Getenv("DB_PORT"))
+	if err != nil {
+		a = 5432
+	}
+
+	dbengine.Init(
+		uint16(a),
+		utils.StringOr(os.Getenv("DB_HOST"), "127.0.0.1"),
+		utils.StringOr(os.Getenv("DB_USERNAME_TESTS"), "usva_tests"),
+		utils.StringOr(os.Getenv("DB_NAME_TESTS"), "usva_tests"),
+		utils.StringOr(os.Getenv("DB_PASSWORD_TESTS"), "testrunner"),
+	)
 
 	type payload struct {
 		fileData string
@@ -79,7 +93,7 @@ func Test_uploadFile(t *testing.T) {
 		c, r := prepareMultipartBody(t, tt.payload.fileData)
 		handler := UploadFile(&middleware.Ratelimiter{}, &APIConfiguration{
 			MaxSingleUploadSize: int64(tt.payload.maxSize),
-			UploadsDir:          "../test-uploads/",
+			UploadsDir:          t.TempDir(),
 		})
 		handler(c)
 

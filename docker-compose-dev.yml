@@ -6,12 +6,11 @@ services:
     restart: always
 
     environment:
-      PGPORT: ${DB_PORT:-5432}
-      POSTGRES_USER: ${DB_USERNAME:-usva_tests}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-testrunner}
+      POSTGRES_USER: ${DB_USERNAME_TESTS:-usva_tests}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_TESTS:-testrunner}
 
     ports:
-      - "${DB_PORT:-5432}:${DB_PORT:-5432}"
+      - "${DB_PORT:-5432}:5432"
 
     expose:
       - "${DB_PORT:-5432}"
