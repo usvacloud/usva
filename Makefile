@@ -62,7 +62,7 @@ run-docker-nodaemon:
 build:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
 
-test: preparetests
+test:
 	-echo "--------- GO TESTS -----------" 
 	 go test ./...
 	-echo "------------------------------" 
