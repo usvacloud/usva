@@ -25,12 +25,12 @@ MaxUploadSizePerDay = 16777216
 UploadsDir = "uploads" # directory for uploaded files
 
 [Ratelimit.StrictLimit]
-AllowedRequests = 3
-ResetTime = 180
+Requests = 3
+Time = 180
 
 [Ratelimit.QueryLimit]
-AllowedRequests = 2
-ResetTime = 60
+Requests = 2
+Time = 60
 
 [Database]
 User  = "dev"

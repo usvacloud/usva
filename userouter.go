@@ -10,7 +10,7 @@ import (
 	"github.com/romeq/usva/config"
 )
 
-func initCleanupRoutine(rt *middleware.Ratelimiter) {
+func initCleanupRoutine(rt ...*middleware.Ratelimiter) {
 	if rt == nil {
 		log.Println("initCleanupRoutine: rt is nil")
 		return
@@ -18,8 +18,10 @@ func initCleanupRoutine(rt *middleware.Ratelimiter) {
 
 	for {
 		<-time.After(time.Hour)
-		if time.Since(rt.LastCleanup) > time.Duration(24)*time.Hour {
-			rt.Clean()
+		for _, ft := range rt {
+			if time.Since(ft.LastCleanup) > time.Duration(24)*time.Hour {
+				ft.Clean()
+			}
 		}
 	}
 }
@@ -30,10 +32,15 @@ func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {
 	}
 }
 
-func SetupRouteHandlers(router *gin.Engine, a *middleware.Ratelimiter, cfg *config.Config) {
+func toDurationSeconds(i int32) time.Duration {
+	return time.Duration(i) * time.Second
+}
+
+func SetupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 	// Declare ratelimiters
-	requestLimiter := a
-	go initCleanupRoutine(requestLimiter)
+	strictrl := middleware.NewRatelimiter()
+	queryrl := middleware.NewRatelimiter()
+	go initCleanupRoutine(strictrl, queryrl)
 	apic := api.APIConfiguration{
 		MaxSingleUploadSize: cfg.Files.MaxSingleUploadSize,
 		MaxUploadSizePerDay: cfg.Files.MaxUploadSizePerDay,
@@ -42,11 +49,11 @@ func SetupRouteHandlers(router *gin.Engine, a *middleware.Ratelimiter, cfg *conf
 
 	ratelimits := parseRatelimits(&cfg.Ratelimit)
 
-	slmt := ratelimits.StrictLimit
-	strict := requestLimiter.RestrictRequests(slmt.AllowedRequests, time.Duration(slmt.ResetTime)*time.Second)
+	strict := strictrl.RestrictRequests(ratelimits.StrictLimit.Requests,
+		toDurationSeconds(ratelimits.StrictLimit.Time))
 
-	qlmt := ratelimits.QueryLimit
-	query := requestLimiter.RestrictRequests(qlmt.AllowedRequests, time.Duration(qlmt.ResetTime)*time.Second)
+	query := queryrl.RestrictRequests(ratelimits.QueryLimit.Requests,
+		toDurationSeconds(ratelimits.QueryLimit.Time))
 
 	// Middleware/general stuff
 	router.Use(middleware.IdentifierHeader)
@@ -59,17 +66,19 @@ func SetupRouteHandlers(router *gin.Engine, a *middleware.Ratelimiter, cfg *conf
 	file := router.Group("/file")
 	{
 		// Routes
+		file.POST("/report", strict, api.ReportFile())
 		file.GET("/info", query, api.FileInformation(&apic))
 		file.GET("/", query, api.DownloadFile(&apic))
 		file.DELETE("/", query, api.DeleteFile(&apic))
 		file.POST(
 			"/upload",
 			strict,
-			requestLimiter.RestrictUploads(
+			strictrl.RestrictUploads(
 				time.Duration(24)*time.Hour,
 				cfg.Files.MaxUploadSizePerDay,
 			),
-			api.UploadFile(requestLimiter, &apic),
+			// pass strictrl for updating the uploaded content
+			api.UploadFile(strictrl, &apic),
 		)
 	}
 

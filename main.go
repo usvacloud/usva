@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/api/middleware"
 	"github.com/romeq/usva/arguments"
 	"github.com/romeq/usva/config"
 	"github.com/romeq/usva/dbengine"
@@ -36,7 +35,7 @@ func setupEngine(cfg config.Config) *gin.Engine {
 	r := gin.New()
 
 	// setup primary middleware
-	SetupRouteHandlers(r, middleware.NewRatelimiter(), &cfg)
+	SetupRouteHandlers(r, &cfg)
 
 	// setup other required middleware
 	r.Use(gin.Recovery())
