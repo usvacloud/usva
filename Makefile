@@ -11,6 +11,7 @@ DB_PORT ?= 5432
 DB_NAME_TESTS	?= usva_tests
 DB_USERNAME_TESTS ?= usva_tests
 DB_PASSWORD_TESTS ?= testrunner
+START_TEST_DOCKER ?= 1
 
 .PHONY: all lint test
 
@@ -50,42 +51,43 @@ db-create:
 		-q -c "CREATE DATABASE $(DB_NAME) OWNER postgres ENCODING UTF8;"
 
 run:
-	@./$(BINARY) -c ./config.toml
+	./$(BINARY) -c ./config.toml
 
 run-docker:
-	@docker-compose run --service-ports --rm -d server
+	docker-compose run --service-ports --rm -d server
 
 run-docker-nodaemon:
-	@docker-compose run --service-ports --rm server
+	docker-compose run --service-ports --rm server
 
 build:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
 
 test: preparetests
-	@-echo "--------- GO TESTS -----------" 
-	@ go test ./...
-	@-echo "------------------------------" 
+	-echo "--------- GO TESTS -----------" 
+	 go test ./...
+	-echo "------------------------------" 
 
-	@make tests-cleanup clean
+	make tests-cleanup clean
 
 preparetests:
-	@- mkdir test-uploads postgres-tests 2>/dev/null
-	@ docker-compose -f docker-compose-dev.yml up -d
-	@ sleep 1
-	@ make migrateup-tests
+	- mkdir test-uploads postgres-tests 2>/dev/null
+	- [ "${START_TEST_DOCKER}" = "1" ] 
+		&& docker-compose -f docker-compose-dev.yml up -d
+		&& sleep 3
+	make migrateup-tests
 
 
 tests-cleanup:
-	@- rm -r test-uploads postgres-tests
-	@- make migratedown-tests
+	- rm -r test-uploads postgres-tests
+	- make migratedown-tests
 
-	@- docker-compose -f docker-compose-dev.yml down
+	- docker-compose -f docker-compose-dev.yml down
 
 lint:
-	@golangci-lint run ./...
+	golangci-lint run ./...
 
 format:
-	@go fmt ./...
+	go fmt ./...
 
 clean:
-	@rm -rf $(BINARY) test-uploads postgres-tests
+	rm -rf $(BINARY) test-uploads postgres-tests

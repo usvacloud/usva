@@ -1,8 +1,25 @@
 name: push-validation
 on: [push]
 jobs:
-  check-bats-version:
+  validity-test:
     runs-on: ubuntu-latest
+
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        env:
+          POSTGRES_USER: ${DB_USERNAME_TESTS}
+          POSTGRES_PASSWORD: ${DB_PASSWORD_TESTS}
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -12,6 +29,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3.2.0
 
       - name: Unit Testing
-        run: DB_PORT=15432 make migratesetup test
+        run: START_TEST_DOCKER=0 make migratesetup test
       - name: Building
         run: make build
