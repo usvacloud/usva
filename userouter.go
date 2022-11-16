@@ -41,12 +41,12 @@ func SetupRouteHandlers(router *gin.Engine, a *middleware.Ratelimiter, cfg *conf
 	}
 
 	ratelimits := parseRatelimits(&cfg.Ratelimit)
-	slmt := ratelimits.StrictLimit
-	strict := requestLimiter.RestrictRequests(slmt.AllowedRequests, time.Duration(slmt.ResetTime))
 
-	queryLimit := requestLimiter.RestrictRequests(
-		ratelimits.QueryLimit.AllowedRequests,
-		time.Duration(ratelimits.QueryLimit.ResetTime))
+	slmt := ratelimits.StrictLimit
+	strict := requestLimiter.RestrictRequests(slmt.AllowedRequests, time.Duration(slmt.ResetTime)*time.Second)
+
+	qlmt := ratelimits.QueryLimit
+	query := requestLimiter.RestrictRequests(qlmt.AllowedRequests, time.Duration(qlmt.ResetTime)*time.Second)
 
 	// Middleware/general stuff
 	router.Use(middleware.IdentifierHeader)
@@ -59,9 +59,9 @@ func SetupRouteHandlers(router *gin.Engine, a *middleware.Ratelimiter, cfg *conf
 	file := router.Group("/file")
 	{
 		// Routes
-		file.GET("/info", queryLimit, api.FileInformation(&apic))
-		file.GET("/", queryLimit, api.DownloadFile(&apic))
-		file.DELETE("/", queryLimit, api.DeleteFile(&apic))
+		file.GET("/info", query, api.FileInformation(&apic))
+		file.GET("/", query, api.DownloadFile(&apic))
+		file.DELETE("/", query, api.DeleteFile(&apic))
 		file.POST(
 			"/upload",
 			strict,
@@ -76,7 +76,7 @@ func SetupRouteHandlers(router *gin.Engine, a *middleware.Ratelimiter, cfg *conf
 	// Feedback
 	feedback := router.Group("/feedback")
 	{
-		feedback.GET("/", api.GetFeedback())
+		feedback.GET("/", query, api.GetFeedback())
 		feedback.POST("/", strict, api.AddFeedback())
 	}
 }
