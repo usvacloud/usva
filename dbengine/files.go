@@ -2,15 +2,15 @@ package dbengine
 
 // InsertFile creates a new record on file database
 // from given File struct
-func InsertFile(file File) error {
-	_, err := DbConnection.Exec(insertFileQuery, file.FileUUID, file.Title, file.Uploader,
+func InsertFile(file File) (err error) {
+	_, err = DbConnection.Exec(insertFileQuery, file.FileUUID, file.Title, file.Uploader,
 		file.PasswordHash, file.UploadDate, file.IsEncrypted)
 	return err
 }
 
 // DeleteFile removes file metadata from database
-func DeleteFile(filename string) error {
-	_, err := DbConnection.Exec(deleteFileQuery, filename)
+func DeleteFile(filename string) (err error) {
+	_, err = DbConnection.Exec(deleteFileQuery, filename)
 	return err
 }
 
@@ -25,6 +25,11 @@ func GetPasswordHash(filename string) (pwd string, err error) {
 	err = row.Scan(&pwd)
 
 	return pwd, err
+}
+
+func ReportUploadByName(filename string, reason string) (err error) {
+	_, err = DbConnection.Exec(reportQuery, filename)
+	return err
 }
 
 /*

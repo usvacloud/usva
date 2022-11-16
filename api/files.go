@@ -20,7 +20,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var errAuthMissing = errors.New("missing authentication in protected file")
+var (
+	errAuthMissing = errors.New("missing authentication in protected file")
+	errInvalidBody = errors.New("invalid request body")
+)
 
 func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -171,6 +174,37 @@ func DownloadFile(uploadInformation *APIConfiguration) gin.HandlerFunc {
 	}
 }
 
+func ReportFile() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var requestBody struct {
+			filename string
+			reason   string
+		}
+		err := ctx.BindJSON(&requestBody)
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		if len(requestBody.filename) != 36 ||
+			!utils.IsBetween(len(requestBody.reason), 20, 1024) {
+
+			setErrResponse(ctx, errInvalidBody)
+			return
+		}
+
+		err = dbengine.ReportUploadByName(requestBody.filename, requestBody.reason)
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "thank you! your report has been sent.",
+		})
+	}
+}
+
 func DeleteFile(fileOptions *APIConfiguration) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
@@ -243,6 +277,10 @@ func parseHeaderPassword(ctx *gin.Context) (string, error) {
 
 // helper for providing standard error messages in return
 func setErrResponse(ctx *gin.Context, err error) {
+	if err == nil {
+		return
+	}
+
 	errorMessage, status := "request failed", http.StatusBadRequest
 
 	switch err {
@@ -250,6 +288,8 @@ func setErrResponse(ctx *gin.Context, err error) {
 		errorMessage, status = "file not found", http.StatusNotFound
 	case bcrypt.ErrMismatchedHashAndPassword:
 		errorMessage, status = "password is invalid", http.StatusForbidden
+	case errInvalidBody:
+		errorMessage, status = err.Error(), http.StatusBadRequest
 	case errAuthMissing:
 		errorMessage, status = err.Error(), http.StatusUnauthorized
 	case errEmptyResponse:

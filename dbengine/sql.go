@@ -18,16 +18,21 @@ UPDATE files
 
 const insertFileQuery = `
 INSERT INTO files(file_uuid, title, uploader, passwdhash, upload_date, isencrypted, viewcount)
-	VALUES($1, $2, $3, $4, $5, $6, 0)`
+	VALUES($1, $2, $3, $4, $5, $6, 0);`
 
 const deleteFileQuery = `
 DELETE FROM files
 	WHERE file_uuid = $1;`
 
+const reportQuery = `
+INSERT INTO reports(file_uuid, reason) 
+	VALUES($1, $2);`
+
 // Feedback related queries
 const getFeedbacksQuery = `
-SELECT comment, boxes FROM feedbacks;`
+SELECT comment, boxes FROM feedbacks 
+	LIMIT $1;`
 
 const addFeedbackQuery = `
 INSERT INTO feedbacks(comment, boxes)
-	VALUES($1, $2)`
+	VALUES($1, $2);`

@@ -34,3 +34,7 @@ func VarOr(var1, var2 any) any {
 	}
 	return var2
 }
+
+func IsBetween(base, min, max int) bool {
+	return min <= base && base <= max
+}
