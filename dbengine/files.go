@@ -3,23 +3,18 @@ package dbengine
 // InsertFile creates a new record on file database
 // from given File struct
 func InsertFile(file File) error {
-	if _, err := DbConnection.Exec(insertFileQuery, file.FileUUID, file.Title, file.Uploader,
-		file.PasswordHash, file.UploadDate, file.IsEncrypted); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := DbConnection.Exec(insertFileQuery, file.FileUUID, file.Title, file.Uploader,
+		file.PasswordHash, file.UploadDate, file.IsEncrypted)
+	return err
 }
 
 // DeleteFile removes file metadata from database
 func DeleteFile(filename string) error {
-	if _, err := DbConnection.Exec(deleteFileQuery, filename); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := DbConnection.Exec(deleteFileQuery, filename)
+	return err
 }
 
+// TryDeleteFile is DeleteFile, but ignores any errors.
 func TryDeleteFile(filename string) {
 	_ = DeleteFile(filename)
 }
@@ -46,20 +41,13 @@ fields will remain empty:
 */
 func GetFile(filename string) (f File, err error) {
 	row := DbConnection.QueryRow(getFileInformationQuery, filename)
-	if err = row.Scan(&f.FileUUID, &f.Title, &f.UploadDate, &f.IsEncrypted,
-		&f.ViewCount); err != nil {
-		return File{}, err
-	}
-
-	return f, nil
+	err = row.Scan(&f.FileUUID, &f.Title, &f.UploadDate, &f.IsEncrypted, &f.ViewCount)
+	return f, err
 }
 
 // IncrementFileViewCount increments file's viewcount
 // field by 1 in database
 func IncrementFileViewCount(filename string) error {
-	if _, err := DbConnection.Exec(incrementFileViewCountQuery, filename); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := DbConnection.Exec(incrementFileViewCountQuery, filename)
+	return err
 }
