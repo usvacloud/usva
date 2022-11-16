@@ -13,15 +13,24 @@ KeyFile = "/path/to/keyfile"
 
 [Files]
 # Maximum size for a single upload in bytes. In this configuration set to 1 Mb
-# Zero (0) disables this field. (Restriction is bypassed)
+# Zero (0) disables this field. (ratelimit is bypassed)
 MaxSingleUploadSize = 1048576
 
-# Maximum size for uploads per day per IP. In this configuration set to 16 Mb
-# Zero (0) disables this field. (Restriction is bypassed)
+# Maximum size for uploads per day per IP. In this configuration this value is
+# set to 16 Mb.
+# Zero (0) disables this field. (ratelimit is bypassed)
 MaxUploadSizePerDay = 16777216
 
 # UploadsDir describes the path in current filesystem where uploaded files are saved.
 UploadsDir = "uploads" # directory for uploaded files
+
+[Ratelimit.StrictLimit]
+AllowedRequests = 3
+ResetTime = 180
+
+[Ratelimit.QueryLimit]
+AllowedRequests = 2
+ResetTime = 60
 
 [Database]
 User  = "dev"

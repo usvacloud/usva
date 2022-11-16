@@ -9,6 +9,19 @@ import (
 	"github.com/romeq/usva/utils"
 )
 
+// ratelimitRestriction includes properties used specifically to configure
+// different groups of ratelimits
+type Ratelimit struct {
+	// StrictLimit struct is used to limit the access of different
+	// POST-operations. This works for example in limiting the process
+	// of creating a new feedback or as an additional limit to file upload.
+	StrictLimit api.Limits
+
+	// QueryLimit configuration is used, by considering it's name, to
+	// limit the query operations applied to database etcetera.
+	QueryLimit api.Limits
+}
+
 type Server struct {
 	Address        string
 	Port           int
@@ -21,21 +34,6 @@ type Server struct {
 		CertFile string
 		KeyFile  string
 	}
-}
-
-// ratelimitRestriction includes properties used specifically to configure
-// different groups of ratelimits
-type ratelimitRestriction api.Limits
-
-type Ratelimit struct {
-	// StrictLimit struct is used to limit the access of different
-	// POST-operations. This works for example in limiting the process
-	// of creating a new feedback or as an additional limit to file upload.
-	StrictLimit ratelimitRestriction
-
-	// QueryLimit configuration is used, by considering it's name, to
-	// limit the query operations applied to database etcetera.
-	QueryLimit ratelimitRestriction
 }
 
 type Files struct {
