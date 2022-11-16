@@ -1,0 +1,9 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS reports(
+	id			SERIAL 		PRIMARY KEY,
+	file_uuid 	VARCHAR(256) NOT NULL,
+	reason 		VARCHAR(1024) NOT NULL
+);
+
+COMMIT;
