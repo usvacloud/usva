@@ -123,7 +123,7 @@ func main() {
 	r := setupEngine(cfg)
 	tlssettings := cfg.Server.TLS
 	if tlssettings.Enabled {
-		utils.Check(r.RunTLS(opts.getaddr(), tlssettings.KeyFile, tlssettings.CertFile))
+		utils.Check(r.RunTLS(opts.getaddr(), tlssettings.CertFile, tlssettings.KeyFile))
 	} else {
 		utils.Check(r.Run(opts.getaddr()))
 	}
