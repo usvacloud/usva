@@ -12,6 +12,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3.2.0
 
       - name: Unit Testing
-        run: make migratesetup test
+        run: DB_PORT=15432 make migratesetup test
       - name: Building
         run: make build
