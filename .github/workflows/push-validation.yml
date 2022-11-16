@@ -11,8 +11,8 @@ jobs:
         # Docker Hub image
         image: postgres
         env:
-          POSTGRES_USER: ${DB_USERNAME_TESTS}
-          POSTGRES_PASSWORD: ${DB_PASSWORD_TESTS}
+          POSTGRES_USER: usva_tests
+          POSTGRES_PASSWORD: testsrunner
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -25,10 +25,16 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.19
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3.2.0
 
       - name: Unit Testing
         run: START_TEST_DOCKER=0 make migratesetup test
+        env:
+          DB_USERNAME_TESTS: usva_tests
+          DB_PASSWORD_TESTS: testsrunner
+          DB_NAME_TESTS: usva_tests
+
       - name: Building
         run: make build
