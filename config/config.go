@@ -37,11 +37,12 @@ type Server struct {
 }
 
 type Files struct {
-	MaxSingleUploadSize   uint64
-	MaxUploadSizePerDay   uint64
-	UploadsDir            string
-	InactivityUntilDelete uint32
-	CleanTrashes          bool
+	MaxSingleUploadSize        uint64
+	MaxUploadSizePerDay        uint64
+	UploadsDir                 string
+	RemoveFilesAfterInactivity bool
+	InactivityUntilDelete      uint32
+	CleanTrashes               bool
 }
 
 type Config struct {

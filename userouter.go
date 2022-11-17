@@ -41,7 +41,14 @@ func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 	strictrl := middleware.NewRatelimiter()
 	queryrl := middleware.NewRatelimiter()
 	go initCleanupRoutine(strictrl, queryrl)
-	go removeOldFilesWorker(toseconds(cfg.Files.InactivityUntilDelete), cfg.Files.UploadsDir, cfg.Files.CleanTrashes)
+
+	if cfg.Files.RemoveFilesAfterInactivity {
+		go removeOldFilesWorker(
+			toseconds(cfg.Files.InactivityUntilDelete),
+			cfg.Files.UploadsDir,
+			cfg.Files.CleanTrashes,
+		)
+	}
 
 	apic := api.APIConfiguration{
 		MaxSingleUploadSize: cfg.Files.MaxSingleUploadSize,

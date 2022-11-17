@@ -24,6 +24,16 @@ MaxUploadSizePerDay = 16777216
 # UploadsDir describes the path in current filesystem where uploaded files are saved.
 UploadsDir = "uploads" # directory for uploaded files
 
+RemoveFilesAfterInactivity = true
+
+# File maximum inactivity in seconds until delete
+InactivityUntilDelete = 86400
+
+# Cleantrashes boolean specifies if server should remove all files that are not present in database.
+# this can be optimal but dangerous at the same time, if you haven't verified that usva
+# correctly reads the target directory. In the worst case scenario your important files are gone!
+CleanTrashes          = false
+
 [Ratelimit.StrictLimit]
 Requests = 3
 Time = 180
