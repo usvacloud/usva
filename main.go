@@ -34,9 +34,6 @@ func setupEngine(cfg config.Config) *gin.Engine {
 	}
 	r := gin.New()
 
-	// setup primary middleware
-	SetupRouteHandlers(r, &cfg)
-
 	// setup other required middleware
 	r.Use(gin.Recovery())
 	r.Use(cors.New(cors.Config{
@@ -47,6 +44,9 @@ func setupEngine(cfg config.Config) *gin.Engine {
 	if !cfg.Server.HideRequests {
 		r.Use(requestLogger)
 	}
+
+	// setup primary middleware
+	setupRouteHandlers(r, &cfg)
 
 	utils.Check(r.SetTrustedProxies(cfg.Server.TrustedProxies))
 
@@ -87,7 +87,7 @@ func main() {
 	cfg := config.ParseFromFile(cfgHandle)
 
 	// runtime options
-	opts := parseOpts(cfg, *args)
+	opts := parseOpts(cfg, args)
 	odb := cfg.Database
 	dbengine.Init(uint16(odb.Port), odb.Host, odb.Database, odb.User, odb.Password)
 	defer dbengine.DbConnection.Close()
