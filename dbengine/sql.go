@@ -16,6 +16,11 @@ UPDATE files
 	SET viewcount = viewcount + 1
 	WHERE file_uuid = $1;`
 
+const updateLastSeenQuery = `
+UPDATE files
+	SET last_seen = $2
+	WHERE file_uuid = $1;`
+
 const insertFileQuery = `
 INSERT INTO files(
 	file_uuid, 

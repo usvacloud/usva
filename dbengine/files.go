@@ -69,6 +69,10 @@ fields will remain empty:
   - ViewCount
 */
 func GetFile(filename string) (f File, err error) {
+	_, err = DbConnection.Exec(updateLastSeenQuery, filename, time.Now())
+	if err != nil {
+		return f, err
+	}
 	row := DbConnection.QueryRow(getFileInformationQuery, filename)
 	err = row.Scan(&f.FileUUID, &f.Title, &f.UploadDate, &f.IsEncrypted, &f.ViewCount)
 	return f, err
@@ -76,7 +80,11 @@ func GetFile(filename string) (f File, err error) {
 
 // IncrementFileViewCount increments file's viewcount
 // field by 1 in database
-func IncrementFileViewCount(filename string) error {
-	_, err := DbConnection.Exec(incrementFileViewCountQuery, filename)
+func IncrementFileViewCount(filename string) (err error) {
+	_, err = DbConnection.Exec(updateLastSeenQuery, filename, time.Now())
+	if err != nil {
+		return err
+	}
+	_, err = DbConnection.Exec(incrementFileViewCountQuery, filename)
 	return err
 }
