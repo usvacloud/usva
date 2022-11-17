@@ -37,7 +37,7 @@ func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gi
 		// generate name for the uploaded file
 		filename := uuid.New().String() + path.Ext(f.Filename)
 
-		if uploadOptions.MaxSingleUploadSize > 0 && f.Size > uploadOptions.MaxSingleUploadSize {
+		if uploadOptions.MaxSingleUploadSize > 0 && uint64(f.Size) > uploadOptions.MaxSingleUploadSize {
 			ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
 				"error": "File is too big",
 			})
@@ -177,8 +177,8 @@ func DownloadFile(uploadInformation *APIConfiguration) gin.HandlerFunc {
 func ReportFile() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var requestBody struct {
-			filename string
-			reason   string
+			Filename string `json:"filename"`
+			Reason   string `json:"reason"`
 		}
 		err := ctx.BindJSON(&requestBody)
 		if err != nil {
@@ -186,14 +186,14 @@ func ReportFile() gin.HandlerFunc {
 			return
 		}
 
-		if len(requestBody.filename) != 36 ||
-			!utils.IsBetween(len(requestBody.reason), 20, 1024) {
+		if len(requestBody.Filename) < 36 ||
+			!utils.IsBetween(len(requestBody.Reason), 20, 1024) {
 
 			setErrResponse(ctx, errInvalidBody)
 			return
 		}
 
-		err = dbengine.ReportUploadByName(requestBody.filename, requestBody.reason)
+		err = dbengine.ReportUploadByName(requestBody.Filename, requestBody.Reason)
 		if err != nil {
 			setErrResponse(ctx, err)
 			return

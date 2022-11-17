@@ -17,12 +17,24 @@ UPDATE files
 	WHERE file_uuid = $1;`
 
 const insertFileQuery = `
-INSERT INTO files(file_uuid, title, uploader, passwdhash, upload_date, isencrypted, viewcount)
-	VALUES($1, $2, $3, $4, $5, $6, 0);`
+INSERT INTO files(
+	file_uuid, 
+	title, 
+	uploader, 
+	passwdhash, 
+	upload_date, 
+	isencrypted, 
+	last_seen,
+	viewcount
+)
+VALUES($1, $2, $3, $4, $5, $6, $7, 0);`
 
 const deleteFileQuery = `
 DELETE FROM files
 	WHERE file_uuid = $1;`
+
+const lastSeenAllQuery = `
+SELECT file_uuid, last_seen FROM files;`
 
 const reportQuery = `
 INSERT INTO reports(file_uuid, reason) 

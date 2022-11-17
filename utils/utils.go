@@ -21,7 +21,7 @@ func StringOr(str1, str2 string) string {
 	return str2
 }
 
-func IntOr(int1, int2 int) int {
+func IntOr[T ~int | ~uint](int1, int2 T) T {
 	if int1 != 0 {
 		return int1
 	}
@@ -35,6 +35,6 @@ func VarOr(var1, var2 any) any {
 	return var2
 }
 
-func IsBetween(base, min, max int) bool {
+func IsBetween[T ~int | ~uint](base, min, max T) bool {
 	return min <= base && base <= max
 }

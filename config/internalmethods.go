@@ -18,7 +18,7 @@ func (c *Config) ensureRequiredValues() {
 
 	c.Database.Host = utils.StringOr(c.Database.Host, "127.0.0.1")
 	c.Database.Database = utils.StringOr(c.Database.Database, "usva")
-	c.Database.Port = utils.IntOr(c.Database.Port, 5432)
+	c.Database.Port = uint16(utils.IntOr(uint(c.Database.Port), 5432))
 }
 
 func ensureVal(key string, val any) {

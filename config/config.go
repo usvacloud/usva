@@ -24,7 +24,7 @@ type Ratelimit struct {
 
 type Server struct {
 	Address        string
-	Port           int
+	Port           uint
 	TrustedProxies []string
 	DebugMode      bool
 	HideRequests   bool
@@ -37,9 +37,11 @@ type Server struct {
 }
 
 type Files struct {
-	MaxSingleUploadSize int64
-	MaxUploadSizePerDay int64
-	UploadsDir          string
+	MaxSingleUploadSize   uint64
+	MaxUploadSizePerDay   uint64
+	UploadsDir            string
+	InactivityUntilDelete uint32
+	CleanTrashes          bool
 }
 
 type Config struct {
@@ -50,7 +52,7 @@ type Config struct {
 		User     string
 		Password string
 		Host     string
-		Port     int
+		Port     uint16
 		Database string
 	}
 }

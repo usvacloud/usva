@@ -158,7 +158,7 @@ func (limiterBase *Ratelimiter) RestrictRequests(count int16, per time.Duration)
 // Allows a certain amount of data in specific duration.
 func (limiterBase *Ratelimiter) RestrictUploads(
 	duration time.Duration,
-	allowedData int64,
+	allowedData uint64,
 ) gin.HandlerFunc {
 	if allowedData == 0 {
 		return func(ctx *gin.Context) {
@@ -182,12 +182,12 @@ func (limiterBase *Ratelimiter) RestrictUploads(
 			return
 		}
 
-		sum := int64(0)
+		sum := uint64(0)
 		for _, upload := range *client.Uploads {
 			if time.Since(upload.Time) > duration {
 				break
 			}
-			sum += upload.Size
+			sum += uint64(upload.Size)
 		}
 
 		if sum > allowedData {

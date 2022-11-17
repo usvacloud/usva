@@ -1,10 +1,12 @@
 package dbengine
 
+import "time"
+
 // InsertFile creates a new record on file database
 // from given File struct
 func InsertFile(file File) (err error) {
 	_, err = DbConnection.Exec(insertFileQuery, file.FileUUID, file.Title, file.Uploader,
-		file.PasswordHash, file.UploadDate, file.IsEncrypted)
+		file.PasswordHash, file.UploadDate, file.IsEncrypted, time.Now())
 	return err
 }
 
@@ -27,8 +29,30 @@ func GetPasswordHash(filename string) (pwd string, err error) {
 	return pwd, err
 }
 
+type FileLastSeen struct {
+	Filename string
+	LastSeen time.Time
+}
+
+func LastSeenAll() (files []FileLastSeen, err error) {
+	rows, err := DbConnection.Query(lastSeenAllQuery)
+	if err != nil {
+		return files, err
+	}
+	for rows.Next() {
+		var fl FileLastSeen
+		err := rows.Scan(&fl.Filename, &fl.LastSeen)
+		if err != nil {
+			return files, err
+		}
+
+		files = append(files, fl)
+	}
+	return files, nil
+}
+
 func ReportUploadByName(filename string, reason string) (err error) {
-	_, err = DbConnection.Exec(reportQuery, filename)
+	_, err = DbConnection.Exec(reportQuery, filename, reason)
 	return err
 }
 

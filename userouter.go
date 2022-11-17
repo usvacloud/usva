@@ -32,15 +32,17 @@ func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {
 	}
 }
 
-func toDurationSeconds(i int32) time.Duration {
+func toseconds(i uint32) time.Duration {
 	return time.Duration(i) * time.Second
 }
 
-func SetupRouteHandlers(router *gin.Engine, cfg *config.Config) {
+func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 	// Declare ratelimiters
 	strictrl := middleware.NewRatelimiter()
 	queryrl := middleware.NewRatelimiter()
 	go initCleanupRoutine(strictrl, queryrl)
+	go removeOldFilesWorker(toseconds(cfg.Files.InactivityUntilDelete), cfg.Files.UploadsDir, cfg.Files.CleanTrashes)
+
 	apic := api.APIConfiguration{
 		MaxSingleUploadSize: cfg.Files.MaxSingleUploadSize,
 		MaxUploadSizePerDay: cfg.Files.MaxUploadSizePerDay,
@@ -50,10 +52,10 @@ func SetupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 	ratelimits := parseRatelimits(&cfg.Ratelimit)
 
 	strict := strictrl.RestrictRequests(ratelimits.StrictLimit.Requests,
-		toDurationSeconds(ratelimits.StrictLimit.Time))
+		toseconds(ratelimits.StrictLimit.Time))
 
 	query := queryrl.RestrictRequests(ratelimits.QueryLimit.Requests,
-		toDurationSeconds(ratelimits.QueryLimit.Time))
+		toseconds(ratelimits.QueryLimit.Time))
 
 	// Middleware/general stuff
 	router.Use(middleware.IdentifierHeader)

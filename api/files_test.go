@@ -92,7 +92,7 @@ func Test_uploadFile(t *testing.T) {
 
 		c, r := prepareMultipartBody(t, tt.payload.fileData)
 		handler := UploadFile(&middleware.Ratelimiter{}, &APIConfiguration{
-			MaxSingleUploadSize: int64(tt.payload.maxSize),
+			MaxSingleUploadSize: uint64(tt.payload.maxSize),
 			UploadsDir:          t.TempDir(),
 		})
 		handler(c)
