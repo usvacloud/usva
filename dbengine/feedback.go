@@ -1,10 +1,14 @@
 package dbengine
 
-import "errors"
+import (
+	"errors"
+	"strconv"
+	"strings"
+)
 
 type Feedback struct {
 	Comment string `json:"comment"`
-	Boxes   string `json:"boxes"`
+	Boxes   []int  `json:"boxes"`
 }
 
 func GetFeedbacks(count uint) (feedbacks []Feedback, err error) {
@@ -19,10 +23,18 @@ func GetFeedbacks(count uint) (feedbacks []Feedback, err error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		row := Feedback{}
-		err := rows.Scan(&row.Comment, &row.Boxes)
+		var row Feedback
+		var boxes string
+		err := rows.Scan(&row.Comment, &boxes)
 		if err != nil {
 			return feedbacks, err
+		}
+
+		for _, box := range strings.Split(boxes, ",") {
+			parsed, err := strconv.Atoi(box)
+			if err == nil {
+				row.Boxes = append(row.Boxes, parsed)
+			}
 		}
 
 		feedbacks = append(feedbacks, row)
@@ -32,6 +44,10 @@ func GetFeedbacks(count uint) (feedbacks []Feedback, err error) {
 }
 
 func AddFeedback(feedback *Feedback) error {
-	_, err := DbConnection.Exec(addFeedbackQuery, feedback.Comment, feedback.Boxes)
+	var boxes []string
+	for _, val := range feedback.Boxes {
+		boxes = append(boxes, strconv.Itoa(val))
+	}
+	_, err := DbConnection.Exec(addFeedbackQuery, feedback.Comment, strings.Join(boxes, ", "))
 	return err
 }

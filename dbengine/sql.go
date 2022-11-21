@@ -48,7 +48,8 @@ INSERT INTO reports(file_uuid, reason)
 // Feedback related queries
 const getFeedbacksQuery = `
 SELECT comment, boxes FROM feedbacks 
-	LIMIT $1;`
+    ORDER BY id DESC
+    LIMIT $1;`
 
 const addFeedbackQuery = `
 INSERT INTO feedbacks(comment, boxes)

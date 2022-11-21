@@ -1,9 +1,8 @@
 package api
 
 import (
-	"errors"
+    "sort"
 	"net/http"
-	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/dbengine"
@@ -17,11 +16,17 @@ func AddFeedback() gin.HandlerFunc {
 			return
 		}
 
-		matched, err := regexp.Match(`1?,2?,3?,4?,5?,6?`, []byte(body.Boxes))
-		if !matched || err != nil {
-			setErrResponse(ctx, errors.New("invalid body"))
-			return
-		}
+        maxint := 6
+        sort.Ints(body.Boxes)
+        if len(body.Boxes) < 1 {
+            setErrResponse(ctx, errInvalidBody)
+            return
+        }
+
+        if body.Boxes[len(body.Boxes)-1] > maxint {
+            setErrResponse(ctx, errInvalidBody)
+            return
+        }
 
 		if err := dbengine.AddFeedback(&body); err != nil {
 			setErrResponse(ctx, err)
