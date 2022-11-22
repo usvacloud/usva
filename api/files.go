@@ -47,15 +47,18 @@ func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gi
 		var hash []byte
 		pwd := strings.TrimSpace(ctx.PostForm("password"))
 		if len(pwd) > 0 {
+            if len(pwd) > 512 {
+                setErrResponse(ctx, errInvalidBody)
+                return
+            }
+
 			decodedkey, err := base64.RawStdEncoding.DecodeString(pwd)
 			if err != nil {
-				ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-					"error": "Failed to decode key as base64",
-				})
+                setErrResponse(ctx, errInvalidBody)
 				return
 			}
-			decodedkey = []byte(strings.TrimSpace(string(decodedkey)))
 
+			decodedkey = []byte(strings.TrimSpace(string(decodedkey)))
 			if len(decodedkey) > 0 {
 				hash, err = bcrypt.GenerateFromPassword(decodedkey, 12)
 				if err != nil {
