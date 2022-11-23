@@ -11,7 +11,7 @@ import (
 
 func removeOldFilesWorker(timeUntilRemove time.Duration, uploadDirectory string, cleantrashes bool) {
 	for {
-		<-time.After(time.Second)
+		<-time.After(time.Hour * 24)
 
 		files, err := dbengine.LastSeenAll()
 		if err != nil {
