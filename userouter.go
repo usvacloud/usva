@@ -78,7 +78,9 @@ func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 		file.POST("/report", strict, api.ReportFile())
 		file.GET("/info", query, api.FileInformation(&apic))
 		file.GET("/", query, api.DownloadFile(&apic))
-		file.DELETE("/", query, api.DeleteFile(&apic))
+		// TODO: think of a better way to do handling
+		//       idea: return random token which is authorized to make changes
+		//file.DELETE("/", query, api.DeleteFile(&apic))
 		file.POST(
 			"/upload",
 			strict,
@@ -86,7 +88,7 @@ func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 				time.Duration(24)*time.Hour,
 				cfg.Files.MaxUploadSizePerDay,
 			),
-			// pass strictrl for updating the uploaded content
+			// pass strictrl for updating the uploaded content.
 			api.UploadFile(strictrl, &apic),
 		)
 	}
