@@ -47,14 +47,14 @@ func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gi
 		var hash []byte
 		pwd := strings.TrimSpace(ctx.PostForm("password"))
 		if len(pwd) > 0 {
-            if len(pwd) > 512 {
-                setErrResponse(ctx, errInvalidBody)
-                return
-            }
+			if len(pwd) > 512 {
+				setErrResponse(ctx, errInvalidBody)
+				return
+			}
 
 			decodedkey, err := base64.RawStdEncoding.DecodeString(pwd)
 			if err != nil {
-                setErrResponse(ctx, errInvalidBody)
+				setErrResponse(ctx, errInvalidBody)
 				return
 			}
 
