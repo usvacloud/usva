@@ -12,7 +12,7 @@ services:
       - "./postgres-data:/var/lib/postgresql/data:rw"
 
   server:
-    image: "usva/server:0.2.2"
+    image: "ghcr.io/romeq/usva:release"
     depends_on:
       - db
     environment:
