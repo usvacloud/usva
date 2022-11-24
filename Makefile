@@ -63,16 +63,16 @@ build:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
 
 test:
-	-echo "--------- GO TESTS -----------" 
-	 go test ./...
-	-echo "------------------------------" 
+	- echo "--------- GO TESTS -----------" 
+	- go test ./...
+	- echo "------------------------------" 
 
 	make tests-cleanup clean
 
 preparetests:
-	- mkdir test-uploads postgres-tests 2>/dev/null
+	- mkdir test-uploads postgres-tests
 	- [ "${START_TEST_DOCKER}" = "1" ] \
-		&& docker-compose -f docker-compose-dev.yml up -d \
+		&& docker-compose -f docker-compose-dev.yml up -d --remove-orphans \
 		&& sleep 3
 	make migrateup-tests
 
