@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"time"
@@ -130,10 +128,9 @@ func (limiterBase *Ratelimiter) RestrictRequests(count int16, per time.Duration)
 		}
 	}
 	return func(ctx *gin.Context) {
-		rawip := []byte(ctx.ClientIP())
-		ip := hex.EncodeToString(sha256.New().Sum(rawip))
+		identifier := ctx.Request.Header.Get("Api-Identifier")
 
-		found, client := limiterBase.getClientByIdentifierOrCreate(ip)
+		found, client := limiterBase.getClientByIdentifierOrCreate(identifier)
 		if !found {
 			client.handler = NewHandler(count, per)
 		}
@@ -166,36 +163,29 @@ func (limiterBase *Ratelimiter) RestrictUploads(
 		}
 	}
 	return func(ctx *gin.Context) {
-		if allowedData == 0 {
-			ctx.Next()
-			return
-		}
-
-		rawip := []byte(ctx.ClientIP())
-		ip := hex.EncodeToString(sha256.New().Sum(rawip))
-
-		_, client := limiterBase.getClientByIdentifierOrCreate(ip)
+		identifier := ctx.Request.Header.Get("Api-Identifier")
+		_, client := limiterBase.getClientByIdentifierOrCreate(identifier)
 		client.LastRequest = time.Now()
 
 		if client.Uploads == nil {
-			ctx.Next()
-			return
+			client.Uploads = &[]*ClientUpload{}
 		}
 
-		sum := uint64(0)
+		totalUploaded := uint64(ctx.Request.ContentLength)
 		for _, upload := range *client.Uploads {
 			if time.Since(upload.Time) > duration {
-				break
+				continue
 			}
-			sum += uint64(upload.Size)
+			totalUploaded += uint64(upload.Size)
 		}
 
-		if sum > allowedData {
+		if totalUploaded > allowedData {
 			ctx.AbortWithStatusJSON(http.StatusNotAcceptable, gin.H{
 				"error": "you've exceeded your upload capacity",
 			})
 			return
 		}
 
+		ctx.Header("Usva-AllowedUploadBytes", fmt.Sprint(allowedData-totalUploaded))
 	}
 }
