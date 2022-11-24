@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/jackc/pgx v3.6.2+incompatible
+	github.com/jaswdr/faker v1.15.0
 	github.com/stretchr/testify v1.8.0
 )
 
