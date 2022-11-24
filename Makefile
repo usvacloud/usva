@@ -67,8 +67,6 @@ test:
 	- go test ./...
 	- echo "------------------------------" 
 
-	make tests-cleanup clean
-
 preparetests:
 	- mkdir test-uploads postgres-tests
 	- [ "${START_TEST_DOCKER}" = "1" ] \
