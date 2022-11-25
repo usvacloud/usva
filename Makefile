@@ -15,6 +15,11 @@ START_TEST_DOCKER ?= 1
 
 .PHONY: all lint test
 
+setup-and-build: setup build
+
+build:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
+
 setup: clean
 	go get -u
 	cp config-example.toml config.toml
@@ -58,9 +63,6 @@ run-docker:
 
 run-docker-nodaemon:
 	docker-compose run --service-ports --rm server
-
-build:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
 
 test:
 	- echo "--------- GO TESTS -----------" 
