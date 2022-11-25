@@ -14,6 +14,22 @@ type RequestHandler struct {
 	maximumTokens int16
 }
 
+type ClientUpload struct {
+	Size int64
+	Time time.Time
+}
+type Client struct {
+	Identifier  string
+	handler     *RequestHandler
+	LastRequest time.Time
+	Uploads     *[]*ClientUpload
+}
+
+type Ratelimiter struct {
+	Clients     *[](*Client)
+	LastCleanup time.Time
+}
+
 func NewHandler(requestCount int16, saveDuration time.Duration) *RequestHandler {
 	return &RequestHandler{
 		nextReset:     time.Now().Add(saveDuration),
@@ -31,22 +47,6 @@ func (hand *RequestHandler) UseToken(count int16) bool {
 }
 func (hand *RequestHandler) ResetTokens() {
 	hand.tokens = hand.maximumTokens
-}
-
-type ClientUpload struct {
-	Size int64
-	Time time.Time
-}
-type Client struct {
-	Identifier  string
-	handler     *RequestHandler
-	LastRequest time.Time
-	Uploads     *[]*ClientUpload
-}
-
-type Ratelimiter struct {
-	Clients     *[](*Client)
-	LastCleanup time.Time
 }
 
 func safeListAccess[T *Client | *ClientUpload, L *[]T](f L) L {
@@ -146,6 +146,7 @@ func (limiterBase *Ratelimiter) RestrictRequests(count int16, per time.Duration)
 		} else {
 			ctx.AbortWithStatus(http.StatusTooManyRequests)
 		}
+
 		client.LastRequest = time.Now()
 	}
 }
