@@ -9,6 +9,6 @@ COPY . .
 
 EXPOSE 8080
 
-RUN make setup build migratesetup
+RUN make setup build
 
 CMD ["make", "migrateup", "run"]
