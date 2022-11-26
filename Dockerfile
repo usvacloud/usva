@@ -9,7 +9,7 @@ COPY . .
 
 EXPOSE 8080
 
-RUN sudo apt install postgresql-client-14
+RUN apt update && apt install -y postgresql postgresql-client-14
 RUN make setup build
 
 CMD ["make", "migrateup", "run"]
