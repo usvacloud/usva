@@ -2,36 +2,32 @@ package dbengine
 
 import (
 	"context"
+	"fmt"
+	"log"
 
-	"github.com/jackc/pgx"
-	_ "github.com/jackc/pgx/stdlib"
-
-	"github.com/romeq/usva/utils"
+	"github.com/jackc/pgx/v4"
+	"github.com/romeq/usva/db"
 )
 
-var DbConnection *pgx.Conn
+var DB *db.Queries
 
-type File struct {
-	IncrementalId int    `database:"id"`
-	Title         string `database:"title"`
-	PasswordHash  string `database:"passwdhash"`
-	FileUUID      string `database:"file_uuid"`
-	IsEncrypted   bool   `database:"isencrypted"`
-	Uploader      string `database:"uploader"`
-	UploadDate    string `database:"upload_date"`
-	ViewCount     int    `database:"viewcount"`
+type DbConfig struct {
+	Host        string
+	Port        uint16
+	User        string
+	Password    string
+	Name        string
+	SslDisabled bool
 }
 
-func Init(port uint16, host, database, user, password string) {
-	var err error
-	DbConnection, err = pgx.Connect(pgx.ConnConfig{
-		Host:      host,
-		Port:      port,
-		User:      user,
-		Password:  password,
-		Database:  database,
-		TLSConfig: nil,
-	})
-	utils.Check(err)
-	utils.Check(DbConnection.Ping(context.Background()))
+func Init(x DbConfig) {
+	connstr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		x.User, x.Password, x.Host, x.Port, x.Name)
+
+	r, err := pgx.Connect(context.Background(), connstr)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	DB = db.New(r)
 }

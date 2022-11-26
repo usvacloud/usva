@@ -24,32 +24,14 @@ setup: clean
 	go get -u
 	cp config-example.toml config.toml
 
-migratesetup:
-	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-
 migrateup:
-	$(GOPATH)/bin/migrate \
-		-source file://migrations \
-		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
-		up
-
-migratedown:
-	$(GOPATH)/bin/migrate \
-		-source file://migrations \
-		-database "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
-		down
+	psql \
+		-d "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
 
 migrateup-tests:
-	$(GOPATH)/bin/migrate \
-		-source file://migrations \
-		-database "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable" \
-		up
-
-migratedown-tests:
-	$(GOPATH)/bin/migrate \
-		-source file://migrations \
-		-database "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable" \
-		down -all
+	cat sqlc/schemas/* | psql \
+		-d "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable" \
+		-f -
 
 db-create:
 	 psql "postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/" \

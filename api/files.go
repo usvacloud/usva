@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/romeq/usva/api/middleware"
+	"github.com/romeq/usva/db"
 	"github.com/romeq/usva/dbengine"
 	"github.com/romeq/usva/utils"
 	"golang.org/x/crypto/bcrypt"
@@ -70,13 +71,14 @@ func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gi
 
 		// Append file metadata into database
 		apiid := ctx.Writer.Header().Get("Api-Identifier")
-		err = dbengine.InsertFile(dbengine.File{
-			FileUUID:     filename,
-			Title:        ctx.Request.FormValue("title"),
-			PasswordHash: string(hash),
-			Uploader:     apiid,
-			IsEncrypted:  len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
-			UploadDate:   time.Now().Format(time.RFC3339),
+		title := ctx.Request.FormValue("title")
+		err = dbengine.DB.NewFile(ctx, db.NewFileParams{
+			FileUuid:    filename,
+			Title:       sql.NullString{String: title, Valid: title != ""},
+			Passwdhash:  sql.NullString{String: string(hash), Valid: string(hash) != ""},
+			Uploader:    sql.NullString{String: apiid, Valid: apiid != ""},
+			Isencrypted: len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
+			UploadDate:  time.Now().Format(time.RFC3339),
 		})
 		if err != nil {
 			setErrResponse(ctx, err)
@@ -91,7 +93,7 @@ func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gi
 
 		err = ctx.SaveUploadedFile(f, path.Join(abspath, filename))
 		if err != nil {
-			dbengine.TryDeleteFile(filename)
+			_ = dbengine.DB.DeleteFile(ctx, filename)
 			setErrResponse(ctx, err)
 			return
 		}
@@ -122,13 +124,13 @@ func FileInformation(uploadInformation *APIConfiguration) gin.HandlerFunc {
 			return
 		}
 
-		f, err := dbengine.GetFile(filename)
+		f, err := dbengine.DB.FileInformation(ctx, filename)
 		if err != nil {
 			setErrResponse(ctx, err)
 			return
 		}
 
-		pwd, err := dbengine.GetPasswordHash(filename)
+		pwd, err := dbengine.DB.GetPasswordHash(ctx, filename)
 		if err != nil {
 			setErrResponse(ctx, err)
 			return
@@ -141,13 +143,13 @@ func FileInformation(uploadInformation *APIConfiguration) gin.HandlerFunc {
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{
-			"filename":   f.FileUUID,
+			"filename":   f.FileUuid,
 			"size":       filesize,
 			"title":      f.Title,
 			"uploadDate": f.UploadDate,
-			"viewCount":  f.ViewCount,
-			"locked":     pwd != "",
-			"encrypted":  f.IsEncrypted,
+			"viewCount":  f.Viewcount,
+			"locked":     pwd.Valid,
+			"encrypted":  f.Isencrypted,
 		})
 
 	}
@@ -167,7 +169,7 @@ func DownloadFile(uploadInformation *APIConfiguration) gin.HandlerFunc {
 			return
 		}
 
-		err := dbengine.IncrementFileViewCount(filename)
+		err := dbengine.DB.UpdateViewCount(ctx, filename)
 		if err != nil {
 			setErrResponse(ctx, err)
 			return
@@ -196,7 +198,10 @@ func ReportFile() gin.HandlerFunc {
 			return
 		}
 
-		err = dbengine.ReportUploadByName(requestBody.Filename, requestBody.Reason)
+		err = dbengine.DB.NewReport(ctx, db.NewReportParams{
+			FileUuid: requestBody.Filename,
+			Reason:   requestBody.Reason,
+		})
 		if err != nil {
 			setErrResponse(ctx, err)
 			return
@@ -228,7 +233,7 @@ func DeleteFile(fileOptions *APIConfiguration) gin.HandlerFunc {
 			return
 		}
 
-		if err := dbengine.DeleteFile(filename); err != nil {
+		if err := dbengine.DB.DeleteFile(ctx, filename); err != nil {
 			setErrResponse(ctx, err)
 			return
 		}
@@ -241,13 +246,13 @@ func DeleteFile(fileOptions *APIConfiguration) gin.HandlerFunc {
 
 // Functions to help with most common tasks
 func authorizeRequest(ctx *gin.Context, filename string) (success bool) {
-	pwdhash, err := dbengine.GetPasswordHash(filename)
+	pwdhash, err := dbengine.DB.GetPasswordHash(ctx, filename)
 	if err != nil {
 		setErrResponse(ctx, err)
 		return false
 	}
 
-	if len(pwdhash) > 0 {
+	if pwdhash.Valid {
 		pwd, err := parseHeaderPassword(ctx)
 		if err != nil {
 			setErrResponse(ctx, err)
@@ -255,7 +260,7 @@ func authorizeRequest(ctx *gin.Context, filename string) (success bool) {
 		}
 
 		trimmedpwd := strings.TrimSpace(pwd)
-		err = bcrypt.CompareHashAndPassword([]byte(pwdhash), []byte(trimmedpwd))
+		err = bcrypt.CompareHashAndPassword([]byte(pwdhash.String), []byte(trimmedpwd))
 		if err != nil {
 			setErrResponse(ctx, err)
 			return false

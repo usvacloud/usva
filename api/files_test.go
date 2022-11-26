@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"mime/multipart"
@@ -45,13 +46,14 @@ func Test_uploadFile(t *testing.T) {
 		a = 5432
 	}
 
-	dbengine.Init(
-		uint16(a),
-		utils.StringOr(os.Getenv("DB_HOST"), "127.0.0.1"),
-		utils.StringOr(os.Getenv("DB_USERNAME_TESTS"), "usva_tests"),
-		utils.StringOr(os.Getenv("DB_NAME_TESTS"), "usva_tests"),
-		utils.StringOr(os.Getenv("DB_PASSWORD_TESTS"), "testrunner"),
-	)
+	dbengine.Init(dbengine.DbConfig{
+		Host:        utils.StringOr(os.Getenv("DB_HOST"), "127.0.0.1"),
+		Port:        uint16(a),
+		User:        utils.StringOr(os.Getenv("DB_USERNAME_TESTS"), "usva_tests"),
+		Password:    utils.StringOr(os.Getenv("DB_PASSWORD_TESTS"), "testrunner"),
+		Name:        utils.StringOr(os.Getenv("DB_NAME_TESTS"), "usva_tests"),
+		SslDisabled: true,
+	})
 
 	type payload struct {
 		fileData string
@@ -62,6 +64,7 @@ func Test_uploadFile(t *testing.T) {
 		name               string
 		payload            payload
 		expectedCode       int
+		context            context.Context
 		verifyResponseJSON bool
 	}{
 		{
@@ -71,6 +74,7 @@ func Test_uploadFile(t *testing.T) {
 				maxSize:  8,
 			},
 			expectedCode:       200,
+			context:            context.Background(),
 			verifyResponseJSON: true,
 		},
 		{
@@ -80,6 +84,7 @@ func Test_uploadFile(t *testing.T) {
 				maxSize:  2,
 			},
 			expectedCode:       413,
+			context:            context.Background(),
 			verifyResponseJSON: false,
 		},
 	}
@@ -106,7 +111,7 @@ func Test_uploadFile(t *testing.T) {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)
 			}
 
-			_, e = dbengine.GetFile(responseStruct.Filename)
+			_, e = dbengine.DB.FileInformation(tt.context, responseStruct.Filename)
 			if e != nil {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)
 			}

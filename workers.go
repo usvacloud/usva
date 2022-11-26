@@ -1,19 +1,22 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"path"
 	"time"
 
+	"github.com/romeq/usva/db"
 	"github.com/romeq/usva/dbengine"
 )
 
 func removeOldFilesWorker(timeUntilRemove time.Duration, uploadDirectory string, cleantrashes bool) {
 	for {
 		<-time.After(time.Hour * 24)
+		workContext := context.Background()
 
-		files, err := dbengine.LastSeenAll()
+		files, err := dbengine.DB.GetLastSeenAll(workContext)
 		if err != nil {
 			log.Println("file cleanup process failed", err)
 		}
@@ -26,12 +29,12 @@ func removeOldFilesWorker(timeUntilRemove time.Duration, uploadDirectory string,
 				continue
 			}
 
-			err := dbengine.DeleteFile(file.Filename)
+			err := dbengine.DB.DeleteFile(workContext, file.FileUuid)
 			if err != nil {
 				log.Println("removeOldFilesWorker:", err)
 			}
 
-			err = os.RemoveAll(path.Join(uploadDirectory, file.Filename))
+			err = os.RemoveAll(path.Join(uploadDirectory, file.FileUuid))
 			if err != nil {
 				log.Println("removeOldFilesWorker:", err)
 			}
@@ -39,7 +42,7 @@ func removeOldFilesWorker(timeUntilRemove time.Duration, uploadDirectory string,
 	}
 }
 
-func removeJunkWorker(files []dbengine.FileLastSeen, uploadDirectory string) {
+func removeJunkWorker(files []db.GetLastSeenAllRow, uploadDirectory string) {
 	fsFiles, err := os.ReadDir(uploadDirectory)
 	if err != nil {
 		log.Println("removeOldFilesWorker:", err)
@@ -47,7 +50,7 @@ func removeJunkWorker(files []dbengine.FileLastSeen, uploadDirectory string) {
 	found := false
 	for _, direntry := range fsFiles {
 		for _, file := range files {
-			found = file.Filename == direntry.Name()
+			found = file.FileUuid == direntry.Name()
 			if found {
 				break
 			}
