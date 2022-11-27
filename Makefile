@@ -25,12 +25,17 @@ setup: clean
 	cp config-example.toml config.toml
 
 migrateup:
-	cat sqlc/schemas/* | psql \
+	cat ./sqlc/schemas/* | psql \
 		-d "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
 		-f -
 
+migratedown:
+	psql \
+		-d "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
+		-f ./sqlc/dbdown.sql
+
 migrateup-tests:
-	cat sqlc/schemas/* | psql \
+	cat ./sqlc/schemas/* | psql \
 		-d "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable" \
 		-f -
 
