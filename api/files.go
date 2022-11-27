@@ -23,9 +23,11 @@ import (
 )
 
 var (
-	errAuthMissing = errors.New("missing authentication in a protected file")
-	errAuthFailed  = errors.New("authorization succeeded but cookies were not set")
-	errInvalidBody = errors.New("invalid request body")
+	errAuthMissing      = errors.New("missing authentication in a protected file")
+	errAuthFailed       = errors.New("authorization succeeded but cookies were not set")
+	errInvalidBody      = errors.New("invalid request body")
+	AuthSaveTime        = 1900 // half a hour
+	AuthUseSecureCookie = false
 )
 
 func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gin.HandlerFunc {
@@ -281,7 +283,15 @@ func authorizeRequest(ctx *gin.Context, filename string) (success bool) {
 			return false
 		}
 
-		ctx.SetCookie(fileauthcookie, at, 3600, "/", "localhost", false, false)
+		ctx.SetCookie(
+			fileauthcookie,
+			at,
+			AuthSaveTime,
+			"/",
+			ctx.Request.Host,
+			AuthUseSecureCookie,
+			true,
+		)
 	}
 
 	return true

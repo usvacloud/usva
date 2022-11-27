@@ -43,6 +43,8 @@ type Files struct {
 	RemoveFilesAfterInactivity bool
 	InactivityUntilDelete      uint32
 	CleanTrashes               bool
+	AuthSaveTime               int
+	AuthUseSecureCookie        bool
 }
 
 type Config struct {
