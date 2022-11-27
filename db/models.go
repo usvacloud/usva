@@ -20,6 +20,7 @@ type File struct {
 	Title       sql.NullString
 	Passwdhash  sql.NullString
 	Uploader    sql.NullString
+	AccessToken string
 	FileUuid    string
 	Isencrypted bool
 	UploadDate  string

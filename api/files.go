@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -22,7 +23,8 @@ import (
 )
 
 var (
-	errAuthMissing = errors.New("missing authentication in protected file")
+	errAuthMissing = errors.New("missing authentication in a protected file")
+	errAuthFailed  = errors.New("authorization succeeded but cookies were not set")
 	errInvalidBody = errors.New("invalid request body")
 )
 
@@ -36,7 +38,7 @@ func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gi
 		}
 
 		// generate name for the uploaded file
-		filename := uuid.New().String() + path.Ext(f.Filename)
+		filename := uuid.NewString() + path.Ext(f.Filename)
 
 		if uploadOptions.MaxSingleUploadSize > 0 && uint64(f.Size) > uploadOptions.MaxSingleUploadSize {
 			ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
@@ -77,6 +79,7 @@ func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gi
 			Title:       sql.NullString{String: title, Valid: title != ""},
 			Passwdhash:  sql.NullString{String: string(hash), Valid: string(hash) != ""},
 			Uploader:    sql.NullString{String: apiid, Valid: apiid != ""},
+			AccessToken: uuid.NewString(),
 			Isencrypted: len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
 			UploadDate:  time.Now().Format(time.RFC3339),
 		})
@@ -151,7 +154,6 @@ func FileInformation(uploadInformation *APIConfiguration) gin.HandlerFunc {
 			"locked":     pwd.Valid,
 			"encrypted":  f.Isencrypted,
 		})
-
 	}
 }
 
@@ -253,6 +255,19 @@ func authorizeRequest(ctx *gin.Context, filename string) (success bool) {
 	}
 
 	if pwdhash.Valid {
+		fileauthcookie := fmt.Sprintf("usva-auth-%s", filename)
+		authcookieValue, _ := ctx.Cookie(fileauthcookie)
+
+		at, err := dbengine.DB.GetAccessToken(ctx, filename)
+		if err != nil {
+			setErrResponse(ctx, errAuthFailed)
+			return false
+		}
+
+		if authcookieValue == at {
+			return true
+		}
+
 		pwd, err := parseHeaderPassword(ctx)
 		if err != nil {
 			setErrResponse(ctx, err)
@@ -265,7 +280,10 @@ func authorizeRequest(ctx *gin.Context, filename string) (success bool) {
 			setErrResponse(ctx, err)
 			return false
 		}
+
+		ctx.SetCookie(fileauthcookie, at, 3600, "/", "localhost", false, false)
 	}
+
 	return true
 }
 

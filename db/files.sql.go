@@ -52,6 +52,19 @@ func (q *Queries) FileInformation(ctx context.Context, fileUuid string) (FileInf
 	return i, err
 }
 
+const getAccessToken = `-- name: GetAccessToken :one
+SELECT access_token
+FROM file
+WHERE file_uuid = $1
+`
+
+func (q *Queries) GetAccessToken(ctx context.Context, fileUuid string) (string, error) {
+	row := q.db.QueryRow(ctx, getAccessToken, fileUuid)
+	var access_token string
+	err := row.Scan(&access_token)
+	return access_token, err
+}
+
 const getLastSeenAll = `-- name: GetLastSeenAll :many
 SELECT file_uuid,
     last_seen
@@ -102,12 +115,13 @@ INSERT INTO file(
         title,
         uploader,
         passwdhash,
+        access_token,
         upload_date,
         isencrypted,
         last_seen,
         viewcount
     )
-VALUES($1, $2, $3, $4, $5, $6, $7, 0)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0)
 `
 
 type NewFileParams struct {
@@ -115,6 +129,7 @@ type NewFileParams struct {
 	Title       sql.NullString
 	Uploader    sql.NullString
 	Passwdhash  sql.NullString
+	AccessToken string
 	UploadDate  string
 	Isencrypted bool
 	LastSeen    time.Time
@@ -126,6 +141,7 @@ func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
 		arg.Title,
 		arg.Uploader,
 		arg.Passwdhash,
+		arg.AccessToken,
 		arg.UploadDate,
 		arg.Isencrypted,
 		arg.LastSeen,

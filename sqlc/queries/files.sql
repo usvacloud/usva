@@ -24,12 +24,13 @@ INSERT INTO file(
         title,
         uploader,
         passwdhash,
+        access_token,
         upload_date,
         isencrypted,
         last_seen,
         viewcount
     )
-VALUES($1, $2, $3, $4, $5, $6, $7, 0);
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0);
 -- name: DeleteFile :exec
 DELETE FROM file
 WHERE file_uuid = $1;
@@ -37,3 +38,7 @@ WHERE file_uuid = $1;
 SELECT file_uuid,
     last_seen
 FROM file;
+-- name: GetAccessToken :one
+SELECT access_token
+FROM file
+WHERE file_uuid = $1;

@@ -37,9 +37,10 @@ func setupEngine(cfg config.Config) *gin.Engine {
 	// setup other required middleware
 	r.Use(gin.Recovery())
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: cfg.Server.AllowedOrigins,
-		AllowMethods: []string{"POST", "GET", "OPTIONS", "DELETE"},
-		AllowHeaders: []string{"Authorization"},
+		AllowOrigins:     cfg.Server.AllowedOrigins,
+		AllowCredentials: true,
+		AllowMethods:     []string{"POST", "GET", "OPTIONS", "DELETE"},
+		AllowHeaders:     []string{"Authorization"},
 	}))
 	if !cfg.Server.HideRequests {
 		r.Use(requestLogger)
