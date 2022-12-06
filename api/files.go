@@ -288,7 +288,7 @@ func authorizeRequest(ctx *gin.Context, filename string) (success bool) {
 			at,
 			AuthSaveTime,
 			"/",
-			strings.Split(ctx.Request.Host, ":")[0],
+			CookieDomain,
 			AuthUseSecureCookie,
 			true,
 		)

@@ -24,6 +24,7 @@ type Ratelimit struct {
 
 type Server struct {
 	Address        string
+	ApiDomain      string
 	Port           uint
 	TrustedProxies []string
 	DebugMode      bool

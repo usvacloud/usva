@@ -52,6 +52,7 @@ func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 
 	api.AuthSaveTime = cfg.Files.AuthSaveTime
 	api.AuthUseSecureCookie = cfg.Files.AuthUseSecureCookie
+	api.CookieDomain = cfg.Server.ApiDomain
 	apic := api.APIConfiguration{
 		MaxSingleUploadSize: cfg.Files.MaxSingleUploadSize,
 		MaxUploadSizePerDay: cfg.Files.MaxUploadSizePerDay,
