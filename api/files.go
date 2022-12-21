@@ -87,7 +87,7 @@ func UploadFileSimple(lmt *middleware.Ratelimiter, uploadOptions *APIConfigurati
 		}
 
 		ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file?filename=%s",
-			protocol, ctx.Request.Host, filename))
+			protocol, CookieDomain, filename))
 	}
 
 }
