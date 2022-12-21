@@ -16,7 +16,7 @@ SET viewcount = viewcount + 1
 WHERE file_uuid = $1;
 -- name: UpdateLastSeen :exec
 UPDATE file
-SET last_seen = $2
+SET last_seen = CURRENT_TIMESTAMP
 WHERE file_uuid = $1;
 -- name: NewFile :exec
 INSERT INTO file(
@@ -25,12 +25,10 @@ INSERT INTO file(
         uploader,
         passwdhash,
         access_token,
-        upload_date,
         isencrypted,
-        last_seen,
         viewcount
     )
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0);
+VALUES($1, $2, $3, $4, $5, $6, 0);
 -- name: DeleteFile :exec
 DELETE FROM file
 WHERE file_uuid = $1;

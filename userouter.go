@@ -1,30 +1,15 @@
 package main
 
 import (
-	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/romeq/jobscheduler"
 	"github.com/romeq/usva/api"
 	"github.com/romeq/usva/api/middleware"
 	"github.com/romeq/usva/config"
 )
 
-func initCleanupRoutine(rt ...*middleware.Ratelimiter) {
-	if rt == nil {
-		log.Println("initCleanupRoutine: rt is nil")
-		return
-	}
-
-	for {
-		<-time.After(time.Hour)
-		for _, ft := range rt {
-			if time.Since(ft.LastCleanup) > time.Duration(24)*time.Hour {
-				ft.Clean()
-			}
-		}
-	}
-}
 func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {
 	return api.Ratelimits{
 		StrictLimit: api.Limits(cfg.StrictLimit),
@@ -32,7 +17,7 @@ func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {
 	}
 }
 
-func toseconds(i uint32) time.Duration {
+func asSeconds(i uint32) time.Duration {
 	return time.Duration(i) * time.Second
 }
 
@@ -40,15 +25,24 @@ func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 	// Declare ratelimiters
 	strictrl := middleware.NewRatelimiter()
 	queryrl := middleware.NewRatelimiter()
-	go initCleanupRoutine(strictrl, queryrl)
+
+	var jobs []jobscheduler.Job
+	jobs = append(jobs, jobscheduler.NewJob(0, time.Second, strictrl.Clean, true))
+	jobs = append(jobs, jobscheduler.NewJob(0, time.Second, queryrl.Clean, true))
 
 	if cfg.Files.RemoveFilesAfterInactivity {
-		go removeOldFilesWorker(
-			toseconds(cfg.Files.InactivityUntilDelete),
-			cfg.Files.UploadsDir,
-			cfg.Files.CleanTrashes,
-		)
+		job := jobscheduler.NewJob(0, time.Hour*24, func() {
+			removeOldFiles(
+				asSeconds(cfg.Files.InactivityUntilDelete),
+				cfg.Files.UploadsDir,
+				cfg.Files.CleanTrashes,
+			)
+		}, true)
+
+		jobs = append(jobs, job)
 	}
+
+	go jobscheduler.Run(jobs)
 
 	api.AuthSaveTime = cfg.Files.AuthSaveTime
 	api.AuthUseSecureCookie = cfg.Files.AuthUseSecureCookie
@@ -62,10 +56,12 @@ func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 	ratelimits := parseRatelimits(&cfg.Ratelimit)
 
 	strict := strictrl.RestrictRequests(ratelimits.StrictLimit.Requests,
-		toseconds(ratelimits.StrictLimit.Time))
+		asSeconds(ratelimits.StrictLimit.Time))
 
 	query := queryrl.RestrictRequests(ratelimits.QueryLimit.Requests,
-		toseconds(ratelimits.QueryLimit.Time))
+		asSeconds(ratelimits.QueryLimit.Time))
+
+	uploadRestrictor := strictrl.RestrictUploads(time.Duration(24)*time.Hour, cfg.Files.MaxUploadSizePerDay)
 
 	// Middleware/general stuff
 	router.Use(middleware.IdentifierHeader)
@@ -73,6 +69,11 @@ func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 	router.GET("/restrictions", func(ctx *gin.Context) {
 		api.RestrictionsHandler(ctx, &apic)
 	})
+	router.POST("/",
+		strict,
+		uploadRestrictor,
+		api.UploadFileSimple(strictrl, &apic),
+	)
 
 	// Files API
 	file := router.Group("/file")
@@ -87,11 +88,7 @@ func setupRouteHandlers(router *gin.Engine, cfg *config.Config) {
 		file.POST(
 			"/upload",
 			strict,
-			strictrl.RestrictUploads(
-				time.Duration(24)*time.Hour,
-				cfg.Files.MaxUploadSizePerDay,
-			),
-			// pass strictrl for updating the uploaded content.
+			uploadRestrictor,
 			api.UploadFile(strictrl, &apic),
 		)
 	}

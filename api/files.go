@@ -30,9 +30,70 @@ var (
 	AuthUseSecureCookie = false
 )
 
+func UploadFileSimple(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		// retrieve file from request
+		f, err := ctx.FormFile("file")
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		// generate name for the uploaded file
+		filename := uuid.NewString() + path.Ext(f.Filename)
+
+		if uploadOptions.MaxSingleUploadSize > 0 && uint64(f.Size) > uploadOptions.MaxSingleUploadSize {
+			ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
+				"error": "File is too big",
+			})
+			return
+		}
+
+		apiid := ctx.Writer.Header().Get("Api-Identifier")
+		title := ctx.Request.FormValue("title")
+		err = dbengine.DB.NewFile(ctx, db.NewFileParams{
+			FileUuid:    filename,
+			Title:       sql.NullString{String: title, Valid: title != ""},
+			Uploader:    sql.NullString{String: apiid, Valid: apiid != ""},
+			AccessToken: uuid.NewString(),
+		})
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		abspath, err := filepath.Abs(uploadOptions.UploadsDir)
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+		err = ctx.SaveUploadedFile(f, path.Join(abspath, filename))
+		if err != nil {
+			_ = dbengine.DB.DeleteFile(ctx, filename)
+			setErrResponse(ctx, err)
+			return
+		}
+
+		lmt.AppendClientUploads(apiid, middleware.ClientUpload{
+			Size: f.Size,
+			Time: time.Now(),
+		})
+
+		protocol := "http"
+		if AuthUseSecureCookie {
+			protocol = "https"
+		}
+
+		ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file?filename=%s",
+			protocol, ctx.Request.Host, filename))
+	}
+
+}
+
 func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// retrieve file from request
 		f, err := ctx.FormFile("file")
 		if err != nil {
 			setErrResponse(ctx, err)
@@ -83,7 +144,6 @@ func UploadFile(lmt *middleware.Ratelimiter, uploadOptions *APIConfiguration) gi
 			Uploader:    sql.NullString{String: apiid, Valid: apiid != ""},
 			AccessToken: uuid.NewString(),
 			Isencrypted: len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
-			UploadDate:  time.Now().Format(time.RFC3339),
 		})
 		if err != nil {
 			setErrResponse(ctx, err)
@@ -135,6 +195,10 @@ func FileInformation(uploadInformation *APIConfiguration) gin.HandlerFunc {
 			return
 		}
 
+		if err = dbengine.DB.UpdateLastSeen(ctx, filename); err != nil {
+			setErrResponse(ctx, err)
+		}
+
 		pwd, err := dbengine.DB.GetPasswordHash(ctx, filename)
 		if err != nil {
 			setErrResponse(ctx, err)
@@ -171,6 +235,10 @@ func DownloadFile(uploadInformation *APIConfiguration) gin.HandlerFunc {
 
 		if !authorizeRequest(ctx, filename) {
 			return
+		}
+
+		if err := dbengine.DB.UpdateLastSeen(ctx, filename); err != nil {
+			setErrResponse(ctx, err)
 		}
 
 		err := dbengine.DB.UpdateViewCount(ctx, filename)
