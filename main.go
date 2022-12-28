@@ -89,13 +89,12 @@ func main() {
 
 	// runtime options
 	opts := parseOpts(cfg, args)
-	odb := cfg.Database
 	dbengine.Init(dbengine.DbConfig{
-		Port:     uint16(odb.Port),
-		Host:     odb.Host,
-		Name:     odb.Database,
-		User:     odb.User,
-		Password: odb.Password,
+		Port:     uint16(cfg.Database.Port),
+		Host:     cfg.Database.Host,
+		Name:     cfg.Database.Database,
+		User:     cfg.Database.User,
+		Password: cfg.Database.Password,
 	})
 
 	log.Println("Starting server at", opts.getaddr())
