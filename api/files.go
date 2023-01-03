@@ -73,8 +73,7 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 		protocol = "https"
 	}
 
-	ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file?filename=%s",
-		protocol, CookieDomain, filename))
+	ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file?filename=%s", protocol, CookieDomain, filename))
 }
 
 func (s *Server) UploadFile(ctx *gin.Context) {
@@ -293,9 +292,7 @@ func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
 			return false
 		}
 
-		ctx.SetCookie(fileauthcookie, at, s.api.CookieSaveTime, "/",
-			CookieDomain, s.api.UseSecureCookie, true,
-		)
+		ctx.SetCookie(fileauthcookie, at, s.api.CookieSaveTime, "/", CookieDomain, s.api.UseSecureCookie, true)
 	}
 
 	return true
