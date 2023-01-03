@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/db"
-	"github.com/romeq/usva/dbengine"
 )
 
 func (s *Server) AddFeedback(ctx *gin.Context) {
@@ -41,7 +40,7 @@ func (s *Server) AddFeedback(ctx *gin.Context) {
 		}
 	}
 
-	if err := dbengine.DB.NewFeedback(ctx, db.NewFeedbackParams{
+	if err := s.db.NewFeedback(ctx, db.NewFeedbackParams{
 		Comment: sql.NullString{String: body.Message, Valid: body.Message != ""},
 		Boxes:   boxestobeinserted,
 	}); err != nil {
@@ -55,13 +54,13 @@ func (s *Server) AddFeedback(ctx *gin.Context) {
 }
 
 func (s *Server) GetFeedback(ctx *gin.Context) {
-	dbFeedbacks, e := dbengine.DB.GetFeedbacks(ctx, 10)
+	dbFeedbacks, e := s.db.GetFeedbacks(ctx, 10)
 	if e != nil {
 		setErrResponse(ctx, e)
 		return
 	}
 
-	if len(dbFeedbacks) <= 0 {
+	if len(dbFeedbacks) == 0 {
 		setErrResponse(ctx, errEmptyResponse)
 		return
 	}

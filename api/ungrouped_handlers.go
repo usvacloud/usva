@@ -7,9 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	errEmptyResponse = errors.New("content was not found")
-)
+var errEmptyResponse = errors.New("content was not found")
 
 func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{

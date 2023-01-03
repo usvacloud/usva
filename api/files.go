@@ -323,16 +323,16 @@ func setErrResponse(ctx *gin.Context, err error) {
 
 	errorMessage, status := "request failed", http.StatusBadRequest
 
-	switch err {
-	case sql.ErrNoRows:
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
 		errorMessage, status = "file not found", http.StatusNotFound
-	case bcrypt.ErrMismatchedHashAndPassword:
+	case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
 		errorMessage, status = "password is invalid", http.StatusForbidden
-	case errInvalidBody:
+	case errors.Is(err, errInvalidBody):
 		errorMessage, status = err.Error(), http.StatusBadRequest
-	case errAuthMissing:
+	case errors.Is(err, errAuthMissing):
 		errorMessage, status = err.Error(), http.StatusUnauthorized
-	case errEmptyResponse:
+	case errors.Is(err, errEmptyResponse):
 		errorMessage, status = err.Error(), http.StatusNoContent
 	default:
 		log.Println("error: ", err.Error())

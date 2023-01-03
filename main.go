@@ -17,7 +17,7 @@ import (
 
 type Options config.Config
 
-func parseOpts(cfg config.Config, args arguments.Arguments) Options {
+func parseOpts(cfg *config.Config, args *arguments.Arguments) Options {
 	return Options{
 		Server: config.Server{
 			Address: utils.StringOr(args.Config.Server.Address, cfg.Server.Address),
@@ -25,11 +25,12 @@ func parseOpts(cfg config.Config, args arguments.Arguments) Options {
 		},
 	}
 }
+
 func (o *Options) getaddr() string {
 	return fmt.Sprintf("%s:%d", o.Server.Address, o.Server.Port)
 }
 
-func setupEngine(cfg config.Config) *gin.Engine {
+func setupEngine(cfg *config.Config) *gin.Engine {
 	if !cfg.Server.DebugMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -57,7 +58,7 @@ func setLogWriter(file string) *os.File {
 		return nil
 	}
 
-	fhandle, err := os.OpenFile(file, os.O_WRONLY, 0644)
+	fhandle, err := os.OpenFile(file, os.O_WRONLY, 0o644)
 	utils.Must(err)
 
 	log.SetOutput(fhandle)
@@ -87,8 +88,8 @@ func main() {
 
 	// runtime options
 	opts := parseOpts(cfg, args)
-	dbengine.Init(dbengine.DbConfig{
-		Port:     uint16(cfg.Database.Port),
+	queries := dbengine.Init(dbengine.DbConfig{
+		Port:     cfg.Database.Port,
 		Host:     cfg.Database.Host,
 		Name:     cfg.Database.Database,
 		User:     cfg.Database.User,
@@ -99,16 +100,16 @@ func main() {
 
 	// start server
 	r := setupEngine(cfg)
-	server := api.NewServer(r, dbengine.DB, &api.APIConfiguration{
+	server := api.NewServer(r, queries, &api.Configuration{
 		MaxSingleUploadSize: cfg.Files.MaxSingleUploadSize,
 		MaxUploadSizePerDay: cfg.Files.MaxUploadSizePerDay,
 		UploadsDir:          cfg.Files.UploadsDir,
 		CookieSaveTime:      cfg.Files.AuthSaveTime,
 		UseSecureCookie:     cfg.Files.AuthUseSecureCookie,
-		ApiDomain:           cfg.Server.ApiDomain,
+		APIDomain:           cfg.Server.APIDomain,
 	})
 
-	setupRouteHandlers(server, &cfg)
+	setupRouteHandlers(server, cfg)
 
 	tlssettings := cfg.Server.TLS
 	if tlssettings.Enabled {

@@ -13,11 +13,11 @@ type Ratelimits struct {
 	QueryLimit  Limits
 }
 
-type APIConfiguration struct {
+type Configuration struct {
 	MaxSingleUploadSize uint64
 	MaxUploadSizePerDay uint64
 	UploadsDir          string
 	CookieSaveTime      int
 	UseSecureCookie     bool
-	ApiDomain           string
+	APIDomain           string
 }

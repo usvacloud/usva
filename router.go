@@ -27,7 +27,7 @@ func setupRouteHandlers(server *api.Server, cfg *config.Config) {
 
 	if cfg.Files.RemoveFilesAfterInactivity {
 		job := jobscheduler.NewJob(0, time.Hour*24, func() {
-			removeOldFiles(cfg.Files.InactivityUntilDelete, cfg.Files.UploadsDir, cfg.Files.CleanTrashes)
+			server.RemoveOldFilesWorker(cfg.Files.InactivityUntilDelete, cfg.Files.UploadsDir, cfg.Files.CleanTrashes)
 		}, true)
 
 		jobs = append(jobs, job)
@@ -42,13 +42,14 @@ func setupRouteHandlers(server *api.Server, cfg *config.Config) {
 	uploadRestrictor := strictrl.RestrictUploads(time.Duration(24)*time.Hour, cfg.Files.MaxUploadSizePerDay)
 
 	// Middleware/general stuff
-	server.GetRouter().Use(middleware.IdentifierHeader)
-	server.GetRouter().NoRoute(server.NotFoundHandler)
-	server.GetRouter().GET("/restrictions", server.RestrictionsHandler)
-	server.GetRouter().POST("/", strict, uploadRestrictor, server.UploadFileSimple)
+	router := server.GetRouter()
+	router.Use(middleware.IdentifierHeader)
+	router.NoRoute(server.NotFoundHandler)
+	router.GET("/restrictions", server.RestrictionsHandler)
+	router.POST("/", strict, uploadRestrictor, server.UploadFileSimple)
 
 	// Files API
-	file := server.GetRouter().Group("/file")
+	file := router.Group("/file")
 	{
 		// Routes
 		file.POST("/report", strict, server.ReportFile)
@@ -58,7 +59,7 @@ func setupRouteHandlers(server *api.Server, cfg *config.Config) {
 	}
 
 	// Feedback
-	feedback := server.GetRouter().Group("/feedback")
+	feedback := router.Group("/feedback")
 	{
 		feedback.GET("/", query, server.GetFeedback)
 		feedback.POST("/", strict, server.AddFeedback)

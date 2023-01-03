@@ -12,8 +12,9 @@ type Arguments struct {
 	LogOutput  string
 }
 
-func Parse() (args Arguments) {
+func Parse() *Arguments {
 	// Server configuration
+	var args Arguments
 	flag.StringVar(&args.Config.Server.Address, "a", "", "server address")
 	flag.UintVar(&args.Config.Server.Port, "p", 0, "server port")
 
@@ -23,5 +24,5 @@ func Parse() (args Arguments) {
 
 	// Processing arguments
 	flag.Parse()
-	return args
+	return &args
 }

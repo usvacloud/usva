@@ -1,0 +1,17 @@
+run:
+  concurrency: 4
+  timeout: 2m
+
+linters:
+ enable:
+    - dupl
+    - errorlint
+    - exhaustive
+    - gocritic
+    - lll
+    - gofumpt
+    - gosec
+    - govet
+    - revive
+    - staticcheck
+    - typecheck

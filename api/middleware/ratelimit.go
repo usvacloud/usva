@@ -45,6 +45,7 @@ func (hand *RequestHandler) UseToken(count int16) bool {
 	}
 	return ok
 }
+
 func (hand *RequestHandler) ResetTokens() {
 	hand.tokens = hand.maximumTokens
 }

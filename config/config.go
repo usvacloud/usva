@@ -25,7 +25,7 @@ type Ratelimit struct {
 
 type Server struct {
 	Address        string
-	ApiDomain      string
+	APIDomain      string
 	Port           uint
 	TrustedProxies []string
 	DebugMode      bool
@@ -57,18 +57,19 @@ type Config struct {
 		User     string
 		Password string
 		Host     string
-		Port     uint16
+		Port     int
 		Database string
 	}
 }
 
-func ParseFromFile(f *os.File) (cfg Config) {
+func ParseFromFile(f *os.File) *Config {
 	configtoml, err := io.ReadAll(f)
 	utils.Must(err)
 
+	var cfg Config
 	_, err = toml.Decode(string(configtoml), &cfg)
 	utils.Must(err)
 
 	cfg.ensureRequiredValues()
-	return cfg
+	return &cfg
 }

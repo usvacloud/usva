@@ -9,18 +9,16 @@ import (
 	"github.com/romeq/usva/db"
 )
 
-var DB *db.Queries
-
 type DbConfig struct {
 	Host        string
-	Port        uint16
+	Port        int
 	User        string
 	Password    string
 	Name        string
 	SslDisabled bool
 }
 
-func Init(x DbConfig) {
+func Init(x DbConfig) *db.Queries {
 	connstr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		x.User, x.Password, x.Host, x.Port, x.Name)
 
@@ -29,5 +27,5 @@ func Init(x DbConfig) {
 		log.Fatalln(err)
 	}
 
-	DB = db.New(r)
+	return db.New(r)
 }

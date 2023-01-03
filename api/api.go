@@ -10,10 +10,10 @@ var CookieDomain string
 type Server struct {
 	engine *gin.Engine
 	db     *db.Queries
-	api    *APIConfiguration
+	api    *Configuration
 }
 
-func NewServer(engine *gin.Engine, conn *db.Queries, apiconfiguration *APIConfiguration) *Server {
+func NewServer(engine *gin.Engine, conn *db.Queries, apiconfiguration *Configuration) *Server {
 	return &Server{
 		engine: engine,
 		api:    apiconfiguration,

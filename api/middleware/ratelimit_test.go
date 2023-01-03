@@ -13,9 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	fakerInstance = faker.New()
-)
+var fakerInstance = faker.New()
 
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.ReleaseMode)
@@ -209,7 +207,6 @@ func TestRatelimiter_RestrictRequests(t *testing.T) {
 			}
 			statusgot := res.Code
 			assert.Equal(t, tt.want, statusgot)
-
 		})
 	}
 }

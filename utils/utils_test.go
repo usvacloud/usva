@@ -103,7 +103,6 @@ func TestVarOr(t *testing.T) {
 		args args
 		want any
 	}{
-
 		{
 			name: "test1",
 			args: args{

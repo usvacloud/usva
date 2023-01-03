@@ -19,8 +19,8 @@ import (
 )
 
 func prepareMultipartBody(t *testing.T, text string) (*gin.Context, *httptest.ResponseRecorder) {
-	request_body := new(bytes.Buffer)
-	mw := multipart.NewWriter(request_body)
+	requestBody := new(bytes.Buffer)
+	mw := multipart.NewWriter(requestBody)
 
 	bodyFile, err := mw.CreateFormFile("file", text)
 	if assert.NoError(t, err) {
@@ -31,7 +31,7 @@ func prepareMultipartBody(t *testing.T, text string) (*gin.Context, *httptest.Re
 
 	r := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(r)
-	c.Request, _ = http.NewRequest("POST", "/", request_body)
+	c.Request, _ = http.NewRequest("POST", "/", requestBody)
 	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
 
 	return c, r
@@ -44,10 +44,9 @@ func Test_uploadFile(t *testing.T) {
 	if err != nil {
 		a = 5432
 	}
-
-	dbengine.Init(dbengine.DbConfig{
+	db := dbengine.Init(dbengine.DbConfig{
 		Host:        utils.StringOr(os.Getenv("DB_HOST"), "127.0.0.1"),
-		Port:        uint16(a),
+		Port:        a,
 		User:        utils.StringOr(os.Getenv("DB_USERNAME_TESTS"), "usva_tests"),
 		Password:    utils.StringOr(os.Getenv("DB_PASSWORD_TESTS"), "testrunner"),
 		Name:        utils.StringOr(os.Getenv("DB_NAME_TESTS"), "usva_tests"),
@@ -96,7 +95,9 @@ func Test_uploadFile(t *testing.T) {
 
 		c, r := prepareMultipartBody(t, tt.payload.fileData)
 
-		server := NewServer(nil, dbengine.DB, &APIConfiguration{
+		server := NewServer(nil, db, &Configuration{
+			UseSecureCookie:     false,
+			UploadsDir:          "../uploads",
 			MaxSingleUploadSize: uint64(tt.payload.maxSize),
 		})
 		server.UploadFile(c)
@@ -110,7 +111,7 @@ func Test_uploadFile(t *testing.T) {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)
 			}
 
-			_, e = dbengine.DB.FileInformation(tt.context, responseStruct.Filename)
+			_, e = server.db.FileInformation(tt.context, responseStruct.Filename)
 			if e != nil {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)
 			}

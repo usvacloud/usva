@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"context"
@@ -8,20 +8,20 @@ import (
 	"time"
 
 	"github.com/romeq/usva/db"
-	"github.com/romeq/usva/dbengine"
 )
 
-func removeOldFiles(timeUntilRemove time.Duration, uploadDirectory string, cleantrashes bool) {
-	log.Println("executed removeOldFiles")
+func (s *Server) RemoveOldFilesWorker(timeUntilRemove time.Duration, uploadDirectory string, cleantrashes bool) {
+	log.Println("executed RemoveOldFilesWorker")
 	workContext := context.Background()
 
-	files, err := dbengine.DB.GetLastSeenAll(workContext)
+	files, err := s.db.GetLastSeenAll(workContext)
 	if err != nil {
 		log.Println("file cleanup process failed", err)
+		return
 	}
 
 	if cleantrashes {
-		go removeJunk(files, uploadDirectory)
+		go s.RemoveJunkWorker(files, uploadDirectory)
 	}
 
 	for _, file := range files {
@@ -29,22 +29,25 @@ func removeOldFiles(timeUntilRemove time.Duration, uploadDirectory string, clean
 			continue
 		}
 
-		err := dbengine.DB.DeleteFile(workContext, file.FileUuid)
+		err := s.db.DeleteFile(workContext, file.FileUuid)
 		if err != nil {
-			log.Println("removeOldFilesWorker:", err)
+			log.Println("RemoveOldFilesWorker:", err)
+			return
 		}
 
 		err = os.RemoveAll(path.Join(uploadDirectory, file.FileUuid))
 		if err != nil {
-			log.Println("removeOldFilesWorker:", err)
+			log.Println("RemoveOldFilesWorker:", err)
+			return
 		}
 	}
 }
 
-func removeJunk(files []db.GetLastSeenAllRow, uploadDirectory string) {
+func (s *Server) RemoveJunkWorker(files []db.GetLastSeenAllRow, uploadDirectory string) {
 	fsFiles, err := os.ReadDir(uploadDirectory)
 	if err != nil {
-		log.Println("removeOldFilesWorker:", err)
+		log.Println("RemoveJunkWorker:", err)
+		return
 	}
 	found := false
 	for _, direntry := range fsFiles {
@@ -57,7 +60,8 @@ func removeJunk(files []db.GetLastSeenAllRow, uploadDirectory string) {
 		if !found {
 			err = os.RemoveAll(path.Join(uploadDirectory, direntry.Name()))
 			if err != nil {
-				log.Println("removeOldFilesWorker:", err)
+				log.Println("RemoveJunkWorker:", err)
+				return
 			}
 		}
 	}
