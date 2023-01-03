@@ -3,6 +3,7 @@ package config
 import (
 	"io"
 	"os"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/romeq/usva/api"
@@ -42,7 +43,7 @@ type Files struct {
 	MaxUploadSizePerDay        uint64
 	UploadsDir                 string
 	RemoveFilesAfterInactivity bool
-	InactivityUntilDelete      uint32
+	InactivityUntilDelete      time.Duration
 	CleanTrashes               bool
 	AuthSaveTime               int
 	AuthUseSecureCookie        bool
@@ -63,10 +64,10 @@ type Config struct {
 
 func ParseFromFile(f *os.File) (cfg Config) {
 	configtoml, err := io.ReadAll(f)
-	utils.Check(err)
+	utils.Must(err)
 
 	_, err = toml.Decode(string(configtoml), &cfg)
-	utils.Check(err)
+	utils.Must(err)
 
 	cfg.ensureRequiredValues()
 	return cfg
