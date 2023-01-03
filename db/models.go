@@ -23,7 +23,7 @@ type File struct {
 	AccessToken string
 	FileUuid    string
 	Isencrypted bool
-	UploadDate  string
+	UploadDate  time.Time
 	LastSeen    time.Time
 	Viewcount   int32
 }

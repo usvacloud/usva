@@ -12,6 +12,6 @@ func FileSize(relativePath string) (int64, error) {
 
 func FileSizeGuarded(relativePath string) int64 {
 	fs, err := FileSize(relativePath)
-	Check(err)
+	Must(err)
 	return fs
 }

@@ -34,7 +34,7 @@ WHERE file_uuid = $1
 type FileInformationRow struct {
 	FileUuid    string
 	Title       sql.NullString
-	UploadDate  string
+	UploadDate  time.Time
 	Isencrypted bool
 	Viewcount   int32
 }
@@ -116,12 +116,10 @@ INSERT INTO file(
         uploader,
         passwdhash,
         access_token,
-        upload_date,
         isencrypted,
-        last_seen,
         viewcount
     )
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0)
+VALUES($1, $2, $3, $4, $5, $6, 0)
 `
 
 type NewFileParams struct {
@@ -130,9 +128,7 @@ type NewFileParams struct {
 	Uploader    sql.NullString
 	Passwdhash  sql.NullString
 	AccessToken string
-	UploadDate  string
 	Isencrypted bool
-	LastSeen    time.Time
 }
 
 func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
@@ -142,26 +138,19 @@ func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
 		arg.Uploader,
 		arg.Passwdhash,
 		arg.AccessToken,
-		arg.UploadDate,
 		arg.Isencrypted,
-		arg.LastSeen,
 	)
 	return err
 }
 
 const updateLastSeen = `-- name: UpdateLastSeen :exec
 UPDATE file
-SET last_seen = $2
+SET last_seen = CURRENT_TIMESTAMP
 WHERE file_uuid = $1
 `
 
-type UpdateLastSeenParams struct {
-	FileUuid string
-	LastSeen time.Time
-}
-
-func (q *Queries) UpdateLastSeen(ctx context.Context, arg UpdateLastSeenParams) error {
-	_, err := q.db.Exec(ctx, updateLastSeen, arg.FileUuid, arg.LastSeen)
+func (q *Queries) UpdateLastSeen(ctx context.Context, fileUuid string) error {
+	_, err := q.db.Exec(ctx, updateLastSeen, fileUuid)
 	return err
 }
 

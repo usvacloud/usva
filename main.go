@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/romeq/usva/api"
 	"github.com/romeq/usva/arguments"
 	"github.com/romeq/usva/config"
 	"github.com/romeq/usva/dbengine"
@@ -46,10 +47,7 @@ func setupEngine(cfg config.Config) *gin.Engine {
 		r.Use(requestLogger)
 	}
 
-	// setup primary middleware
-	setupRouteHandlers(r, &cfg)
-
-	utils.Check(r.SetTrustedProxies(cfg.Server.TrustedProxies))
+	utils.Must(r.SetTrustedProxies(cfg.Server.TrustedProxies))
 
 	return r
 }
@@ -60,7 +58,7 @@ func setLogWriter(file string) *os.File {
 	}
 
 	fhandle, err := os.OpenFile(file, os.O_WRONLY, 0644)
-	utils.Check(err)
+	utils.Must(err)
 
 	log.SetOutput(fhandle)
 	return fhandle
@@ -84,28 +82,38 @@ func main() {
 
 	// config file
 	cfgHandle, err := os.Open(args.ConfigFile)
-	utils.Check(err)
+	utils.Must(err)
 	cfg := config.ParseFromFile(cfgHandle)
 
 	// runtime options
 	opts := parseOpts(cfg, args)
-	odb := cfg.Database
 	dbengine.Init(dbengine.DbConfig{
-		Port:     uint16(odb.Port),
-		Host:     odb.Host,
-		Name:     odb.Database,
-		User:     odb.User,
-		Password: odb.Password,
+		Port:     uint16(cfg.Database.Port),
+		Host:     cfg.Database.Host,
+		Name:     cfg.Database.Database,
+		User:     cfg.Database.User,
+		Password: cfg.Database.Password,
 	})
 
 	log.Println("Starting server at", opts.getaddr())
 
 	// start server
 	r := setupEngine(cfg)
+	server := api.NewServer(r, dbengine.DB, &api.APIConfiguration{
+		MaxSingleUploadSize: cfg.Files.MaxSingleUploadSize,
+		MaxUploadSizePerDay: cfg.Files.MaxUploadSizePerDay,
+		UploadsDir:          cfg.Files.UploadsDir,
+		CookieSaveTime:      cfg.Files.AuthSaveTime,
+		UseSecureCookie:     cfg.Files.AuthUseSecureCookie,
+		ApiDomain:           cfg.Server.ApiDomain,
+	})
+
+	setupRouteHandlers(server, &cfg)
+
 	tlssettings := cfg.Server.TLS
 	if tlssettings.Enabled {
-		utils.Check(r.RunTLS(opts.getaddr(), tlssettings.CertFile, tlssettings.KeyFile))
+		utils.Must(r.RunTLS(opts.getaddr(), tlssettings.CertFile, tlssettings.KeyFile))
 	} else {
-		utils.Check(r.Run(opts.getaddr()))
+		utils.Must(r.Run(opts.getaddr()))
 	}
 }

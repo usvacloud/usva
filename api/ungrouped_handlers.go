@@ -11,13 +11,13 @@ var (
 	errEmptyResponse = errors.New("content was not found")
 )
 
-func RestrictionsHandler(ctx *gin.Context, cfg *APIConfiguration) {
+func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"maxSize": cfg.MaxSingleUploadSize,
+		"maxSize": s.api.MaxSingleUploadSize,
 	})
 }
 
-func NotFoundHandler(ctx *gin.Context) {
+func (s *Server) NotFoundHandler(ctx *gin.Context) {
 	ctx.AbortWithStatus(http.StatusNotFound)
 	ctx.File("public/404.html")
 }
