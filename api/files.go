@@ -126,7 +126,7 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 		Passwdhash:  sql.NullString{String: string(hash), Valid: string(hash) != ""},
 		Uploader:    sql.NullString{String: apiid, Valid: apiid != ""},
 		AccessToken: uuid.NewString(),
-		Isencrypted: len(pwd) > 0 && ctx.PostForm("didClientEncrypt") == "yes",
+		Isencrypted: ctx.PostForm("didClientEncrypt") == "yes",
 	})
 	if err != nil {
 		setErrResponse(ctx, err)
