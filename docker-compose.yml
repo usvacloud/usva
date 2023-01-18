@@ -6,8 +6,8 @@ services:
     restart: always
     environment:
       PGPORT: ${DB_PORT:-5432}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME:-dev}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev}
     volumes:
       - "./postgres-data:/var/lib/postgresql/data:rw"
 
@@ -18,8 +18,8 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT:-5432}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME:-dev}
+      DB_PASSWORD: ${DB_PASSWORD:-dev}
       DB_NAME: ${DB_NAME:-usva}
 
     ports:
@@ -30,4 +30,4 @@ services:
 
     volumes:
       - "./config.toml:/app/config.toml"
-      - "./uploads/:/app/uploads/" # replace custom upload directory from config here
+      - "./uploads/:/app/uploads/" 
