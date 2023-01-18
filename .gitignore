@@ -17,13 +17,5 @@
 
 # project directories
 uploads
-tmp
-db.db
-__debug*
-reset.sh
-usva
-config-local.toml
 config.toml
-
 postgres-data
-main
