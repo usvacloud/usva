@@ -6,7 +6,7 @@ WHERE file_uuid = $1;
 SELECT file_uuid,
     title,
     upload_date,
-    isencrypted,
+    encrypted,
     viewcount
 FROM file
 WHERE file_uuid = $1;
@@ -18,16 +18,27 @@ WHERE file_uuid = $1;
 UPDATE file
 SET last_seen = CURRENT_TIMESTAMP
 WHERE file_uuid = $1;
+-- name: GetEncryptedStatus :one
+SELECT encrypted FROM file
+WHERE file_uuid = $1;
+-- name: GetDownload :one
+UPDATE file
+SET 
+    last_seen = CURRENT_TIMESTAMP,
+    viewcount = viewcount + 1
+WHERE file_uuid = $1
+RETURNING encryption_iv;
+
 -- name: NewFile :exec
 INSERT INTO file(
-        file_uuid,
-        title,
-        uploader,
-        passwdhash,
-        access_token,
-        isencrypted,
-        viewcount
-    )
+    file_uuid,
+    title,
+    uploader,
+    passwdhash,
+    access_token,
+    encryption_iv,
+    viewcount
+)
 VALUES($1, $2, $3, $4, $5, $6, 0);
 -- name: DeleteFile :exec
 DELETE FROM file
