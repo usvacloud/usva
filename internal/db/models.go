@@ -16,16 +16,17 @@ type Feedback struct {
 }
 
 type File struct {
-	ID          int32
-	Title       sql.NullString
-	Passwdhash  sql.NullString
-	Uploader    sql.NullString
-	AccessToken string
-	FileUuid    string
-	Isencrypted bool
-	UploadDate  time.Time
-	LastSeen    time.Time
-	Viewcount   int32
+	ID           int32
+	Title        sql.NullString
+	Passwdhash   sql.NullString
+	Uploader     sql.NullString
+	AccessToken  string
+	FileUuid     string
+	Encrypted    bool
+	EncryptionIv []byte
+	UploadDate   time.Time
+	LastSeen     time.Time
+	Viewcount    int32
 }
 
 type Report struct {

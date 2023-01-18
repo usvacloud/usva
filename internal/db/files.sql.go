@@ -25,18 +25,18 @@ const fileInformation = `-- name: FileInformation :one
 SELECT file_uuid,
     title,
     upload_date,
-    isencrypted,
+    encrypted,
     viewcount
 FROM file
 WHERE file_uuid = $1
 `
 
 type FileInformationRow struct {
-	FileUuid    string
-	Title       sql.NullString
-	UploadDate  time.Time
-	Isencrypted bool
-	Viewcount   int32
+	FileUuid   string
+	Title      sql.NullString
+	UploadDate time.Time
+	Encrypted  bool
+	Viewcount  int32
 }
 
 func (q *Queries) FileInformation(ctx context.Context, fileUuid string) (FileInformationRow, error) {
@@ -46,7 +46,7 @@ func (q *Queries) FileInformation(ctx context.Context, fileUuid string) (FileInf
 		&i.FileUuid,
 		&i.Title,
 		&i.UploadDate,
-		&i.Isencrypted,
+		&i.Encrypted,
 		&i.Viewcount,
 	)
 	return i, err
@@ -63,6 +63,34 @@ func (q *Queries) GetAccessToken(ctx context.Context, fileUuid string) (string, 
 	var access_token string
 	err := row.Scan(&access_token)
 	return access_token, err
+}
+
+const getDownload = `-- name: GetDownload :one
+UPDATE file
+SET 
+    last_seen = CURRENT_TIMESTAMP,
+    viewcount = viewcount + 1
+WHERE file_uuid = $1
+RETURNING encryption_iv
+`
+
+func (q *Queries) GetDownload(ctx context.Context, fileUuid string) ([]byte, error) {
+	row := q.db.QueryRow(ctx, getDownload, fileUuid)
+	var encryption_iv []byte
+	err := row.Scan(&encryption_iv)
+	return encryption_iv, err
+}
+
+const getEncryptedStatus = `-- name: GetEncryptedStatus :one
+SELECT encrypted FROM file
+WHERE file_uuid = $1
+`
+
+func (q *Queries) GetEncryptedStatus(ctx context.Context, fileUuid string) (bool, error) {
+	row := q.db.QueryRow(ctx, getEncryptedStatus, fileUuid)
+	var encrypted bool
+	err := row.Scan(&encrypted)
+	return encrypted, err
 }
 
 const getLastSeenAll = `-- name: GetLastSeenAll :many
@@ -111,24 +139,24 @@ func (q *Queries) GetPasswordHash(ctx context.Context, fileUuid string) (sql.Nul
 
 const newFile = `-- name: NewFile :exec
 INSERT INTO file(
-        file_uuid,
-        title,
-        uploader,
-        passwdhash,
-        access_token,
-        isencrypted,
-        viewcount
-    )
+    file_uuid,
+    title,
+    uploader,
+    passwdhash,
+    access_token,
+    encryption_iv,
+    viewcount
+)
 VALUES($1, $2, $3, $4, $5, $6, 0)
 `
 
 type NewFileParams struct {
-	FileUuid    string
-	Title       sql.NullString
-	Uploader    sql.NullString
-	Passwdhash  sql.NullString
-	AccessToken string
-	Isencrypted bool
+	FileUuid     string
+	Title        sql.NullString
+	Uploader     sql.NullString
+	Passwdhash   sql.NullString
+	AccessToken  string
+	EncryptionIv []byte
 }
 
 func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
@@ -138,7 +166,7 @@ func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
 		arg.Uploader,
 		arg.Passwdhash,
 		arg.AccessToken,
-		arg.Isencrypted,
+		arg.EncryptionIv,
 	)
 	return err
 }

@@ -8,27 +8,12 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/api"
-	"github.com/romeq/usva/arguments"
-	"github.com/romeq/usva/config"
-	"github.com/romeq/usva/dbengine"
-	"github.com/romeq/usva/utils"
+	"github.com/romeq/usva/internal/api"
+	"github.com/romeq/usva/internal/arguments"
+	"github.com/romeq/usva/internal/config"
+	"github.com/romeq/usva/internal/dbengine"
+	"github.com/romeq/usva/internal/utils"
 )
-
-type Options config.Config
-
-func parseOpts(cfg *config.Config, args *arguments.Arguments) Options {
-	return Options{
-		Server: config.Server{
-			Address: utils.StringOr(args.Config.Server.Address, cfg.Server.Address),
-			Port:    utils.IntOr(args.Config.Server.Port, cfg.Server.Port),
-		},
-	}
-}
-
-func (o *Options) getaddr() string {
-	return fmt.Sprintf("%s:%d", o.Server.Address, o.Server.Port)
-}
 
 func setupEngine(cfg *config.Config) *gin.Engine {
 	if !cfg.Server.DebugMode {
@@ -36,7 +21,6 @@ func setupEngine(cfg *config.Config) *gin.Engine {
 	}
 	r := gin.New()
 
-	// setup other required middleware
 	r.Use(gin.Recovery())
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.Server.AllowedOrigins,
@@ -107,7 +91,7 @@ func main() {
 		CookieSaveTime:      cfg.Files.AuthSaveTime,
 		UseSecureCookie:     cfg.Files.AuthUseSecureCookie,
 		APIDomain:           cfg.Server.APIDomain,
-	})
+	}, cfg.Encryption.KeySize)
 
 	setupRouteHandlers(server, cfg)
 
@@ -117,4 +101,19 @@ func main() {
 	} else {
 		utils.Must(r.Run(opts.getaddr()))
 	}
+}
+
+type Options config.Config
+
+func parseOpts(cfg *config.Config, args *arguments.Arguments) Options {
+	return Options{
+		Server: config.Server{
+			Address: utils.StringOr(args.Config.Server.Address, cfg.Server.Address),
+			Port:    utils.IntOr(args.Config.Server.Port, cfg.Server.Port),
+		},
+	}
+}
+
+func (o *Options) getaddr() string {
+	return fmt.Sprintf("%s:%d", o.Server.Address, o.Server.Port)
 }

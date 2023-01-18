@@ -3,7 +3,7 @@ package arguments
 import (
 	"flag"
 
-	"github.com/romeq/usva/config"
+	"github.com/romeq/usva/internal/config"
 )
 
 type Arguments struct {

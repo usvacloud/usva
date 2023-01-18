@@ -5,16 +5,20 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/romeq/usva/db"
-	"github.com/romeq/usva/utils"
+	"github.com/romeq/usva/internal/api/middleware"
+	"github.com/romeq/usva/internal/cryptography"
+	"github.com/romeq/usva/internal/db"
+	"github.com/romeq/usva/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -42,7 +46,7 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 		return
 	}
 
-	apiid := ctx.Writer.Header().Get("Api-Identifier")
+	apiid := ctx.Writer.Header().Get(middleware.Headers.ApiIdentifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
 		FileUuid:    filename,
@@ -77,71 +81,86 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 }
 
 func (s *Server) UploadFile(ctx *gin.Context) {
-	f, err := ctx.FormFile("file")
+	formFile, err := ctx.FormFile("file")
 	if err != nil {
 		setErrResponse(ctx, err)
 		return
 	}
 
-	// generate name for the uploaded file
-	filename := uuid.NewString() + path.Ext(f.Filename)
+	filename := uuid.NewString() + path.Ext(formFile.Filename)
 
-	if s.api.MaxSingleUploadSize > 0 && uint64(f.Size) > s.api.MaxSingleUploadSize {
+	if s.api.MaxSingleUploadSize > 0 && uint64(formFile.Size) > s.api.MaxSingleUploadSize {
 		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
 			"error": "File is too big",
 		})
 		return
 	}
 
-	var hash []byte
-	pwd := strings.TrimSpace(ctx.PostForm("password"))
-	if len(pwd) > 0 {
-		if len(pwd) > 512 {
-			setErrResponse(ctx, errInvalidBody)
-			return
-		}
+	formpwd := strings.TrimSpace(ctx.PostForm("password"))
+	pwd, err := base64.RawStdEncoding.DecodeString(formpwd)
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+	password := strings.TrimSpace(string(pwd))
 
-		decodedkey, err := base64.RawStdEncoding.DecodeString(pwd)
+	formFileHandle, err := formFile.Open()
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	absUploads, err := filepath.Abs(s.api.UploadsDir)
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	file, err := os.OpenFile(path.Join(absUploads, filename), os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	iv := []byte{}
+	if len(password) >= 6 && len(password) < 128 {
+		encryptionKey, err := cryptography.DeriveBasicKey([]byte(password), s.encryptionKeySize)
 		if err != nil {
-			setErrResponse(ctx, errInvalidBody)
+			setErrResponse(ctx, err)
 			return
 		}
 
-		decodedkey = []byte(strings.TrimSpace(string(decodedkey)))
-		if len(decodedkey) > 0 {
-			hash, err = bcrypt.GenerateFromPassword(decodedkey, 12)
-			if err != nil {
-				setErrResponse(ctx, err)
-				return
-			}
+		iv, err = cryptography.EncryptStream(file, formFileHandle, encryptionKey)
+		if err != nil {
+			setErrResponse(ctx, err)
+			return
+		}
+
+	} else {
+		if _, err := io.Copy(file, formFileHandle); err != nil {
+			setErrResponse(ctx, err)
+			return
 		}
 	}
 
-	// Append file metadata into database
-	apiid := ctx.Writer.Header().Get("Api-Identifier")
+	hash, err := bcryptPasswordHash([]byte(password))
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	apiid := ctx.Writer.Header().Get(middleware.Headers.ApiIdentifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
-		FileUuid:    filename,
-		Title:       sql.NullString{String: title, Valid: title != ""},
-		Passwdhash:  sql.NullString{String: string(hash), Valid: string(hash) != ""},
-		Uploader:    sql.NullString{String: apiid, Valid: apiid != ""},
-		AccessToken: uuid.NewString(),
-		Isencrypted: ctx.PostForm("didClientEncrypt") == "yes",
+		FileUuid:   filename,
+		Title:      sql.NullString{String: title, Valid: title != ""},
+		Passwdhash: sql.NullString{String: string(hash), Valid: string(hash) != ""},
+		Uploader:   sql.NullString{String: apiid, Valid: apiid != ""},
+
+		EncryptionIv: iv,
+		AccessToken:  uuid.NewString(),
 	})
 	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
-
-	abspath, err := filepath.Abs(s.api.UploadsDir)
-	if err != nil {
-		setErrResponse(ctx, err)
-		return
-	}
-
-	err = ctx.SaveUploadedFile(f, path.Join(abspath, filename))
-	if err != nil {
-		_ = s.db.DeleteFile(ctx, filename)
 		setErrResponse(ctx, err)
 		return
 	}
@@ -195,34 +214,63 @@ func (s *Server) FileInformation(ctx *gin.Context) {
 		"uploadDate": f.UploadDate,
 		"viewCount":  f.Viewcount,
 		"locked":     pwd.Valid,
-		"encrypted":  f.Isencrypted,
+		"encrypted":  f.Encrypted,
 	})
 }
 
 func (s *Server) DownloadFile(ctx *gin.Context) {
 	filename, filenameGiven := ctx.GetQuery("filename")
 	if !filenameGiven {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "filename not given",
-		})
+		setErrResponse(ctx, errors.New("filename not given"))
 		return
 	}
 
+	// authorize request
 	if !s.authorizeRequest(ctx, filename) {
 		return
 	}
 
-	if err := s.db.UpdateLastSeen(ctx, filename); err != nil {
-		setErrResponse(ctx, err)
-	}
-
-	err := s.db.UpdateViewCount(ctx, filename)
+	filepath := path.Join(s.api.UploadsDir, filename)
+	fileHandle, err := os.Open(filepath)
 	if err != nil {
 		setErrResponse(ctx, err)
 		return
 	}
 
-	ctx.FileAttachment(path.Join(s.api.UploadsDir, filename), filename)
+	headerPassword, err := parseHeaderPassword(ctx)
+	if err != nil && err != errAuthMissing {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	encryptionIv, err := s.db.GetDownload(ctx, filename)
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	if len(encryptionIv) == 0 {
+		ctx.FileAttachment(filepath, path.Base(filepath))
+		return
+	} else if err == errAuthMissing {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	log.Println("served file with encryption")
+	ctx.Status(http.StatusOK)
+
+	derivedKey, err := cryptography.DeriveBasicKey([]byte(headerPassword), s.encryptionKeySize)
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
+
+	err = cryptography.DecryptStream(ctx.Writer, fileHandle, derivedKey, encryptionIv)
+	if err != nil {
+		setErrResponse(ctx, err)
+		return
+	}
 }
 
 func (s *Server) ReportFile(ctx *gin.Context) {
@@ -257,6 +305,16 @@ func (s *Server) ReportFile(ctx *gin.Context) {
 	})
 }
 
+func bcryptPasswordHash(pwd []byte) ([]byte, error) {
+	if len(pwd) > 512 {
+		return []byte{}, errInvalidBody
+	} else if len(pwd) == 0 {
+		return []byte{}, nil
+	}
+
+	return bcrypt.GenerateFromPassword(pwd, 12)
+}
+
 // Functions to help with most common tasks
 func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
 	pwdhash, err := s.db.GetPasswordHash(ctx, filename)
@@ -265,35 +323,36 @@ func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
 		return false
 	}
 
-	if pwdhash.Valid {
-		fileauthcookie := fmt.Sprintf("usva-auth-%s", filename)
-		authcookieValue, _ := ctx.Cookie(fileauthcookie)
-
-		at, err := s.db.GetAccessToken(ctx, filename)
-		if err != nil {
-			setErrResponse(ctx, errAuthFailed)
-			return false
-		}
-
-		if authcookieValue == at {
-			return true
-		}
-
-		pwd, err := parseHeaderPassword(ctx)
-		if err != nil {
-			setErrResponse(ctx, err)
-			return false
-		}
-
-		trimmedpwd := strings.TrimSpace(pwd)
-		err = bcrypt.CompareHashAndPassword([]byte(pwdhash.String), []byte(trimmedpwd))
-		if err != nil {
-			setErrResponse(ctx, err)
-			return false
-		}
-
-		ctx.SetCookie(fileauthcookie, at, s.api.CookieSaveTime, "/", CookieDomain, s.api.UseSecureCookie, true)
+	if !pwdhash.Valid {
+		return true
 	}
+
+	fileauthcookie := fmt.Sprintf("usva-auth-%s", filename)
+	authcookieValue, _ := ctx.Cookie(fileauthcookie)
+
+	at, err := s.db.GetAccessToken(ctx, filename)
+	if err != nil {
+		setErrResponse(ctx, errAuthFailed)
+		return false
+	}
+
+	if authcookieValue == at {
+		return true
+	}
+
+	pwd, err := parseHeaderPassword(ctx)
+	if err != nil {
+		setErrResponse(ctx, err)
+		return false
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(pwdhash.String), []byte(pwd))
+	if err != nil {
+		setErrResponse(ctx, err)
+		return false
+	}
+
+	ctx.SetCookie(fileauthcookie, at, s.api.CookieSaveTime, "/", CookieDomain, s.api.UseSecureCookie, true)
 
 	return true
 }
@@ -309,33 +368,5 @@ func parseHeaderPassword(ctx *gin.Context) (string, error) {
 		return "", err
 	}
 
-	return string(p), nil
-}
-
-// helper for providing standard error messages in return
-func setErrResponse(ctx *gin.Context, err error) {
-	if err == nil {
-		return
-	}
-
-	errorMessage, status := "request failed", http.StatusBadRequest
-
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		errorMessage, status = "file not found", http.StatusNotFound
-	case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
-		errorMessage, status = "password is invalid", http.StatusForbidden
-	case errors.Is(err, errInvalidBody):
-		errorMessage, status = err.Error(), http.StatusBadRequest
-	case errors.Is(err, errAuthMissing):
-		errorMessage, status = err.Error(), http.StatusUnauthorized
-	case errors.Is(err, errEmptyResponse):
-		errorMessage, status = err.Error(), http.StatusNoContent
-	default:
-		log.Println("error: ", err.Error())
-	}
-
-	ctx.AbortWithStatusJSON(status, gin.H{
-		"error": errorMessage,
-	})
+	return strings.TrimSpace(string(p)), nil
 }

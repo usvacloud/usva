@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/dbengine"
-	"github.com/romeq/usva/utils"
+	"github.com/romeq/usva/internal/dbengine"
+	"github.com/romeq/usva/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +37,7 @@ func prepareMultipartBody(t *testing.T, text string) (*gin.Context, *httptest.Re
 	return c, r
 }
 
-func Test_uploadFile(t *testing.T) {
+func TestUploadFile(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 
 	a, err := strconv.Atoi(os.Getenv("DB_PORT"))
@@ -94,12 +94,16 @@ func Test_uploadFile(t *testing.T) {
 		}{}
 
 		c, r := prepareMultipartBody(t, tt.payload.fileData)
+		path, err := os.MkdirTemp(os.TempDir(), "usva-tmp")
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		server := NewServer(nil, db, &Configuration{
 			UseSecureCookie:     false,
-			UploadsDir:          "../uploads",
+			UploadsDir:          path,
 			MaxSingleUploadSize: uint64(tt.payload.maxSize),
-		})
+		}, 16)
 		server.UploadFile(c)
 
 		// make sure the test ran correctly

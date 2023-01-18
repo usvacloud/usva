@@ -3,17 +3,22 @@ package config
 import (
 	"log"
 
-	"github.com/romeq/usva/utils"
+	"github.com/romeq/usva/internal/utils"
 )
 
 func (c *Config) ensureRequiredValues() {
-	ensureVal("server address", c.Server.Address)
-	ensureVal("server port", c.Server.Port)
-	ensureVal("file upload directory", c.Files.UploadsDir)
-	ensureList("allowed origins", c.Server.AllowedOrigins)
+	ensureVal("server: address", c.Server.Address)
+	ensureVal("server: port", c.Server.Port)
+	ensureList("server: allowed origins", c.Server.AllowedOrigins)
 	if c.Server.TLS.Enabled {
-		ensureVal("tls: certificate file", c.Server.TLS.CertFile)
-		ensureVal("tls: key file", c.Server.TLS.KeyFile)
+		ensureVal("server: tls: certificate file", c.Server.TLS.CertFile)
+		ensureVal("server: tls: key file", c.Server.TLS.KeyFile)
+	}
+
+	ensureVal("files: upload directory", c.Files.UploadsDir)
+
+	if c.Encryption.KeySize != 16 && c.Encryption.KeySize != 32 && c.Encryption.KeySize != 24 {
+		log.Fatalf("encryption: key size is invalid (%d is not 16, 24 or 32).", c.Encryption.KeySize)
 	}
 
 	c.Database.Host = utils.StringOr(c.Database.Host, "127.0.0.1")

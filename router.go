@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/romeq/jobscheduler"
-	"github.com/romeq/usva/api"
-	"github.com/romeq/usva/api/middleware"
-	"github.com/romeq/usva/config"
+	"github.com/romeq/usva/internal/api"
+	"github.com/romeq/usva/internal/api/middleware"
+	"github.com/romeq/usva/internal/config"
 )
 
 func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {
@@ -43,7 +43,7 @@ func setupRouteHandlers(server *api.Server, cfg *config.Config) {
 
 	// Middleware/general stuff
 	router := server.GetRouter()
-	router.Use(middleware.IdentifierHeader)
+	router.Use(middleware.SetIdentifierHeader)
 	router.NoRoute(server.NotFoundHandler)
 	router.GET("/restrictions", server.RestrictionsHandler)
 	router.POST("/", strict, uploadRestrictor, server.UploadFileSimple)

@@ -36,7 +36,7 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 			name: "valid user",
 			client: Client{
 				Identifier: "test-identifier-valid",
-				Uploads:    nil,
+				uploads:    nil,
 			},
 			args: args{
 				allowedData: 32,
@@ -48,12 +48,11 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 			name: "invalid user",
 			client: Client{
 				Identifier:  "test-identifier-invalid",
-				handler:     &RequestHandler{},
-				LastRequest: time.Now().Add(-time.Minute),
-				Uploads: &[](*ClientUpload){
+				lastRequest: time.Now().Add(-time.Minute),
+				uploads: []clientUpload{
 					{
-						Size: 32,
-						Time: time.Now().Add(-time.Minute),
+						size:      32,
+						timestamp: time.Now().Add(-time.Minute),
 					},
 				},
 			},
@@ -68,7 +67,7 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			limiterBase := Ratelimiter{
-				Clients: &[](*Client){&tt.client},
+				clients: []Client{tt.client},
 			}
 
 			res := httptest.NewRecorder()
@@ -80,12 +79,12 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 			})
 
 			req := httptest.NewRequest("POST", "/", strings.NewReader(fakerInstance.App().Name()))
-			req.Header.Set("Api-Identifier", tt.client.Identifier)
+			req.Header.Set(Headers.ApiIdentifier, tt.client.Identifier)
 			r.ServeHTTP(res, req)
 
 			assert.Equal(t, tt.want, res.Result().StatusCode, tt.name)
 			if tt.wantHeader {
-				assert.NotEmpty(t, res.Header().Get("Usva-AllowedUploadBytes"), tt.name)
+				assert.NotEmpty(t, res.Header().Get(Headers.AllowedUploadBytes), tt.name)
 			}
 		})
 	}
@@ -134,12 +133,12 @@ func TestRequestHandler_UseToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hand := &RequestHandler{
+			hand := &requestHandler{
 				nextReset:     tt.fields.nextReset,
 				tokens:        tt.fields.tokens,
 				maximumTokens: tt.fields.maximumTokens,
 			}
-			if got := hand.UseToken(tt.args.count); got != tt.want {
+			if got := hand.useToken(tt.args.count); got != tt.want {
 				t.Errorf("RequestHandler.UseToken() = %v, want %v", got, tt.want)
 			}
 		})
@@ -190,7 +189,6 @@ func TestRatelimiter_RestrictRequests(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			limiterBase := NewRatelimiter()
-
 			limiter := limiterBase.RestrictRequests(tt.fields.allowedRequests, time.Hour)
 
 			responseWriter := httptest.NewRecorder()
@@ -198,15 +196,15 @@ func TestRatelimiter_RestrictRequests(t *testing.T) {
 			r.GET("/", limiter)
 
 			var res *httptest.ResponseRecorder
-			for iter := int16(0); uint(iter) < tt.fields.testRequestCount; iter++ {
+			for iter := uint(0); iter < tt.fields.testRequestCount; iter++ {
 				req := httptest.NewRequest("GET", "/", strings.NewReader("hello"))
-				req.Header.Set("Api-Identifier", "api-identifier")
+				req.Header.Set(Headers.ApiIdentifier, "api-identifier")
 
 				res = httptest.NewRecorder()
 				r.Handler().ServeHTTP(res, req)
 			}
-			statusgot := res.Code
-			assert.Equal(t, tt.want, statusgot)
+
+			assert.Equal(t, tt.want, res.Code)
 		})
 	}
 }

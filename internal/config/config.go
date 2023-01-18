@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/romeq/usva/api"
-	"github.com/romeq/usva/utils"
+	"github.com/romeq/usva/internal/api"
+	"github.com/romeq/usva/internal/utils"
 )
 
 // ratelimitRestriction includes properties used specifically to configure
@@ -38,6 +38,10 @@ type Server struct {
 	}
 }
 
+type Encryption struct {
+	KeySize uint32
+}
+
 type Files struct {
 	MaxSingleUploadSize        uint64
 	MaxUploadSizePerDay        uint64
@@ -50,10 +54,11 @@ type Files struct {
 }
 
 type Config struct {
-	Server    Server
-	Files     Files
-	Ratelimit Ratelimit
-	Database  struct {
+	Server     Server
+	Files      Files
+	Ratelimit  Ratelimit
+	Encryption Encryption
+	Database   struct {
 		User     string
 		Password string
 		Host     string
