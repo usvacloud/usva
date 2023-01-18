@@ -121,8 +121,10 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 
 	var (
 		iv              = []byte{}
-		requirementsMet = len(password) >= 6 && len(password) < 128
-		confirmation    = ctx.PostForm("can_encrypt") == "yes"
+		requirementsMet = len(password) >= 6 &&
+			len(password) < 128 &&
+			formFile.Size < int64(s.api.MaxEncryptableFileSize)
+		confirmation = ctx.PostForm("can_encrypt") == "yes"
 	)
 	if requirementsMet && confirmation {
 		encryptionKey, err := cryptography.DeriveBasicKey([]byte(password), s.encryptionKeySize)
@@ -137,6 +139,9 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 			return
 		}
 
+	} else if !requirementsMet && confirmation {
+		setErrResponse(ctx, errInvalidBody)
+		return
 	} else {
 		if _, err := io.Copy(file, formFileHandle); err != nil {
 			setErrResponse(ctx, err)

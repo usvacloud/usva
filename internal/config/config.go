@@ -43,6 +43,7 @@ type Encryption struct {
 }
 
 type Files struct {
+	MaxEncryptableFileSize     uint64
 	MaxSingleUploadSize        uint64
 	MaxUploadSizePerDay        uint64
 	UploadsDir                 string

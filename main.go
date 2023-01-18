@@ -85,12 +85,13 @@ func main() {
 	// start server
 	r := setupEngine(cfg)
 	server := api.NewServer(r, queries, &api.Configuration{
-		MaxSingleUploadSize: cfg.Files.MaxSingleUploadSize,
-		MaxUploadSizePerDay: cfg.Files.MaxUploadSizePerDay,
-		UploadsDir:          cfg.Files.UploadsDir,
-		CookieSaveTime:      cfg.Files.AuthSaveTime,
-		UseSecureCookie:     cfg.Files.AuthUseSecureCookie,
-		APIDomain:           cfg.Server.APIDomain,
+		MaxEncryptableFileSize: cfg.Files.MaxEncryptableFileSize,
+		MaxSingleUploadSize:    cfg.Files.MaxSingleUploadSize,
+		MaxUploadSizePerDay:    cfg.Files.MaxUploadSizePerDay,
+		UploadsDir:             cfg.Files.UploadsDir,
+		CookieSaveTime:         cfg.Files.AuthSaveTime,
+		UseSecureCookie:        cfg.Files.AuthUseSecureCookie,
+		APIDomain:              cfg.Server.APIDomain,
 	}, cfg.Encryption.KeySize)
 
 	setupRouteHandlers(server, cfg)

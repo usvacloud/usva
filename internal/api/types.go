@@ -14,10 +14,11 @@ type Ratelimits struct {
 }
 
 type Configuration struct {
-	MaxSingleUploadSize uint64
-	MaxUploadSizePerDay uint64
-	UploadsDir          string
-	CookieSaveTime      int
-	UseSecureCookie     bool
-	APIDomain           string
+	MaxEncryptableFileSize uint64
+	MaxSingleUploadSize    uint64
+	MaxUploadSizePerDay    uint64
+	UploadsDir             string
+	CookieSaveTime         int
+	UseSecureCookie        bool
+	APIDomain              string
 }
