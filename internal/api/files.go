@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -90,9 +89,7 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 	filename := uuid.NewString() + path.Ext(formFile.Filename)
 
 	if s.api.MaxSingleUploadSize > 0 && uint64(formFile.Size) > s.api.MaxSingleUploadSize {
-		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
-			"error": "File is too big",
-		})
+		setErrResponse(ctx, errInvalidBody)
 		return
 	}
 
@@ -122,8 +119,12 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	iv := []byte{}
-	if len(password) >= 6 && len(password) < 128 {
+	var (
+		iv              = []byte{}
+		requirementsMet = len(password) >= 6 && len(password) < 128
+		confirmation    = ctx.PostForm("can_encrypt") == "yes"
+	)
+	if requirementsMet && confirmation {
 		encryptionKey, err := cryptography.DeriveBasicKey([]byte(password), s.encryptionKeySize)
 		if err != nil {
 			setErrResponse(ctx, err)
@@ -152,11 +153,10 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 	apiid := ctx.Writer.Header().Get(middleware.Headers.Identifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
-		FileUuid:   filename,
-		Title:      sql.NullString{String: title, Valid: title != ""},
-		Passwdhash: sql.NullString{String: string(hash), Valid: string(hash) != ""},
-		Uploader:   sql.NullString{String: apiid, Valid: apiid != ""},
-
+		FileUuid:     filename,
+		Title:        sql.NullString{String: title, Valid: title != ""},
+		Passwdhash:   sql.NullString{String: string(hash), Valid: string(hash) != ""},
+		Uploader:     sql.NullString{String: apiid, Valid: apiid != ""},
 		EncryptionIv: iv,
 		AccessToken:  uuid.NewString(),
 	})
@@ -257,7 +257,6 @@ func (s *Server) DownloadFile(ctx *gin.Context) {
 		return
 	}
 
-	log.Println("served file with encryption")
 	ctx.Status(http.StatusOK)
 
 	derivedKey, err := cryptography.DeriveBasicKey([]byte(headerPassword), s.encryptionKeySize)
