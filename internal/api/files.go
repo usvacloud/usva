@@ -76,7 +76,7 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 		protocol = "https"
 	}
 
-	ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file?filename=%s", protocol, CookieDomain, filename))
+	ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file/?filename=%s", protocol, CookieDomain, filename))
 }
 
 func (s *Server) UploadFile(ctx *gin.Context) {
@@ -126,7 +126,9 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 			formFile.Size < int64(s.api.MaxEncryptableFileSize)
 		confirmation = ctx.PostForm("can_encrypt") == "yes"
 	)
-	if requirementsMet && confirmation {
+
+	switch {
+	case requirementsMet && confirmation:
 		encryptionKey, err := cryptography.DeriveBasicKey([]byte(password), s.encryptionKeySize)
 		if err != nil {
 			setErrResponse(ctx, err)
@@ -139,10 +141,11 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 			return
 		}
 
-	} else if !requirementsMet && confirmation {
+	case !requirementsMet && confirmation:
 		setErrResponse(ctx, errInvalidBody)
 		return
-	} else {
+
+	default:
 		if _, err := io.Copy(file, formFileHandle); err != nil {
 			setErrResponse(ctx, err)
 			return
