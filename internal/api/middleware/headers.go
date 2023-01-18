@@ -8,19 +8,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ApiHeaders struct {
-	ApiIdentifier      string
-	AllowedUploadBytes string
+type APIHeaders struct {
+	Identifier   string
+	AllowedBytes string
 }
 
-var Headers = ApiHeaders{
-	ApiIdentifier:      "x-usva-api-identifier",
-	AllowedUploadBytes: "x-usva-allowed-bytes",
+var Headers = APIHeaders{
+	Identifier:   "x-usva-api-identifier",
+	AllowedBytes: "x-usva-allowed-bytes",
 }
 
 func SetIdentifierHeader(ctx *gin.Context) {
 	clientIdentifier := hex.EncodeToString(sha256.New().Sum([]byte(ctx.ClientIP())))
-	ctx.Header(Headers.ApiIdentifier, clientIdentifier)
+	ctx.Header(Headers.Identifier, clientIdentifier)
 	ctx.Next()
 }
 

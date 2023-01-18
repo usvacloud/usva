@@ -79,12 +79,12 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 			})
 
 			req := httptest.NewRequest("POST", "/", strings.NewReader(fakerInstance.App().Name()))
-			req.Header.Set(Headers.ApiIdentifier, tt.client.Identifier)
+			req.Header.Set(Headers.Identifier, tt.client.Identifier)
 			r.ServeHTTP(res, req)
 
 			assert.Equal(t, tt.want, res.Result().StatusCode, tt.name)
 			if tt.wantHeader {
-				assert.NotEmpty(t, res.Header().Get(Headers.AllowedUploadBytes), tt.name)
+				assert.NotEmpty(t, res.Header().Get(Headers.AllowedBytes), tt.name)
 			}
 		})
 	}
@@ -198,7 +198,7 @@ func TestRatelimiter_RestrictRequests(t *testing.T) {
 			var res *httptest.ResponseRecorder
 			for iter := uint(0); iter < tt.fields.testRequestCount; iter++ {
 				req := httptest.NewRequest("GET", "/", strings.NewReader("hello"))
-				req.Header.Set(Headers.ApiIdentifier, "api-identifier")
+				req.Header.Set(Headers.Identifier, "api-identifier")
 
 				res = httptest.NewRecorder()
 				r.Handler().ServeHTTP(res, req)

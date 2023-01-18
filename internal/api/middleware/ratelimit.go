@@ -116,7 +116,7 @@ func (r *Ratelimiter) RestrictRequests(count int16, per time.Duration) gin.Handl
 		}
 	}
 	return func(ctx *gin.Context) {
-		identifier := ctx.Request.Header.Get(Headers.ApiIdentifier)
+		identifier := ctx.Request.Header.Get(Headers.Identifier)
 
 		client := r.newClient(identifier, newHandler(count, per))
 
@@ -149,7 +149,7 @@ func (r *Ratelimiter) RestrictUploads(
 		}
 	}
 	return func(ctx *gin.Context) {
-		identifier := ctx.Request.Header.Get(Headers.ApiIdentifier)
+		identifier := ctx.Request.Header.Get(Headers.Identifier)
 		client := r.newClient(identifier, nil)
 		client.lastRequest = time.Now()
 
@@ -168,6 +168,6 @@ func (r *Ratelimiter) RestrictUploads(
 			return
 		}
 
-		ctx.Header(Headers.AllowedUploadBytes, fmt.Sprint(allowedData-totalUploaded))
+		ctx.Header(Headers.AllowedBytes, fmt.Sprint(allowedData-totalUploaded))
 	}
 }

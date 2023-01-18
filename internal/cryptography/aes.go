@@ -46,7 +46,7 @@ func cryptLoop(
 	for {
 		plaintextChunk := make([]byte, aes.BlockSize)
 		n, err := src.Read(plaintextChunk)
-		if err == io.EOF || n == 0 {
+		if errors.Is(err, io.EOF) || n == 0 {
 			break
 		} else if err != nil {
 			return err

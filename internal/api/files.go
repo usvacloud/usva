@@ -46,7 +46,7 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 		return
 	}
 
-	apiid := ctx.Writer.Header().Get(middleware.Headers.ApiIdentifier)
+	apiid := ctx.Writer.Header().Get(middleware.Headers.Identifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
 		FileUuid:    filename,
@@ -149,7 +149,7 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	apiid := ctx.Writer.Header().Get(middleware.Headers.ApiIdentifier)
+	apiid := ctx.Writer.Header().Get(middleware.Headers.Identifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
 		FileUuid:   filename,
@@ -238,7 +238,7 @@ func (s *Server) DownloadFile(ctx *gin.Context) {
 	}
 
 	headerPassword, err := parseHeaderPassword(ctx)
-	if err != nil && err != errAuthMissing {
+	if err != nil && !errors.Is(err, errAuthMissing) {
 		setErrResponse(ctx, err)
 		return
 	}
@@ -252,7 +252,7 @@ func (s *Server) DownloadFile(ctx *gin.Context) {
 	if len(encryptionIv) == 0 {
 		ctx.FileAttachment(filepath, path.Base(filepath))
 		return
-	} else if err == errAuthMissing {
+	} else if errors.Is(err, errAuthMissing) {
 		setErrResponse(ctx, err)
 		return
 	}
