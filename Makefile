@@ -3,6 +3,7 @@ GO			= go
 GOPATH 		= $(shell go env GOPATH)
 BINARY		= usva
 CGO_ENABLED ?= 0
+BUILDDIR ?= ./bin
 
 DB_NAME ?= usva
 DB_USERNAME ?= dev
@@ -18,10 +19,11 @@ START_TEST_DOCKER ?= 1
 setup-and-build: setup build
 
 build:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BINARY)
+	@-mkdir $(BUILDDIR)
+	@-CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) cmd/server
 
 setup: clean
-	go get -u
+	go get -u cmd/server
 	cp config-example.toml config.toml
 
 migrateup:
@@ -34,6 +36,11 @@ migratedown:
 		-d "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
 		-f ./sqlc/dbdown.sql
 
+migratedown-tests:
+	psql \
+		-d "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable" \
+		-f ./sqlc/dbdown.sql
+
 migrateup-tests:
 	cat ./sqlc/schemas/* | psql \
 		-d "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable" \
@@ -44,7 +51,7 @@ db-create:
 		-q -c "CREATE DATABASE $(DB_NAME) OWNER postgres ENCODING UTF8;"
 
 run:
-	./$(BINARY) -c ./config.toml
+	$(BUILDDIR)/$(BINARY) -c ./config.toml
 
 run-docker:
 	docker-compose run --service-ports --rm -d server
