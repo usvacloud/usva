@@ -15,19 +15,24 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/internal/dbengine"
 	"github.com/romeq/usva/internal/utils"
-	"github.com/stretchr/testify/assert"
 )
+
+func ensureError(t *testing.T, err error) {
+	if err != nil {
+		t.Fatal(err)
+	}
+}
 
 func prepareMultipartBody(t *testing.T, text string) (*gin.Context, *httptest.ResponseRecorder) {
 	requestBody := new(bytes.Buffer)
 	mw := multipart.NewWriter(requestBody)
+	defer mw.Close()
 
 	bodyFile, err := mw.CreateFormFile("file", text)
-	if assert.NoError(t, err) {
-		_, err = bodyFile.Write([]byte("test"))
-		assert.NoError(t, err)
-	}
-	mw.Close()
+	ensureError(t, err)
+
+	_, err = bodyFile.Write([]byte("test"))
+	ensureError(t, err)
 
 	r := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(r)
@@ -39,6 +44,11 @@ func prepareMultipartBody(t *testing.T, text string) (*gin.Context, *httptest.Re
 
 func TestUploadFile(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
+
+	uploadsPath, err := os.MkdirTemp(os.TempDir(), "usva-tmp")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	a, err := strconv.Atoi(os.Getenv("DB_PORT"))
 	if err != nil {
@@ -94,20 +104,17 @@ func TestUploadFile(t *testing.T) {
 		}{}
 
 		c, r := prepareMultipartBody(t, tt.payload.fileData)
-		path, err := os.MkdirTemp(os.TempDir(), "usva-tmp")
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		server := NewServer(nil, db, &Configuration{
 			UseSecureCookie:     false,
-			UploadsDir:          path,
+			UploadsDir:          uploadsPath,
 			MaxSingleUploadSize: uint64(tt.payload.maxSize),
 		}, 16)
 		server.UploadFile(c)
 
-		// make sure the test ran correctly
-		assert.EqualValues(t, tt.expectedCode, r.Code)
+		if tt.expectedCode != r.Code {
+			t.Fatalf("expected %d got %d", tt.expectedCode, r.Code)
+		}
 
 		if tt.verifyResponseJSON {
 			e := json.Unmarshal(r.Body.Bytes(), &responseStruct)

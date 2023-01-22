@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jaswdr/faker"
-	"github.com/stretchr/testify/assert"
 )
 
 var fakerInstance = faker.New()
@@ -82,9 +81,11 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 			req.Header.Set(Headers.Identifier, tt.client.Identifier)
 			r.ServeHTTP(res, req)
 
-			assert.Equal(t, tt.want, res.Result().StatusCode, tt.name)
-			if tt.wantHeader {
-				assert.NotEmpty(t, res.Header().Get(Headers.AllowedBytes), tt.name)
+			if tt.want != res.Result().StatusCode {
+				t.Fatal()
+			}
+			if tt.wantHeader && res.Header().Get(Headers.AllowedBytes) == "" {
+				t.Fatalf("%s header is empty", Headers.AllowedBytes)
 			}
 		})
 	}
@@ -204,7 +205,9 @@ func TestRatelimiter_RestrictRequests(t *testing.T) {
 				r.Handler().ServeHTTP(res, req)
 			}
 
-			assert.Equal(t, tt.want, res.Code)
+			if tt.want != res.Code {
+				t.Fatalf("want %d got %d", tt.want, res.Code)
+			}
 		})
 	}
 }
