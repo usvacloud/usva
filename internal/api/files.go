@@ -76,9 +76,10 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 		protocol = "https"
 	}
 
-	ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file/?filename=%s", protocol, CookieDomain, filename))
+	ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file/?filename=%s", protocol, s.api.APIDomain, filename))
 }
 
+// UploadFile
 func (s *Server) UploadFile(ctx *gin.Context) {
 	formFile, err := ctx.FormFile("file")
 	if err != nil {

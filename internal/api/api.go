@@ -5,8 +5,6 @@ import (
 	"github.com/romeq/usva/internal/db"
 )
 
-var CookieDomain string
-
 type Server struct {
 	engine            *gin.Engine
 	db                *db.Queries
