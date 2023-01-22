@@ -261,7 +261,7 @@ func (s *Server) DownloadFile(ctx *gin.Context) {
 		ctx.FileAttachment(filepath, path.Base(filepath))
 		return
 	} else if errors.Is(err, errAuthMissing) {
-		setErrResponse(ctx, err)
+		setErrResponse(ctx, errAuthMissing)
 		return
 	}
 
