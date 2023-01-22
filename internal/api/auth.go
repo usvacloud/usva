@@ -68,12 +68,12 @@ func parseHeaderPassword(ctx *gin.Context) (string, error) {
 func bcryptPasswordHash(pwd []byte) ([]byte, error) {
 	pwdlen := len(pwd)
 	switch {
+	case pwdlen == 0:
+		return []byte{}, nil
 	case pwdlen > 512:
 		return []byte{}, errInvalidBody
 	case pwdlen < 6:
 		return []byte{}, errInvalidBody
-	case pwdlen == 0:
-		return []byte{}, nil
 	default:
 		return bcrypt.GenerateFromPassword(pwd, 12)
 	}

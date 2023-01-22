@@ -91,7 +91,7 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 	filename := uuid.NewString() + path.Ext(formFile.Filename)
 
 	if s.api.MaxSingleUploadSize > 0 && uint64(formFile.Size) > s.api.MaxSingleUploadSize {
-		setErrResponse(ctx, errInvalidBody)
+		setErrResponse(ctx, errTooBigBody)
 		return
 	}
 

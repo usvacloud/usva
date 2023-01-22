@@ -14,6 +14,7 @@ import (
 var (
 	errNotFound      = errors.New("resource not found")
 	errEmptyResponse = errNotFound
+	errTooBigBody    = errors.New("body too big")
 )
 
 func (s *Server) RestrictionsHandler(ctx *gin.Context) {
@@ -41,6 +42,8 @@ func setErrResponse(ctx *gin.Context, err error) {
 		errorMessage, status = "password is invalid", http.StatusForbidden
 	case errors.Is(err, cryptography.ErrPasswordTooShort):
 		errorMessage, status = err.Error(), http.StatusBadRequest
+	case errors.Is(err, errTooBigBody):
+		errorMessage, status = err.Error(), http.StatusRequestEntityTooLarge
 	case errors.Is(err, cryptography.ErrPasswordTooLong):
 		errorMessage, status = err.Error(), http.StatusBadRequest
 	case errors.Is(err, errInvalidBody):

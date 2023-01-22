@@ -28,10 +28,10 @@ func prepareMultipartBody(t *testing.T, text string) (*gin.Context, *httptest.Re
 	mw := multipart.NewWriter(requestBody)
 	defer mw.Close()
 
-	bodyFile, err := mw.CreateFormFile("file", text)
+	bodyFile, err := mw.CreateFormFile("file", "file.txt")
 	ensureError(t, err)
 
-	_, err = bodyFile.Write([]byte("test"))
+	_, err = bodyFile.Write([]byte(text))
 	ensureError(t, err)
 
 	r := httptest.NewRecorder()
@@ -76,7 +76,7 @@ func TestUploadFile(t *testing.T) {
 		verifyResponseJSON bool
 	}{
 		{
-			name: "test1",
+			name: "test-ok",
 			payload: payload{
 				fileData: "hello",
 				maxSize:  8,
@@ -86,7 +86,7 @@ func TestUploadFile(t *testing.T) {
 			verifyResponseJSON: true,
 		},
 		{
-			name: "test2",
+			name: "test-not-ok",
 			payload: payload{
 				fileData: "hello",
 				maxSize:  2,
