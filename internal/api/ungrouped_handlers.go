@@ -18,7 +18,9 @@ var (
 
 func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"maxSize": s.api.MaxSingleUploadSize,
+		"maxFileSize":          s.api.MaxSingleUploadSize,
+		"bytesPerDay":          s.api.MaxUploadSizePerDay,
+		"maxEncryptedFileSize": s.api.MaxEncryptableFileSize,
 	})
 }
 
