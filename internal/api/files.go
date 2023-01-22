@@ -26,6 +26,8 @@ var (
 	errInvalidBody = errors.New("invalid request body")
 )
 
+// UploadFileSimple is a simple wrapper around ctx.SaveUploadedFile to support
+// an upload with a very very simple curl request (curl -Ld = )
 func (s *Server) UploadFileSimple(ctx *gin.Context) {
 	// retrieve file from request
 	f, err := ctx.FormFile("file")
