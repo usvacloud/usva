@@ -18,7 +18,6 @@ import (
 	"github.com/romeq/usva/internal/cryptography"
 	"github.com/romeq/usva/internal/db"
 	"github.com/romeq/usva/internal/utils"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -311,70 +310,4 @@ func (s *Server) ReportFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "thank you! your report has been sent.",
 	})
-}
-
-func bcryptPasswordHash(pwd []byte) ([]byte, error) {
-	if len(pwd) > 512 {
-		return []byte{}, errInvalidBody
-	} else if len(pwd) == 0 {
-		return []byte{}, nil
-	}
-
-	return bcrypt.GenerateFromPassword(pwd, 12)
-}
-
-// Functions to help with most common tasks
-func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
-	pwdhash, err := s.db.GetPasswordHash(ctx, filename)
-	if err != nil {
-		setErrResponse(ctx, err)
-		return false
-	}
-
-	if !pwdhash.Valid {
-		return true
-	}
-
-	fileauthcookie := fmt.Sprintf("usva-auth-%s", filename)
-	authcookieValue, _ := ctx.Cookie(fileauthcookie)
-
-	at, err := s.db.GetAccessToken(ctx, filename)
-	if err != nil {
-		setErrResponse(ctx, errAuthFailed)
-		return false
-	}
-
-	if authcookieValue == at {
-		return true
-	}
-
-	pwd, err := parseHeaderPassword(ctx)
-	if err != nil {
-		setErrResponse(ctx, err)
-		return false
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(pwdhash.String), []byte(pwd))
-	if err != nil {
-		setErrResponse(ctx, err)
-		return false
-	}
-
-	ctx.SetCookie(fileauthcookie, at, s.api.CookieSaveTime, "/", CookieDomain, s.api.UseSecureCookie, true)
-
-	return true
-}
-
-func parseHeaderPassword(ctx *gin.Context) (string, error) {
-	authheader := strings.Split(ctx.Request.Header.Get("Authorization"), " ")
-	if len(authheader) < 2 {
-		return "", errAuthMissing
-	}
-
-	p, err := base64.RawStdEncoding.DecodeString(authheader[1])
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(string(p)), nil
 }
