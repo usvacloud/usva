@@ -9,7 +9,7 @@ COPY . .
 
 EXPOSE 8080
 
-RUN apt update && apt install -y postgresql 
+RUN apk update && apk add postgresql-client make
 RUN make setup build
 
 CMD ["make", "migrateup", "run"]

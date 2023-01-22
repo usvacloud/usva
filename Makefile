@@ -23,7 +23,7 @@ build:
 	@-CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) cmd/server
 
 setup: clean
-	go get -u cmd/server
+	go get -u
 	cp config-example.toml config.toml
 
 migrateup:
