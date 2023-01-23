@@ -19,9 +19,14 @@ var (
 
 func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"maxFileSize":          s.api.MaxSingleUploadSize,
+		"sizeLimit":            s.api.MaxSingleUploadSize,
 		"bytesPerDay":          s.api.MaxUploadSizePerDay,
 		"maxEncryptedFileSize": s.api.MaxEncryptableFileSize,
+		"filePersistDuration": gin.H{
+			"seconds": s.api.FilePersistDuration.Seconds(),
+			"hours":   s.api.FilePersistDuration.Hours(),
+			"days":    s.api.FilePersistDuration.Hours() / 24,
+		},
 	})
 }
 

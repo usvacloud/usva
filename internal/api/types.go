@@ -21,4 +21,5 @@ type Configuration struct {
 	CookieSaveTime         int
 	UseSecureCookie        bool
 	APIDomain              string
+	FilePersistDuration    time.Duration
 }
