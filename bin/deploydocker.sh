@@ -19,6 +19,6 @@ _reinitialize() {
     docker compose up -d
 }
 
-_pull()
-_reinitialize()
+_pull
+_reinitialize
 
