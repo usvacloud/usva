@@ -7,6 +7,7 @@ BUILDDIR ?= ./bin
 
 DB_NAME ?= usva
 DB_USERNAME ?= dev
+DB_PASSWORD ?= dev
 DB_HOST ?= 127.0.0.1
 DB_PORT ?= 5432
 DB_NAME_TESTS	?= usva_tests
@@ -20,13 +21,13 @@ setup-and-build: setup build
 
 build:
 	@-mkdir $(BUILDDIR)
-	@-CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) cmd/server
+	@-CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) .
 
 setup: clean
 	go get -u
 	cp config-example.toml config.toml
 
-migrateup:
+migrateup: db-create
 	cat ./sqlc/schemas/* | psql \
 		-d "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
 		-f -
@@ -48,7 +49,7 @@ migrateup-tests:
 
 db-create:
 	 psql "postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/" \
-		-q -c "CREATE DATABASE $(DB_NAME) OWNER postgres ENCODING UTF8;"
+		-q -c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USERNAME) ENCODING UTF8;"
 
 run:
 	$(BUILDDIR)/$(BINARY) -c ./config.toml
@@ -67,7 +68,7 @@ test:
 preparetests:
 	- mkdir test-uploads postgres-tests
 	- [ "${START_TEST_DOCKER}" = "1" ] \
-		&& docker-compose -f docker-compose-dev.yml up -d --remove-orphans \
+		&& docker-compose -f docker-compose-tests.yml up -d --remove-orphans \
 		&& sleep 3
 	make migrateup-tests
 
@@ -76,7 +77,7 @@ tests-cleanup:
 	- rm -r test-uploads postgres-tests
 	- make migratedown-tests
 
-	- docker-compose -f docker-compose-dev.yml down
+	- docker-compose -f docker-compose-tests.yml down
 
 lint:
 	golangci-lint run ./...
@@ -84,5 +85,5 @@ lint:
 format:
 	go fmt ./...
 
-clean:
-	rm -rf $(BINARY) test-uploads postgres-tests
+clean: tests-cleanup
+	rm -rf $(BINARY)

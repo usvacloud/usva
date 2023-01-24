@@ -11,6 +11,9 @@ Enabled = false
 CertFile = "/path/to/cert"
 KeyFile = "/path/to/keyfile"
 
+[Encryption]
+KeySize = 32
+
 [Files]
 # Maximum size for a single upload in bytes. In this configuration set to 1 Mb
 # Zero (0) disables this field. (ratelimit is bypassed)

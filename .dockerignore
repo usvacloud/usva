@@ -3,7 +3,6 @@
 .gitignore
 .editorconfig
 .env.example
-sqlc
 APISPEC.md
 LICENSE
 
