@@ -1,4 +1,5 @@
 # Usva
+
 [![push-validation](https://github.com/romeq/usva/actions/workflows/push-validation.yml/badge.svg)](https://github.com/romeq/usva/actions/workflows/push-validation.yml)
 
 Usva is a feature-rich file cloud with a modern REST API.
@@ -28,48 +29,31 @@ If you have any questions or comments about usva's security practices, you can o
 
 Installation is done in 3 steps: downloading source, installing dependencies and compiling it.
 
-#### With Docker
+### With Docker
 
 ```sh
 % git clone https://github.com/romeq/usva && cd usva
-
-% make run-docker # requires configuration (see below)
+% cp config-example.toml config.toml
+% $EDITOR config.toml
+% make run-docker
 ```
 
-#### Without Docker
+### Without Docker
 
 ```sh
 % git clone https://github.com/romeq/usva && cd usva
 % make setup build migratesetup
-
-% make run # requires setup (see below)
+% # configure (see below)
+% make run
 ```
 
-## Configuration and setup
-
-### Configuration and migrations using Docker
-
-Migrations are automatically ran when server is started with docker.
-Define following values in `.env`:
+#### Configuration for users without docker
 
 ```shell
-# Required
-DB_USERNAME=my-awesome-username # postgres server username
-DB_PASSWORD=my-super-secure-password # postgres server password
-
-# Optional
-DB_PORT=5434 # Alternative port for postgres server, default = 5432
-DB_NAME=my-awesome-database # Alternative database name, default = usva
-SV_PORT=8080 # Exposed port, default = 8080
-```
-
-### Migrations without Docker
-
-```shell
-% DB_HOST="127.0.0.1" \ # PostgreSQL server host
-	DB_PORT=5432 \ # PostgreSQL server port
-	DB_USERNAME="usva" \ # Username to log in with
-	DB_PASSWORD="password" \ # Password to log in with
+% DB_HOST="127.0.0.1" # PostgreSQL server host
+	DB_PORT=5432 # PostgreSQL server port
+	DB_USERNAME="usva" # Username to log in with
+	DB_PASSWORD="password" # Password to log in with
 	DB_NAME="usva" # Database name for usva
 	make migrateup # Run migrations
 ```
@@ -79,28 +63,12 @@ SV_PORT=8080 # Exposed port, default = 8080
 #### Note for Docker users
 
 Docker image uses config.toml for the server's configuration. By default this file is
-shared between the host and the container.
+shared between the host and the container for easy reconfiguration.
 
 #### Configuration options
 
-Full configuration can be found in `config-example.toml`, thus we suggest for you to use
+Full configuration can be found in `config-example.toml`, and we suggest for you to use
 a modified copy of that file as server's configuration.
-
-You should note, though, that only a few fields from above will be required.
-Shortest possible configuration looks something like below.
-
-```toml
-[Server]
-Address = "127.0.0.1"
-Port = 8080
-AllowedOrigins = [ "http://example.com" ]
-
-[Files]
-UploadsDir = "uploads"
-
-[Database]
-User = "user"
-```
 
 ## API Specification
 
