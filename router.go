@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/romeq/jobscheduler"
-	"github.com/romeq/usva/internal/api"
-	"github.com/romeq/usva/internal/api/middleware"
-	"github.com/romeq/usva/internal/config"
+	"github.com/romeq/usva/pkg/api"
+	"github.com/romeq/usva/pkg/api/middleware"
+	"github.com/romeq/usva/pkg/config"
 )
 
 func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {

@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/internal/cryptography"
+	"github.com/romeq/usva/pkg/cryptography"
 	"golang.org/x/crypto/bcrypt"
 )
 

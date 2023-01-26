@@ -14,10 +14,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/romeq/usva/internal/api/middleware"
-	"github.com/romeq/usva/internal/cryptography"
-	"github.com/romeq/usva/internal/db"
-	"github.com/romeq/usva/internal/utils"
+	"github.com/romeq/usva/pkg/api/middleware"
+	"github.com/romeq/usva/pkg/cryptography"
+	"github.com/romeq/usva/pkg/db"
+	"github.com/romeq/usva/pkg/utils"
 )
 
 var (

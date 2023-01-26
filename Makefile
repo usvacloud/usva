@@ -74,7 +74,7 @@ preparetests:
 
 
 tests-cleanup:
-	- rm -r test-uploads postgres-tests
+	- rm -r test-uploads postgres-tests .postgres-data
 	- make migratedown-tests
 
 	- docker-compose -f docker-compose-tests.yml down

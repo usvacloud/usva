@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/romeq/usva/internal/db"
+	"github.com/romeq/usva/pkg/db"
 )
 
 func (s *Server) RemoveOldFilesWorker(timeUntilRemove time.Duration, uploadDirectory string, cleantrashes bool) {

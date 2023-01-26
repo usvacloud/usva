@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/internal/db"
+	"github.com/romeq/usva/pkg/db"
 )
 
 type Server struct {
