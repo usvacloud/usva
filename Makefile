@@ -8,12 +8,15 @@ BUILDDIR ?= ./bin
 DB_NAME ?= usva
 DB_USERNAME ?= dev
 DB_PASSWORD ?= dev
+DB_OWNER ?= dev
 DB_HOST ?= 127.0.0.1
 DB_PORT ?= 5432
 DB_NAME_TESTS	?= usva_tests
 DB_USERNAME_TESTS ?= usva_tests
 DB_PASSWORD_TESTS ?= testrunner
 START_TEST_DOCKER ?= 1
+DB_CONNECTION_STRING = "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
+DB_TESTS_CONNECTION_STRING = "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable"
 
 .PHONY: all lint test
 
@@ -23,33 +26,24 @@ build:
 	@-mkdir $(BUILDDIR)
 	@-CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) .
 
-setup: clean
-	go get -u
-	cp config-example.toml config.toml
+setup:
+	@-go get -u
+	@-cp config-example.toml config.toml
 
-migrateup: db-create
-	cat ./sqlc/schemas/* | psql \
-		-d "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
-		-f -
+migrateup:
+	cat ./sqlc/schemas/* | psql -d $(DB_CONNECTION_STRING)
 
 migratedown:
-	psql \
-		-d "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" \
-		-f ./sqlc/dbdown.sql
+	psql -d $(DB_CONNECTION_STRING) -f ./sqlc/dbdown.sql
 
 migratedown-tests:
-	psql \
-		-d "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable" \
-		-f ./sqlc/dbdown.sql
+	psql -d $(DB_TESTS_CONNECTION_STRING) -f ./sqlc/dbdown.sql
 
 migrateup-tests:
-	cat ./sqlc/schemas/* | psql \
-		-d "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable" \
-		-f -
+	cat ./sqlc/schemas/* | psql -d $(DB_TESTS_CONNECTION_STRING)
 
 db-create:
-	 psql "postgresql://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/" \
-		-q -c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USERNAME) ENCODING UTF8;"
+	createdb -U $(DB_USERNAME) --owner=$(DB_OWNER) $(DB_NAME)
 
 run:
 	$(BUILDDIR)/$(BINARY) -c ./config.toml
@@ -84,6 +78,3 @@ lint:
 
 format:
 	go fmt ./...
-
-clean: tests-cleanup
-	rm -rf $(BINARY)

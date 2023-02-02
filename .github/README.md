@@ -41,21 +41,22 @@ Installation is done in 3 steps: downloading source, installing dependencies and
 ### Without Docker
 
 ```sh
-% git clone https://github.com/romeq/usva && cd usva
-% make setup build migratesetup
-% # configure (see below)
-% make run
-```
+git clone https://github.com/romeq/usva && cd usva
 
-#### Configuration for users without docker
+# setup database user
+export DB_OWNER=usva
+createuser $DB_OWNER -PU postgres
 
-```shell
-% DB_HOST="127.0.0.1" # PostgreSQL server host
-	DB_PORT=5432 # PostgreSQL server port
-	DB_USERNAME="usva" # Username to log in with
-	DB_PASSWORD="password" # Password to log in with
-	DB_NAME="usva" # Database name for usva
-	make migrateup # Run migrations
+# create database
+DB_USERNAME=postgres \
+	DB_PASSWORD=postgres \
+	DB_OWNER=$DB_OWNER \
+	make db-create
+
+# replace "dbownerpassword" with password you provided earlier on the createuser part
+DB_USERNAME=$DB_OWNER \
+	DB_PASSWORD=dbownerpassword \
+	make migrateup setup build run
 ```
 
 ### Server configuration
