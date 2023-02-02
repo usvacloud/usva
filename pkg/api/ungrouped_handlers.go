@@ -29,7 +29,7 @@ func prettybytes(bytes uint64) gin.H {
 func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"maxSingleUploadSize":  prettybytes(s.api.MaxSingleUploadSize),
-		"maxDailyUploadSize":       prettybytes(s.api.MaxUploadSizePerDay),
+		"maxDailyUploadSize":   prettybytes(s.api.MaxUploadSizePerDay),
 		"maxEncryptedFileSize": prettybytes(s.api.MaxEncryptableFileSize),
 		"filePersistDuration": gin.H{
 			"seconds": s.api.FilePersistDuration.Seconds(),
