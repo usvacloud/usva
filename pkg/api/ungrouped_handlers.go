@@ -17,11 +17,20 @@ var (
 	errTooBigBody    = errors.New("body too big")
 )
 
+func prettybytes(bytes uint64) gin.H {
+	return gin.H{
+		"bytes":     bytes,
+		"kilobytes": bytes / 1000,
+		"megabytes": bytes / 1000 / 1000,
+		"gigabytes": bytes / 1000 / 1000 / 1000,
+	}
+}
+
 func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"sizeLimit":            s.api.MaxSingleUploadSize,
-		"bytesPerDay":          s.api.MaxUploadSizePerDay,
-		"maxEncryptedFileSize": s.api.MaxEncryptableFileSize,
+		"maxSingleUploadSize":  prettybytes(s.api.MaxSingleUploadSize),
+		"maxDailyUploadSize":       prettybytes(s.api.MaxUploadSizePerDay),
+		"maxEncryptedFileSize": prettybytes(s.api.MaxEncryptableFileSize),
 		"filePersistDuration": gin.H{
 			"seconds": s.api.FilePersistDuration.Seconds(),
 			"hours":   s.api.FilePersistDuration.Hours(),
