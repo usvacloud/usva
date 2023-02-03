@@ -16,12 +16,11 @@ type Feedback struct {
 }
 
 type File struct {
-	ID           int32
+	FileUuid     string
 	Title        sql.NullString
 	Passwdhash   sql.NullString
 	Uploader     sql.NullString
 	AccessToken  string
-	FileUuid     string
 	Encrypted    bool
 	EncryptionIv []byte
 	UploadDate   time.Time

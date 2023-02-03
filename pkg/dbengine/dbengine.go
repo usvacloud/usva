@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/romeq/usva/pkg/db"
 )
 
@@ -22,7 +22,7 @@ func Init(x DbConfig) *db.Queries {
 	connstr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		x.User, x.Password, x.Host, x.Port, x.Name)
 
-	r, err := pgx.Connect(context.Background(), connstr)
+	r, err := pgxpool.Connect(context.Background(), connstr)
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -15,8 +15,8 @@ type Server struct {
 func NewServer(eng *gin.Engine, conn *db.Queries, apic *Configuration, encs uint32) *Server {
 	return &Server{
 		engine:            eng,
-		api:               apic,
 		db:                conn,
+		api:               apic,
 		encryptionKeySize: encs,
 	}
 }
