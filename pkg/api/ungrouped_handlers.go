@@ -13,8 +13,8 @@ import (
 
 var (
 	errNotFound      = errors.New("resource not found")
-	errEmptyResponse = errNotFound
-	errTooBigBody    = errors.New("body too big")
+	errEmptyResponse = errors.New("empty response")
+	errTooBigBody    = errors.New("request body too big")
 )
 
 func prettybytes(bytes uint64) gin.H {
@@ -40,7 +40,7 @@ func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 }
 
 func (s *Server) NotFoundHandler(ctx *gin.Context) {
-	setErrResponse(ctx, errEmptyResponse)
+	setErrResponse(ctx, errNotFound)
 }
 
 // setErrResponse helper for providing standard error messages in return
@@ -67,7 +67,7 @@ func setErrResponse(ctx *gin.Context, err error) {
 	case errors.Is(err, errNotFound):
 		errorMessage, status = err.Error(), http.StatusNotFound
 	case errors.Is(err, sql.ErrNoRows):
-		errorMessage, status = errNotFound.Error(), http.StatusNotFound
+		errorMessage, status = err.Error(), http.StatusNoContent
 	case errors.Is(err, errEmptyResponse):
 		errorMessage, status = err.Error(), http.StatusNoContent
 
