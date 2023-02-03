@@ -78,3 +78,11 @@ lint:
 
 format:
 	go fmt ./...
+
+act-verify-source:
+	act -n -W ./.github/workflows/push-validation.yml
+
+act-docker:
+	act -n -W ./.github/workflows/gh-packages.yml
+
+act: act-verify-source act-docker
