@@ -16,7 +16,7 @@ def sendrequest():
 
 
 def main():
-    maximum_requests = 1000
+    maximum_requests = 32
     for _ in range(maximum_requests):
         th = threading.Thread(target=sendrequest)
         th.start()
