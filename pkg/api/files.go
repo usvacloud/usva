@@ -247,7 +247,7 @@ func (s *Server) DownloadFile(ctx *gin.Context) {
 		return
 	}
 
-	headerPassword, err := parseHeaderPassword(ctx)
+	headerPassword, err := s.parseFilePassword(ctx, filename)
 	if err != nil && !errors.Is(err, errAuthMissing) {
 		setErrResponse(ctx, err)
 		return
@@ -266,6 +266,8 @@ func (s *Server) DownloadFile(ctx *gin.Context) {
 		setErrResponse(ctx, errAuthMissing)
 		return
 	}
+
+	ctx.Writer.Header().Set("Content-Disposition", `attachment;`)
 
 	ctx.Status(http.StatusOK)
 

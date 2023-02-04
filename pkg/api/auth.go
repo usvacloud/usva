@@ -24,17 +24,17 @@ func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
 	fileauthcookie := fmt.Sprintf("usva-auth-%s", filename)
 	authcookieValue, _ := ctx.Cookie(fileauthcookie)
 
-	at, err := s.db.GetAccessToken(ctx, filename)
+	accesstoken, err := s.db.GetAccessToken(ctx, filename)
 	if err != nil {
 		setErrResponse(ctx, errAuthFailed)
 		return false
 	}
 
-	if authcookieValue == at {
+	if authcookieValue == accesstoken {
 		return true
 	}
 
-	pwd, err := parseHeaderPassword(ctx)
+	pwd, err := s.parseFilePassword(ctx, filename)
 	if err != nil {
 		setErrResponse(ctx, err)
 		return false
@@ -46,12 +46,19 @@ func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
 		return false
 	}
 
-	ctx.SetCookie(fileauthcookie, at, s.api.CookieSaveTime, "/", s.api.APIDomain, s.api.UseSecureCookie, true)
+	ctx.SetCookie(fileauthcookie, accesstoken, s.api.CookieSaveTime, "/", s.api.APIDomain, s.api.UseSecureCookie, true)
 
 	return true
 }
 
-func parseHeaderPassword(ctx *gin.Context) (string, error) {
+func (s *Server) parseFilePassword(ctx *gin.Context, filename string) (string, error) {
+	passwordcookie := fmt.Sprintf("usva-password-%s", filename)
+
+	if cookie, err := ctx.Cookie(passwordcookie); err == nil && cookie != "" {
+		dec, err := base64.RawStdEncoding.DecodeString(cookie)
+		return string(dec), err
+	}
+
 	authheader := strings.Split(ctx.Request.Header.Get("Authorization"), " ")
 	if len(authheader) < 2 {
 		return "", errAuthMissing
@@ -61,6 +68,8 @@ func parseHeaderPassword(ctx *gin.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	ctx.SetCookie(passwordcookie, authheader[1], s.api.CookieSaveTime, "/", s.api.APIDomain, s.api.UseSecureCookie, true)
 
 	return strings.TrimSpace(string(p)), nil
 }
