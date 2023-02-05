@@ -17,13 +17,18 @@ If you have any questions or comments about usva's security practices, you can o
 - Source code is always free to download.
 - Option for disabling all request logging to enhance privacy on client
 - Ratelimits
+- Dockerized environment
 
 ##### For client
 
-- Files can be locked with a password (hashed with bcrypt)
-- Endpoint for viewing file's metadata
-- Endpoint for viewing file's content
-- Downloading and deleting a file
+- Files can be locked with a password
+- Files can be encrypted
+- Endpoint for viewing file's information, such as
+  - View count
+  - Size
+  - Encryption status
+  - Date uploaded
+- Downloading a file
 
 ## Installation and usage
 
