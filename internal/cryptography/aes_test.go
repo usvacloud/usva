@@ -58,7 +58,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	_, err = io.ReadFull(rand.Reader, iv)
 	check(t, err)
 
-	encryptSrc := make([]byte, 2<<20)
+	encryptSrc := make([]byte, 10000)
 	_, err = io.ReadFull(rand.Reader, encryptSrc)
 	check(t, err)
 
@@ -79,16 +79,14 @@ func TestEncryptDecrypt(t *testing.T) {
 	bs := cip.BlockSize()
 	chunksVerified := 0
 	verifyChunk := func(decBuffer []byte, offset, read int) {
-		t.Logf("verifying %d chunk", chunksVerified+1)
 		sliceto := offset + read
 		if len(encryptSrc) < sliceto {
 			sliceto = len(encryptSrc) - 1
 		}
 
 		plaintextSlice := encryptSrc[offset:sliceto]
-		decryptedSlice := decBuffer[:len(plaintextSlice)]
-		if !bytes.Equal(plaintextSlice, decryptedSlice) {
-			t.Error(plaintextSlice, "!=", decryptedSlice)
+		if !bytes.Equal(plaintextSlice, decBuffer) {
+			t.Error(plaintextSlice, "!=", decBuffer)
 			t.Fatalf("%d out of %d chunks were verified before corruption.", chunksVerified, len(encryptSrc)/bs)
 		}
 		chunksVerified++

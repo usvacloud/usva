@@ -1,7 +1,6 @@
 package cryptography
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -54,11 +53,6 @@ func cryptLoop(
 
 		chunk := make([]byte, bm.BlockSize())
 		bm.CryptBlocks(chunk, plaintextChunk)
-
-		// we've reached the end, so let's parse the unecessary zero bytes out
-		if len(chunk) < bm.BlockSize() {
-			chunk = bytes.Trim(chunk, "\x00")
-		}
 
 		_, err = dst.Write(chunk)
 		if err != nil {

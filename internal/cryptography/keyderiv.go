@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	ErrPasswordTooShort = errors.New("password is too short")
-	ErrPasswordTooLong  = errors.New("password is too long")
+	ErrPasswordTooShort = errors.New("password is too short for derivation")
+	ErrPasswordTooLong  = errors.New("password is too long for derivaation")
 )
 
 func DeriveBasicKey(password []byte, length uint32) ([]byte, error) {
