@@ -14,10 +14,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/romeq/usva/internal/api/middleware"
-	"github.com/romeq/usva/internal/cryptography"
 	"github.com/romeq/usva/internal/db"
 	"github.com/romeq/usva/internal/utils"
+	"github.com/romeq/usva/pkg/cryptography"
+	"github.com/romeq/usva/pkg/ratelimit"
 )
 
 var (
@@ -46,7 +46,7 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 		return
 	}
 
-	apiid := ctx.Writer.Header().Get(middleware.Headers.Identifier)
+	apiid := ctx.Writer.Header().Get(ratelimit.Headers.Identifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
 		FileUuid:    filename,
@@ -160,7 +160,7 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	apiid := ctx.Writer.Header().Get(middleware.Headers.Identifier)
+	apiid := ctx.Writer.Header().Get(ratelimit.Headers.Identifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
 		FileUuid:     filename,

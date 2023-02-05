@@ -8,11 +8,11 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/pkg/api"
-	"github.com/romeq/usva/pkg/arguments"
-	"github.com/romeq/usva/pkg/config"
-	"github.com/romeq/usva/pkg/dbengine"
-	"github.com/romeq/usva/pkg/utils"
+	"github.com/romeq/usva/internal/api"
+	"github.com/romeq/usva/internal/arguments"
+	"github.com/romeq/usva/internal/config"
+	"github.com/romeq/usva/internal/dbengine"
+	"github.com/romeq/usva/internal/utils"
 )
 
 func setupEngine(cfg *config.Config) *gin.Engine {
@@ -66,9 +66,7 @@ func main() {
 	defer setLogWriter(args.LogOutput).Close()
 
 	// config file
-	cfgHandle, err := os.Open(args.ConfigFile)
-	utils.Must(err)
-	cfg := config.ParseFromFile(cfgHandle)
+	cfg := config.ParseFromFile(args.ConfigFile)
 
 	// runtime options
 	opts := parseOpts(cfg, args)

@@ -1,58 +1,63 @@
 [Server]
-Address = "127.0.0.1" # address to bind to
-Port = 8080 # the port to bind to
-TrustedProxies = ["127.0.0.1"]
-DebugMode = false # use of gin's debug mode (includes verbose logging)
-HideRequests = false # requests should be hidden from logs
-AllowedOrigins = [ "http://localhost" ] # cors allowed origins
+address = "127.0.0.1" # address to bind to
+api_domain = "http://api.mydomain.com"
+port = 8080 # the port to bind to
+trusted_proxies = ["127.0.0.1"]
+debug_mode = false # use of gin's debug mode (includes verbose logging)
+hide_requests = false # requests should be hidden from logs
+allowed_origins = [ "http://localhost" ] # cors allowed origins
 
-[Server.TLS]
-Enabled = false
-CertFile = "/path/to/cert"
-KeyFile = "/path/to/keyfile"
+[server.tls]
+enabled = false
+cert_file = "/path/to/cert"
+key_file = "/path/to/keyfile"
 
-[Encryption]
-KeySize = 32
+[encryption]
+key_size = 32
 
-[Files]
+[files]
 # Maximum size for a single upload in bytes. In this configuration set to 1 Mb
 # Zero (0) disables this field. (ratelimit is bypassed)
-MaxSingleUploadSize = 1048576
+max_single_upload_size = 1048576
 
 # Maximum size for uploads per day per IP. In this configuration this value is
 # set to 16 Mb.
 # Zero (0) disables this field. (ratelimit is bypassed)
-MaxUploadSizePerDay = 16777216
+max_upload_size_per_day = 16777216
+
+# MaxEncryptableFileSize is the maximum size of a file that can be encrypted on the server.
+# If not set, defaults to MaxSingleUploadSize.
+max_encryptable_file_size = 1048576
 
 # UploadsDir describes the path in current filesystem where uploaded files are saved.
-UploadsDir = "uploads" # directory for uploaded files
-RemoveFilesAfterInactivity = true
+uploads_dir = "uploads" # directory for uploaded files
+remove_files_after_inactivity = true
 
 # File maximum inactivity in seconds until delete
-InactivityUntilDelete = 86400
+inactivity_until_delete = 86400
 
 # AuthUseSecureCookie needs to be set to true if the api is served with a SSL
-AuthUseSecureCookie = true
+auth_use_secure_cookie = true
 
 # AuthSaveTime describes the seconds the authentication cookie is saved
-AuthSaveTime = 1900
+auth_save_time = 1900
 
 # Cleantrashes boolean specifies if server should remove all files that are not present in database.
 # this can be optimal but dangerous at the same time, if you haven't verified that usva
 # correctly reads the target directory. In the worst case scenario your important files are gone!
-CleanTrashes          = false
+clean_trashes          = false
 
-[Ratelimit.StrictLimit]
-Requests = 3
-Time = 180
+[ratelimit.strict_limit]
+requests = 3
+time = 180
 
-[Ratelimit.QueryLimit]
-Requests = 2
-Time = 60
+[ratelimit.query_limit]
+requests = 2
+time = 60
 
-[Database]
-User  = "dev"
-Password = ""
-Host = "127.0.0.1"
-Port = 5432
-Database = "usva"
+[database]
+user  = "usva"
+password = "dbownerpassword"
+host = "127.0.0.1"
+port = 5432
+database = "usva"

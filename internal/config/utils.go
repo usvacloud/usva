@@ -21,6 +21,10 @@ func (c *Config) ensureRequiredValues() {
 		log.Fatalf("encryption: key size is invalid (%d is not 16, 24 or 32).", c.Encryption.KeySize)
 	}
 
+	if c.Files.MaxEncryptableFileSize == 0 {
+		c.Files.MaxEncryptableFileSize = c.Files.MaxSingleUploadSize
+	}
+
 	c.Database.Host = utils.StringOr(c.Database.Host, "127.0.0.1")
 	c.Database.Database = utils.StringOr(c.Database.Database, "usva")
 	c.Database.Port = int(utils.IntOr(uint(c.Database.Port), 5432))
