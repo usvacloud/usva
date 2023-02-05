@@ -3,7 +3,7 @@ package config
 import (
 	"log"
 
-	"github.com/romeq/usva/pkg/utils"
+	"github.com/romeq/usva/internal/utils"
 )
 
 func (c *Config) ensureRequiredValues() {

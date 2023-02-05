@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/pkg/dbengine"
-	"github.com/romeq/usva/pkg/utils"
+	"github.com/romeq/usva/internal/dbengine"
+	"github.com/romeq/usva/internal/utils"
 )
 
 func ensureError(t *testing.T, err error) {

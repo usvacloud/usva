@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/romeq/usva/pkg/db"
+	"github.com/romeq/usva/internal/db"
 )
 
 type DbConfig struct {
