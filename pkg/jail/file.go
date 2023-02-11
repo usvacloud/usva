@@ -32,7 +32,3 @@ func (j filejail) IsAuthorized(ctx context.Context, value string) (bool, error) 
 
 	return false, nil
 }
-
-func (j filejail) GetFileDescriptor() *os.File {
-	return j.file
-}

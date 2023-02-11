@@ -24,7 +24,7 @@ func SetIdentifierHeader(ctx *gin.Context) {
 	ctx.Next()
 }
 
-func setResponseHeaders(ctx *gin.Context, limit, remaining, toreset int16) {
+func setRatelimitHeaders(ctx *gin.Context, limit, remaining, toreset int16) {
 	ctx.Header("RateLimit-Limit", fmt.Sprint(limit))
 	ctx.Header("RateLimit-Remaining", fmt.Sprint(remaining))
 	ctx.Header("RateLimit-Reset", fmt.Sprint(toreset))

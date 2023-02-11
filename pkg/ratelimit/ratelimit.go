@@ -125,7 +125,7 @@ func (r *Ratelimiter) RestrictRequests(count int16, per time.Duration) gin.Handl
 			client.handler.nextReset = time.Now().Add(per)
 		}
 
-		setResponseHeaders(ctx, count, client.handler.tokens, int16(per.Seconds()))
+		setRatelimitHeaders(ctx, count, client.handler.tokens, int16(per.Seconds()))
 		if client.handler.useToken(1) {
 			ctx.Next()
 		} else {

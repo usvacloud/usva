@@ -1,4 +1,4 @@
-package api
+package file
 
 import (
 	"bytes"
@@ -9,10 +9,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/romeq/usva/cmd/webserver/handlers"
+	"github.com/romeq/usva/cmd/webserver/handlers/auth"
 	"github.com/romeq/usva/internal/dbengine"
 	"github.com/romeq/usva/internal/utils"
 )
@@ -50,18 +51,7 @@ func TestUploadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	a, err := strconv.Atoi(os.Getenv("DB_PORT"))
-	if err != nil {
-		a = 5432
-	}
-	db := dbengine.Init(dbengine.DbConfig{
-		Host:        utils.StringOr(os.Getenv("DB_HOST"), "127.0.0.1"),
-		Port:        a,
-		User:        utils.StringOr(os.Getenv("DB_USERNAME_TESTS"), "usva_tests"),
-		Password:    utils.StringOr(os.Getenv("DB_PASSWORD_TESTS"), "testrunner"),
-		Name:        utils.StringOr(os.Getenv("DB_NAME_TESTS"), "usva_tests"),
-		SslDisabled: true,
-	})
+	db := dbengine.Init(utils.NewTestDatabaseConfiguration())
 
 	type payload struct {
 		fileData string
@@ -105,12 +95,12 @@ func TestUploadFile(t *testing.T) {
 
 		c, r := prepareMultipartBody(t, tt.payload.fileData)
 
-		server := NewServer(nil, db, &Configuration{
+		server := handlers.NewServer(nil, db, &handlers.Configuration{
 			UseSecureCookie:     false,
 			UploadsDir:          uploadsPath,
 			MaxSingleUploadSize: uint64(tt.payload.maxSize),
 		}, 16)
-		server.UploadFile(c)
+		NewFileHandler(server, auth.NewAuthHandler(server)).UploadFile(c)
 
 		if tt.expectedCode != r.Code {
 			t.Fatalf("expected %d got %d", tt.expectedCode, r.Code)
@@ -122,7 +112,7 @@ func TestUploadFile(t *testing.T) {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)
 			}
 
-			_, e = server.db.FileInformation(tt.context, responseStruct.Filename)
+			_, e = server.DB.FileInformation(tt.context, responseStruct.Filename)
 			if e != nil {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)
 			}

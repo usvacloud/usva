@@ -1,4 +1,4 @@
-package api
+package handlers
 
 import (
 	"database/sql"
@@ -9,12 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/pkg/cryptography"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	errNotFound      = errors.New("resource not found")
-	errEmptyResponse = errors.New("empty response")
-	errTooBigBody    = errors.New("request body too big")
 )
 
 func prettybytes(bytes uint64) gin.H {
@@ -28,23 +22,23 @@ func prettybytes(bytes uint64) gin.H {
 
 func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"maxSingleUploadSize":  prettybytes(s.api.MaxSingleUploadSize),
-		"maxDailyUploadSize":   prettybytes(s.api.MaxUploadSizePerDay),
-		"maxEncryptedFileSize": prettybytes(s.api.MaxEncryptableFileSize),
+		"maxSingleUploadSize":  prettybytes(s.Config.MaxSingleUploadSize),
+		"maxDailyUploadSize":   prettybytes(s.Config.MaxUploadSizePerDay),
+		"maxEncryptedFileSize": prettybytes(s.Config.MaxEncryptableFileSize),
 		"filePersistDuration": gin.H{
-			"seconds": s.api.FilePersistDuration.Seconds(),
-			"hours":   s.api.FilePersistDuration.Hours(),
-			"days":    s.api.FilePersistDuration.Hours() / 24,
+			"seconds": s.Config.FilePersistDuration.Seconds(),
+			"hours":   s.Config.FilePersistDuration.Hours(),
+			"days":    s.Config.FilePersistDuration.Hours() / 24,
 		},
 	})
 }
 
 func (s *Server) NotFoundHandler(ctx *gin.Context) {
-	setErrResponse(ctx, errNotFound)
+	SetErrResponse(ctx, ErrNotFound)
 }
 
-// setErrResponse helper for providing standard error messages in return
-func setErrResponse(ctx *gin.Context, err error) {
+// SetErrResponse helper for providing standard error messages in return
+func SetErrResponse(ctx *gin.Context, err error) {
 	if err == nil {
 		return
 	}
@@ -56,19 +50,19 @@ func setErrResponse(ctx *gin.Context, err error) {
 		errorMessage, status = "password is invalid", http.StatusForbidden
 	case errors.Is(err, cryptography.ErrPasswordTooShort):
 		errorMessage, status = err.Error(), http.StatusBadRequest
-	case errors.Is(err, errTooBigBody):
+	case errors.Is(err, ErrTooBigBody):
 		errorMessage, status = err.Error(), http.StatusRequestEntityTooLarge
 	case errors.Is(err, cryptography.ErrPasswordTooLong):
 		errorMessage, status = err.Error(), http.StatusBadRequest
-	case errors.Is(err, errInvalidBody):
+	case errors.Is(err, ErrInvalidBody):
 		errorMessage, status = err.Error(), http.StatusBadRequest
-	case errors.Is(err, errAuthMissing):
+	case errors.Is(err, ErrAuthMissing):
 		errorMessage, status = err.Error(), http.StatusUnauthorized
-	case errors.Is(err, errNotFound):
+	case errors.Is(err, ErrNotFound):
 		errorMessage, status = err.Error(), http.StatusNotFound
 	case errors.Is(err, sql.ErrNoRows):
 		errorMessage, status = err.Error(), http.StatusNoContent
-	case errors.Is(err, errEmptyResponse):
+	case errors.Is(err, ErrEmptyResponse):
 		errorMessage, status = err.Error(), http.StatusNoContent
 
 	default:

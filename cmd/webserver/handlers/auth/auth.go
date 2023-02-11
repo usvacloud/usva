@@ -1,4 +1,4 @@
-package api
+package auth
 
 import (
 	"encoding/base64"
@@ -6,14 +6,28 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/romeq/usva/cmd/webserver/handlers"
+	"github.com/romeq/usva/internal/generated/db"
 	"golang.org/x/crypto/bcrypt"
 )
 
+type AuthHandler struct {
+	DB     *db.Queries
+	Config *handlers.Configuration
+}
+
+func NewAuthHandler(s *handlers.Server) *AuthHandler {
+	return &AuthHandler{
+		DB:     s.DB,
+		Config: s.Config,
+	}
+}
+
 // Functions to help with most common tasks
-func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
-	pwdhash, err := s.db.GetPasswordHash(ctx, filename)
+func (a *AuthHandler) AuthorizeRequest(ctx *gin.Context, filename string) bool {
+	pwdhash, err := a.DB.GetPasswordHash(ctx, filename)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return false
 	}
 
@@ -24,9 +38,9 @@ func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
 	fileauthcookie := fmt.Sprintf("usva-auth-%s", filename)
 	authcookieValue, _ := ctx.Cookie(fileauthcookie)
 
-	accesstoken, err := s.db.GetAccessToken(ctx, filename)
+	accesstoken, err := a.DB.GetAccessToken(ctx, filename)
 	if err != nil {
-		setErrResponse(ctx, errAuthFailed)
+		handlers.SetErrResponse(ctx, handlers.ErrAuthFailed)
 		return false
 	}
 
@@ -34,24 +48,24 @@ func (s *Server) authorizeRequest(ctx *gin.Context, filename string) bool {
 		return true
 	}
 
-	pwd, err := s.parseFilePassword(ctx, filename)
+	pwd, err := a.ParseFilePassword(ctx, filename)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return false
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(pwdhash.String), []byte(pwd))
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return false
 	}
 
-	ctx.SetCookie(fileauthcookie, accesstoken, s.api.CookieSaveTime, "/", s.api.APIDomain, s.api.UseSecureCookie, true)
+	ctx.SetCookie(fileauthcookie, accesstoken, a.Config.CookieSaveTime, "/", a.Config.APIDomain, a.Config.UseSecureCookie, true)
 
 	return true
 }
 
-func (s *Server) parseFilePassword(ctx *gin.Context, filename string) (string, error) {
+func (a *AuthHandler) ParseFilePassword(ctx *gin.Context, filename string) (string, error) {
 	passwordcookie := fmt.Sprintf("usva-password-%s", filename)
 
 	if cookie, err := ctx.Cookie(passwordcookie); err == nil && cookie != "" {
@@ -61,7 +75,7 @@ func (s *Server) parseFilePassword(ctx *gin.Context, filename string) (string, e
 
 	authheader := strings.Split(ctx.Request.Header.Get("Authorization"), " ")
 	if len(authheader) < 2 {
-		return "", errAuthMissing
+		return "", handlers.ErrAuthMissing
 	}
 
 	p, err := base64.RawStdEncoding.DecodeString(authheader[1])
@@ -69,20 +83,20 @@ func (s *Server) parseFilePassword(ctx *gin.Context, filename string) (string, e
 		return "", err
 	}
 
-	ctx.SetCookie(passwordcookie, authheader[1], s.api.CookieSaveTime, "/", s.api.APIDomain, s.api.UseSecureCookie, true)
+	ctx.SetCookie(passwordcookie, authheader[1], a.Config.CookieSaveTime, "/", a.Config.APIDomain, a.Config.UseSecureCookie, true)
 
 	return strings.TrimSpace(string(p)), nil
 }
 
-func bcryptPasswordHash(pwd []byte) ([]byte, error) {
+func BCryptPasswordHash(pwd []byte) ([]byte, error) {
 	pwdlen := len(pwd)
 	switch {
 	case pwdlen == 0:
 		return []byte{}, nil
 	case pwdlen > 512:
-		return []byte{}, errInvalidBody
+		return []byte{}, handlers.ErrInvalidBody
 	case pwdlen < 6:
-		return []byte{}, errInvalidBody
+		return []byte{}, handlers.ErrInvalidBody
 	default:
 		return bcrypt.GenerateFromPassword(pwd, 12)
 	}

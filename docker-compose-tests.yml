@@ -13,4 +13,4 @@ services:
       - ${DB_PORT:-5432}:5432
 
     volumes:
-      - "./postgres-tests:/var/lib/postgresql/data:rw"
+      - "./${TEST_CACHE:-.test-cache/postgres}:/var/lib/postgresql/data:rw"

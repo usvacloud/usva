@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/romeq/usva/internal/api"
+	"github.com/romeq/usva/cmd/webserver/handlers"
 	"github.com/romeq/usva/internal/utils"
 )
 
@@ -14,11 +14,11 @@ type Ratelimit struct {
 	// StrictLimit struct is used to limit the access of different
 	// POST-operations. This works for example in limiting the process
 	// of creating a new feedback or as an additional limit to file upload.
-	StrictLimit api.Limits `toml:"strict_limit"`
+	StrictLimit handlers.Limits `toml:"strict_limit"`
 
 	// QueryLimit configuration is used, by considering it's name, to
 	// limit the query operations applied to database etcetera.
-	QueryLimit api.Limits `toml:"query_limit"`
+	QueryLimit handlers.Limits `toml:"query_limit"`
 }
 
 type Server struct {

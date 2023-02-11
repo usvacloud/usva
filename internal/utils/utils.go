@@ -35,6 +35,6 @@ func VarOr(var1, var2 any) any {
 	return var2
 }
 
-func IsBetween[T ~int | ~uint](base, min, max T) bool {
-	return min <= base && base <= max
+func IsBetween[T ~int | ~uint](value, min, max T) bool {
+	return min <= value && value <= max
 }

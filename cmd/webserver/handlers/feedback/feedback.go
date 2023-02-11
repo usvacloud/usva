@@ -1,4 +1,4 @@
-package api
+package feedback
 
 import (
 	"database/sql"
@@ -7,28 +7,39 @@ import (
 	"sort"
 
 	"github.com/gin-gonic/gin"
+	"github.com/romeq/usva/cmd/webserver/handlers"
 	"github.com/romeq/usva/internal/generated/db"
 )
 
-func (s *Server) AddFeedback(ctx *gin.Context) {
+type FeedbackHandler struct {
+	db *db.Queries
+}
+
+func NewFeedbackHandler(s *handlers.Server) *FeedbackHandler {
+	return &FeedbackHandler{
+		db: s.DB,
+	}
+}
+
+func (s *FeedbackHandler) AddFeedback(ctx *gin.Context) {
 	body := struct {
 		Message string
 		Boxes   []int
 	}{}
 	if err := ctx.BindJSON(&body); err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	maxint := 6
 	sort.Ints(body.Boxes)
 	if len(body.Boxes) < 1 {
-		setErrResponse(ctx, errInvalidBody)
+		handlers.SetErrResponse(ctx, handlers.ErrInvalidBody)
 		return
 	}
 
 	if body.Boxes[len(body.Boxes)-1] > maxint {
-		setErrResponse(ctx, errInvalidBody)
+		handlers.SetErrResponse(ctx, handlers.ErrInvalidBody)
 		return
 	}
 
@@ -44,7 +55,7 @@ func (s *Server) AddFeedback(ctx *gin.Context) {
 		Comment: sql.NullString{String: body.Message, Valid: body.Message != ""},
 		Boxes:   boxestobeinserted,
 	}); err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
@@ -53,15 +64,15 @@ func (s *Server) AddFeedback(ctx *gin.Context) {
 	})
 }
 
-func (s *Server) GetFeedback(ctx *gin.Context) {
+func (s *FeedbackHandler) GetFeedback(ctx *gin.Context) {
 	dbFeedbacks, e := s.db.GetFeedbacks(ctx, 10)
 	if e != nil {
-		setErrResponse(ctx, e)
+		handlers.SetErrResponse(ctx, e)
 		return
 	}
 
 	if len(dbFeedbacks) == 0 {
-		setErrResponse(ctx, errEmptyResponse)
+		handlers.SetErrResponse(ctx, handlers.ErrInvalidBody)
 		return
 	}
 

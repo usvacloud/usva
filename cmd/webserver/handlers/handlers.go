@@ -1,4 +1,4 @@
-package api
+package handlers
 
 import (
 	"github.com/gin-gonic/gin"
@@ -6,21 +6,21 @@ import (
 )
 
 type Server struct {
-	engine            *gin.Engine
-	db                *db.Queries
-	api               *Configuration
-	encryptionKeySize uint32
+	GinEngine  *gin.Engine
+	DB         *db.Queries
+	Config     *Configuration
+	EncKeySize uint32
 }
 
 func NewServer(eng *gin.Engine, conn *db.Queries, apic *Configuration, encs uint32) *Server {
 	return &Server{
-		engine:            eng,
-		db:                conn,
-		api:               apic,
-		encryptionKeySize: encs,
+		GinEngine:  eng,
+		DB:         conn,
+		Config:     apic,
+		EncKeySize: encs,
 	}
 }
 
 func (s *Server) GetRouter() *gin.Engine {
-	return s.engine
+	return s.GinEngine
 }

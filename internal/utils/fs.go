@@ -10,7 +10,7 @@ func FileSize(relativePath string) (int64, error) {
 	return filestat.Size(), nil
 }
 
-func FileSizeGuarded(relativePath string) int64 {
+func MustFileSize(relativePath string) int64 {
 	fs, err := FileSize(relativePath)
 	Must(err)
 	return fs

@@ -1,4 +1,4 @@
-package api
+package file
 
 import (
 	"database/sql"
@@ -14,25 +14,36 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/romeq/usva/cmd/webserver/handlers"
+	"github.com/romeq/usva/cmd/webserver/handlers/auth"
 	"github.com/romeq/usva/internal/generated/db"
 	"github.com/romeq/usva/internal/utils"
 	"github.com/romeq/usva/pkg/cryptography"
 	"github.com/romeq/usva/pkg/ratelimit"
 )
 
-var (
-	errAuthMissing = errors.New("missing authentication in a protected file")
-	errAuthFailed  = errors.New("authorization succeeded but cookies were not set")
-	errInvalidBody = errors.New("invalid request body")
-)
+type FileHandler struct {
+	db                *db.Queries
+	api               *handlers.Configuration
+	encryptionKeySize uint32
+	auth              *auth.AuthHandler
+}
+
+func NewFileHandler(s *handlers.Server, authHandler *auth.AuthHandler) *FileHandler {
+	return &FileHandler{
+		db:                s.DB,
+		api:               s.Config,
+		encryptionKeySize: s.EncKeySize,
+		auth:              authHandler,
+	}
+}
 
 // UploadFileSimple is a simple wrapper around ctx.SaveUploadedFile to support
 // an upload with a very very simple curl request (curl -Ld = )
-func (s *Server) UploadFileSimple(ctx *gin.Context) {
-	// retrieve file from request
+func (s *FileHandler) UploadFileSimple(ctx *gin.Context) {
 	f, err := ctx.FormFile("file")
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
@@ -55,20 +66,20 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 		AccessToken: uuid.NewString(),
 	})
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	abspath, err := filepath.Abs(s.api.UploadsDir)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	err = ctx.SaveUploadedFile(f, path.Join(abspath, filename))
 	if err != nil {
 		_ = s.db.DeleteFile(ctx, filename)
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
@@ -81,43 +92,43 @@ func (s *Server) UploadFileSimple(ctx *gin.Context) {
 }
 
 // UploadFile
-func (s *Server) UploadFile(ctx *gin.Context) {
+func (s *FileHandler) UploadFile(ctx *gin.Context) {
 	formFile, err := ctx.FormFile("file")
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	filename := uuid.NewString() + path.Ext(formFile.Filename)
 
 	if s.api.MaxSingleUploadSize > 0 && uint64(formFile.Size) > s.api.MaxSingleUploadSize {
-		setErrResponse(ctx, errTooBigBody)
+		handlers.SetErrResponse(ctx, handlers.ErrTooBigBody)
 		return
 	}
 
 	formpwd := strings.TrimSpace(ctx.PostForm("password"))
 	pwd, err := base64.RawStdEncoding.DecodeString(formpwd)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 	password := strings.TrimSpace(string(pwd))
 
 	formFileHandle, err := formFile.Open()
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	absUploads, err := filepath.Abs(s.api.UploadsDir)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	file, err := os.OpenFile(path.Join(absUploads, filename), os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
@@ -133,30 +144,30 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 	case requirementsMet && confirmation:
 		encryptionKey, err := cryptography.DeriveBasicKey([]byte(password), s.encryptionKeySize)
 		if err != nil {
-			setErrResponse(ctx, err)
+			handlers.SetErrResponse(ctx, err)
 			return
 		}
 
 		iv, err = cryptography.EncryptStream(file, formFileHandle, encryptionKey)
 		if err != nil {
-			setErrResponse(ctx, err)
+			handlers.SetErrResponse(ctx, err)
 			return
 		}
 
 	case !requirementsMet && confirmation:
-		setErrResponse(ctx, errInvalidBody)
+		handlers.SetErrResponse(ctx, handlers.ErrInvalidBody)
 		return
 
 	default:
 		if _, err := io.Copy(file, formFileHandle); err != nil {
-			setErrResponse(ctx, err)
+			handlers.SetErrResponse(ctx, err)
 			return
 		}
 	}
 
-	hash, err := bcryptPasswordHash([]byte(password))
+	hash, err := auth.BCryptPasswordHash([]byte(password))
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
@@ -171,7 +182,7 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 		AccessToken:  uuid.NewString(),
 	})
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
@@ -182,7 +193,7 @@ func (s *Server) UploadFile(ctx *gin.Context) {
 }
 
 // => /file/info?filename=<uuid>
-func (s *Server) FileInformation(ctx *gin.Context) {
+func (s *FileHandler) FileInformation(ctx *gin.Context) {
 	filename, filenameGiven := ctx.GetQuery("filename")
 	if !filenameGiven {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
@@ -191,29 +202,29 @@ func (s *Server) FileInformation(ctx *gin.Context) {
 		return
 	}
 
-	if !s.authorizeRequest(ctx, filename) {
+	if !s.auth.AuthorizeRequest(ctx, filename) {
 		return
 	}
 
 	f, err := s.db.FileInformation(ctx, filename)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	if err = s.db.UpdateLastSeen(ctx, filename); err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 	}
 
 	pwd, err := s.db.GetPasswordHash(ctx, filename)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	filesize, err := utils.FileSize(path.Join(s.api.UploadsDir, filename))
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
@@ -228,42 +239,42 @@ func (s *Server) FileInformation(ctx *gin.Context) {
 	})
 }
 
-func (s *Server) DownloadFile(ctx *gin.Context) {
+func (s *FileHandler) DownloadFile(ctx *gin.Context) {
 	filename, filenameGiven := ctx.GetQuery("filename")
 	if !filenameGiven {
-		setErrResponse(ctx, errors.New("filename not given"))
+		handlers.SetErrResponse(ctx, errors.New("filename not given"))
 		return
 	}
 
 	// authorize request
-	if !s.authorizeRequest(ctx, filename) {
+	if !s.auth.AuthorizeRequest(ctx, filename) {
 		return
 	}
 
 	filepath := path.Join(s.api.UploadsDir, filename)
 	fileHandle, err := os.Open(filepath)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
-	headerPassword, err := s.parseFilePassword(ctx, filename)
-	if err != nil && !errors.Is(err, errAuthMissing) {
-		setErrResponse(ctx, err)
+	headerPassword, err := s.auth.ParseFilePassword(ctx, filename)
+	if err != nil && !errors.Is(err, handlers.ErrAuthMissing) {
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	encryptionIv, err := s.db.GetDownload(ctx, filename)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	if len(encryptionIv) == 0 {
 		ctx.FileAttachment(filepath, path.Base(filepath))
 		return
-	} else if errors.Is(err, errAuthMissing) {
-		setErrResponse(ctx, errAuthMissing)
+	} else if errors.Is(err, handlers.ErrAuthMissing) {
+		handlers.SetErrResponse(ctx, handlers.ErrAuthMissing)
 		return
 	}
 
@@ -273,32 +284,32 @@ func (s *Server) DownloadFile(ctx *gin.Context) {
 
 	derivedKey, err := cryptography.DeriveBasicKey([]byte(headerPassword), s.encryptionKeySize)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	err = cryptography.DecryptStream(ctx.Writer, fileHandle, derivedKey, encryptionIv)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 }
 
-func (s *Server) ReportFile(ctx *gin.Context) {
+func (s *FileHandler) ReportFile(ctx *gin.Context) {
 	var requestBody struct {
 		Filename string `json:"filename"`
 		Reason   string `json:"reason"`
 	}
 	err := ctx.BindJSON(&requestBody)
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 
 	if len(requestBody.Filename) < 36 ||
 		!utils.IsBetween(len(requestBody.Reason), 20, 1024) {
 
-		setErrResponse(ctx, errInvalidBody)
+		handlers.SetErrResponse(ctx, handlers.ErrInvalidBody)
 		return
 	}
 
@@ -307,7 +318,7 @@ func (s *Server) ReportFile(ctx *gin.Context) {
 		Reason:   requestBody.Reason,
 	})
 	if err != nil {
-		setErrResponse(ctx, err)
+		handlers.SetErrResponse(ctx, err)
 		return
 	}
 

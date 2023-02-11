@@ -7,21 +7,22 @@ services:
 
     environment:
       PGPORT: ${DB_PORT:-5432}
-      POSTGRES_USER: ${DB_USERNAME:-dev}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev}
+      POSTGRES_USER: ${DB_USERNAME:-usva}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-usva}
 
     volumes:
       - "./.postgres-data:/var/lib/postgresql/data:rw"
 
   server:
-    image: "ghcr.io/romeq/usva:release"
+    build: .
+    restart: "always"
     depends_on:
       - db
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT:-5432}
-      DB_USERNAME: ${DB_USERNAME:-dev}
-      DB_PASSWORD: ${DB_PASSWORD:-dev}
+      DB_USERNAME: ${DB_USERNAME:-usva}
+      DB_PASSWORD: ${DB_PASSWORD:-usva}
       DB_NAME: ${DB_NAME:-usva}
 
     ports:
