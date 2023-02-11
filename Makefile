@@ -45,6 +45,9 @@ migrateup-tests:
 db-create:
 	createdb -U $(DB_USERNAME) --owner=$(DB_OWNER) $(DB_NAME)
 
+db-shell:
+	@psql -qd $(DB_CONNECTION_STRING)
+
 run:
 	$(BUILDDIR)/$(BINARY) -c ./config.toml
 
