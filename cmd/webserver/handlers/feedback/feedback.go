@@ -11,17 +11,17 @@ import (
 	"github.com/romeq/usva/internal/generated/db"
 )
 
-type FeedbackHandler struct {
+type Handler struct {
 	db *db.Queries
 }
 
-func NewFeedbackHandler(s *handlers.Server) *FeedbackHandler {
-	return &FeedbackHandler{
+func NewFeedbackHandler(s *handlers.Server) *Handler {
+	return &Handler{
 		db: s.DB,
 	}
 }
 
-func (s *FeedbackHandler) AddFeedback(ctx *gin.Context) {
+func (s *Handler) AddFeedback(ctx *gin.Context) {
 	body := struct {
 		Message string
 		Boxes   []int
@@ -64,7 +64,7 @@ func (s *FeedbackHandler) AddFeedback(ctx *gin.Context) {
 	})
 }
 
-func (s *FeedbackHandler) GetFeedback(ctx *gin.Context) {
+func (s *Handler) GetFeedback(ctx *gin.Context) {
 	dbFeedbacks, e := s.db.GetFeedbacks(ctx, 10)
 	if e != nil {
 		handlers.SetErrResponse(ctx, e)

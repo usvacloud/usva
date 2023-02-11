@@ -2,6 +2,7 @@ package workers
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -86,7 +87,7 @@ func TestTrasher_Run(t *testing.T) {
 			}
 
 			file, err := dbq.FileInformation(context.Background(), fuuid)
-			if !tt.wantSaved && err == pgx.ErrNoRows {
+			if !tt.wantSaved && errors.Is(err, pgx.ErrNoRows) {
 				return
 			}
 

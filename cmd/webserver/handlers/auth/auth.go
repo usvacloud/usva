@@ -11,20 +11,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthHandler struct {
+type Handler struct {
 	DB     *db.Queries
 	Config *handlers.Configuration
 }
 
-func NewAuthHandler(s *handlers.Server) *AuthHandler {
-	return &AuthHandler{
+func NewAuthHandler(s *handlers.Server) *Handler {
+	return &Handler{
 		DB:     s.DB,
 		Config: s.Config,
 	}
 }
 
 // Functions to help with most common tasks
-func (a *AuthHandler) AuthorizeRequest(ctx *gin.Context, filename string) bool {
+func (a *Handler) AuthorizeRequest(ctx *gin.Context, filename string) bool {
 	pwdhash, err := a.DB.GetPasswordHash(ctx, filename)
 	if err != nil {
 		handlers.SetErrResponse(ctx, err)
@@ -59,13 +59,12 @@ func (a *AuthHandler) AuthorizeRequest(ctx *gin.Context, filename string) bool {
 		handlers.SetErrResponse(ctx, err)
 		return false
 	}
-
-	ctx.SetCookie(fileauthcookie, accesstoken, a.Config.CookieSaveTime, "/", a.Config.APIDomain, a.Config.UseSecureCookie, true)
-
+	ctx.SetCookie(fileauthcookie, accesstoken, a.Config.CookieSaveTime,
+		"/", a.Config.APIDomain, a.Config.UseSecureCookie, true)
 	return true
 }
 
-func (a *AuthHandler) ParseFilePassword(ctx *gin.Context, filename string) (string, error) {
+func (a *Handler) ParseFilePassword(ctx *gin.Context, filename string) (string, error) {
 	passwordcookie := fmt.Sprintf("usva-password-%s", filename)
 
 	if cookie, err := ctx.Cookie(passwordcookie); err == nil && cookie != "" {
@@ -83,7 +82,8 @@ func (a *AuthHandler) ParseFilePassword(ctx *gin.Context, filename string) (stri
 		return "", err
 	}
 
-	ctx.SetCookie(passwordcookie, authheader[1], a.Config.CookieSaveTime, "/", a.Config.APIDomain, a.Config.UseSecureCookie, true)
+	ctx.SetCookie(passwordcookie, authheader[1], a.Config.CookieSaveTime,
+		"/", a.Config.APIDomain, a.Config.UseSecureCookie, true)
 
 	return strings.TrimSpace(string(p)), nil
 }

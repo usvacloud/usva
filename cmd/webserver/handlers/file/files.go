@@ -22,15 +22,15 @@ import (
 	"github.com/romeq/usva/pkg/ratelimit"
 )
 
-type FileHandler struct {
+type Handler struct {
 	db                *db.Queries
 	api               *handlers.Configuration
 	encryptionKeySize uint32
-	auth              *auth.AuthHandler
+	auth              *auth.Handler
 }
 
-func NewFileHandler(s *handlers.Server, authHandler *auth.AuthHandler) *FileHandler {
-	return &FileHandler{
+func NewFileHandler(s *handlers.Server, authHandler *auth.Handler) *Handler {
+	return &Handler{
 		db:                s.DB,
 		api:               s.Config,
 		encryptionKeySize: s.EncKeySize,
@@ -40,7 +40,7 @@ func NewFileHandler(s *handlers.Server, authHandler *auth.AuthHandler) *FileHand
 
 // UploadFileSimple is a simple wrapper around ctx.SaveUploadedFile to support
 // an upload with a very very simple curl request (curl -Ld = )
-func (s *FileHandler) UploadFileSimple(ctx *gin.Context) {
+func (s *Handler) UploadFileSimple(ctx *gin.Context) {
 	f, err := ctx.FormFile("file")
 	if err != nil {
 		handlers.SetErrResponse(ctx, err)
@@ -92,7 +92,7 @@ func (s *FileHandler) UploadFileSimple(ctx *gin.Context) {
 }
 
 // UploadFile
-func (s *FileHandler) UploadFile(ctx *gin.Context) {
+func (s *Handler) UploadFile(ctx *gin.Context) {
 	formFile, err := ctx.FormFile("file")
 	if err != nil {
 		handlers.SetErrResponse(ctx, err)
@@ -193,7 +193,7 @@ func (s *FileHandler) UploadFile(ctx *gin.Context) {
 }
 
 // => /file/info?filename=<uuid>
-func (s *FileHandler) FileInformation(ctx *gin.Context) {
+func (s *Handler) FileInformation(ctx *gin.Context) {
 	filename, filenameGiven := ctx.GetQuery("filename")
 	if !filenameGiven {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
@@ -239,7 +239,7 @@ func (s *FileHandler) FileInformation(ctx *gin.Context) {
 	})
 }
 
-func (s *FileHandler) DownloadFile(ctx *gin.Context) {
+func (s *Handler) DownloadFile(ctx *gin.Context) {
 	filename, filenameGiven := ctx.GetQuery("filename")
 	if !filenameGiven {
 		handlers.SetErrResponse(ctx, errors.New("filename not given"))
@@ -295,7 +295,7 @@ func (s *FileHandler) DownloadFile(ctx *gin.Context) {
 	}
 }
 
-func (s *FileHandler) ReportFile(ctx *gin.Context) {
+func (s *Handler) ReportFile(ctx *gin.Context) {
 	var requestBody struct {
 		Filename string `json:"filename"`
 		Reason   string `json:"reason"`

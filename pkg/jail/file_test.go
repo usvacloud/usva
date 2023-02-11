@@ -12,13 +12,11 @@ func TestJail(t *testing.T) {
 		testfile = os.TempDir() + "/usva-jail-test"
 	)
 
-	var _ Jail = NewJailFS(nil)
-
 	for _, value := range values {
 		file := getDescriptor(t, testfile, os.O_WRONLY|os.O_APPEND)
 		defer file.Close()
 
-		jail := NewJailFS(file)
+		var jail Jail = NewJailFS(file)
 		err := jail.Ban(context.Background(), value)
 		checkError(t, err)
 	}
@@ -27,7 +25,7 @@ func TestJail(t *testing.T) {
 		file := getDescriptor(t, testfile, os.O_RDONLY)
 		defer file.Close()
 
-		jail := NewJailFS(file)
+		var jail Jail = NewJailFS(file)
 		found, _ := jail.IsAuthorized(context.Background(), value)
 		if !found {
 			t.Fatalf("test failed: %s not found", value)
@@ -47,16 +45,4 @@ func getDescriptor(t *testing.T, path string, flag int) *os.File {
 		t.Fatal(err)
 	}
 	return fp
-}
-
-func resetTestFile(t *testing.T, path string) {
-	if err := os.Remove(path); err != nil {
-		t.Fatal(err)
-	}
-
-	fp, err := os.Create(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fp.Close()
 }

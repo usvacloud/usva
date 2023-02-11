@@ -4,12 +4,12 @@ import (
 	"github.com/romeq/usva/internal/generated/db"
 )
 
-type MiddlewareHandler struct {
+type Handler struct {
 	db *db.Queries
 }
 
-func NewMiddlewareHandler(dbq *db.Queries) *MiddlewareHandler {
-	return &MiddlewareHandler{
+func NewMiddlewareHandler(dbq *db.Queries) *Handler {
+	return &Handler{
 		db: dbq,
 	}
 }
