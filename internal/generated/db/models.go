@@ -28,6 +28,10 @@ type File struct {
 	Viewcount    int32
 }
 
+type PeerBan struct {
+	PeerID string
+}
+
 type Report struct {
 	FileUuid string
 	Reason   string

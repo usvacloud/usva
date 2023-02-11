@@ -14,7 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/romeq/usva/internal/db"
+	"github.com/romeq/usva/internal/generated/db"
 	"github.com/romeq/usva/internal/utils"
 	"github.com/romeq/usva/pkg/cryptography"
 	"github.com/romeq/usva/pkg/ratelimit"
