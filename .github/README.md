@@ -34,7 +34,11 @@ If you have any questions or comments about usva's security practices, you can o
 
 Installation is done in 3 steps: downloading source, installing dependencies and compiling it.
 
-### With Docker <span style="font-size: 15px;color:green;margin-left:5px;background:lightgreen;border-radius:3px;">Recommended!</span>
+
+
+<span style="font-size: 15px;color:green;background:lightgreen;border-radius:3px;">Recommended!</span>
+
+### With Docker
 
 ```sh
 % git clone https://github.com/romeq/usva && cd usva
