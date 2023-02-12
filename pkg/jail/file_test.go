@@ -13,7 +13,7 @@ func TestJail(t *testing.T) {
 	)
 
 	for _, value := range values {
-		file := getDescriptor(t, testfile, os.O_WRONLY|os.O_APPEND)
+		file := getDescriptor(t, testfile, os.O_WRONLY|os.O_APPEND|os.O_CREATE)
 		defer file.Close()
 
 		var jail Jail = NewJailFS(file)
