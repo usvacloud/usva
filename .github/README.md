@@ -34,11 +34,9 @@ If you have any questions or comments about usva's security practices, you can o
 
 Installation is done in 3 steps: downloading source, installing dependencies and compiling it.
 
+### With Docker 
 
-
-<span style="font-size: 15px;color:green;background:lightgreen;border-radius:3px;">Recommended!</span>
-
-### With Docker
+Docker setup is recommended because it's easy, straightforward and Docker makes sure Usva cannot elevate it's privileges to the host system if an unknown vulnerability is exploited!
 
 ```sh
 % git clone https://github.com/romeq/usva && cd usva
@@ -99,13 +97,11 @@ DB_USERNAME=$DB_OWNER \
 
 #### Note for Docker users
 
-Docker image uses config.toml for the server's configuration. By default this file is
-shared between the host and the container for easy reconfiguration.
+Docker image uses config.toml for the server's configuration. By default this file is shared between the host and the container for easy reconfiguration.
 
 #### Configuration options
 
-Full configuration can be found in `config-example.toml`, and we suggest for you to use
-a modified copy of that file as server's configuration.
+Full configuration can be found in `config-example.toml`, and we suggest for you to use a modified copy of that file as server's configuration.
 
 ## API Specification
 
