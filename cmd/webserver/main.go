@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -11,70 +9,10 @@ import (
 	"github.com/romeq/usva/cmd/webserver/arguments"
 	"github.com/romeq/usva/cmd/webserver/config"
 	"github.com/romeq/usva/cmd/webserver/handlers"
-	"github.com/romeq/usva/cmd/webserver/router"
 	"github.com/romeq/usva/internal/dbengine"
 	"github.com/romeq/usva/internal/utils"
 	"github.com/romeq/usva/internal/workers"
 )
-
-// options is a struct that helps with overriding
-// configuration values with command line arguments
-type Options config.Config
-
-func NewOptions(cfg *config.Config, args *arguments.Arguments) *Options {
-	return &Options{
-		Server: config.Server{
-			Address: utils.StringOr(args.Config.Server.Address, cfg.Server.Address),
-			Port:    utils.IntOr(args.Config.Server.Port, cfg.Server.Port),
-		},
-	}
-}
-
-func (o *Options) GetListenAddress() string {
-	return fmt.Sprintf("%s:%d", o.Server.Address, o.Server.Port)
-}
-
-func setupEngine(cfg *config.Config) *gin.Engine {
-	if !cfg.Server.DebugMode {
-		gin.SetMode(gin.ReleaseMode)
-	}
-	r := gin.New()
-
-	r.Use(gin.Recovery())
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     cfg.Server.AllowedOrigins,
-		AllowCredentials: true,
-		AllowMethods:     []string{"POST", "GET", "OPTIONS", "DELETE"},
-		AllowHeaders:     []string{"Authorization"},
-	}))
-	if !cfg.Server.HideRequests {
-		r.Use(requestLogger)
-	}
-
-	utils.Must(r.SetTrustedProxies(cfg.Server.TrustedProxies))
-	return r
-}
-
-func setLogWriter(file string) *os.File {
-	if file == "" {
-		return nil
-	}
-
-	fhandle, err := os.OpenFile(file, os.O_WRONLY, 0o644)
-	utils.Must(err)
-
-	log.SetOutput(fhandle)
-	return fhandle
-}
-
-func requestLogger(ctx *gin.Context) {
-	t := time.Now()
-	ctx.Next()
-	c := time.Since(t).Milliseconds()
-
-	log.Printf("request: %s %s %d (took %dms) \n",
-		ctx.Request.Method, ctx.Request.URL, ctx.Writer.Status(), c)
-}
 
 func main() {
 	log.SetFlags(log.Ltime | log.Ldate)
@@ -99,8 +37,22 @@ func main() {
 	log.Println("Starting server at", opts.GetListenAddress())
 
 	// start server
-	r := setupEngine(cfg)
-	server := handlers.NewServer(r, db, &handlers.Configuration{
+	if !cfg.Server.DebugMode {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     cfg.Server.AllowedOrigins,
+		AllowCredentials: true,
+		AllowMethods:     []string{"POST", "GET", "OPTIONS", "DELETE"},
+		AllowHeaders:     []string{"Authorization"},
+	}))
+
+	utils.Must(r.SetTrustedProxies(cfg.Server.TrustedProxies))
+
+	handler := handlers.NewServer(r, db, &handlers.Configuration{
 		MaxEncryptableFileSize: cfg.Files.MaxEncryptableFileSize,
 		MaxSingleUploadSize:    cfg.Files.MaxSingleUploadSize,
 		MaxUploadSizePerDay:    cfg.Files.MaxUploadSizePerDay,
@@ -112,9 +64,9 @@ func main() {
 	}, cfg.Encryption.KeySize)
 
 	trasher := workers.NewTrasher(time.Hour, cfg.Files.InactivityUntilDelete, cfg.Files.UploadsDir, db)
-	server.IncludeServerContextWorker(trasher)
+	handler.IncludeServerContextWorker(trasher)
 
-	router.ConfigureServer(server, cfg)
+	addRouteHandlers(handler, cfg)
 
 	tlssettings := cfg.Server.TLS
 	if tlssettings.Enabled {

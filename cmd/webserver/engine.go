@@ -1,4 +1,4 @@
-package router
+package main
 
 import (
 	"time"
@@ -20,7 +20,7 @@ func parseRatelimits(cfg *config.Ratelimit) handlers.Ratelimits {
 	}
 }
 
-func ConfigureServer(server *handlers.Server, cfg *config.Config) {
+func addRouteHandlers(server *handlers.Server, cfg *config.Config) {
 	// Initialize ratelimiters
 	strictrl := ratelimit.NewRatelimiter()
 	queryrl := ratelimit.NewRatelimiter()
@@ -34,24 +34,30 @@ func ConfigureServer(server *handlers.Server, cfg *config.Config) {
 	query := queryrl.RestrictRequests(ratelimits.QueryLimit.Requests, ratelimits.QueryLimit.Time)
 	uploadRestrictor := strictrl.RestrictUploads(time.Duration(24)*time.Hour, cfg.Files.MaxUploadSizePerDay)
 
-	authhandler := auth.NewAuthHandler(server)
-	filehandler := file.NewFileHandler(server, authhandler)
-	feedbackhandler := feedback.NewFeedbackHandler(server)
-	middlewarehandler := middleware.NewMiddlewareHandler(server.DB)
-
 	// Middleware/general stuff
 	router := server.GetRouter()
-	router.Use(ratelimit.SetIdentifierHeader)
-	router.Use(middlewarehandler.Jail)
+	authhandler := auth.NewAuthHandler(server)
 
-	// ungrouped handlers
+	// Middlewares
+	middlewarehandler := middleware.NewMiddlewareHandler(server.DB)
 	{
+		router.Use(ratelimit.SetIdentifierHeader)
+		router.Use(middlewarehandler.Jail)
 		router.NoRoute(server.NotFoundHandler)
+
+		if !cfg.Server.HideRequests {
+			router.Use(middlewarehandler.Log)
+		}
+	}
+
+	// Common
+	{
 		router.GET("/restrictions", server.RestrictionsHandler)
 	}
 
 	// Files handlers
 	fileGroup := router.Group("/file")
+	filehandler := file.NewFileHandler(server, authhandler)
 	{
 		// Routes
 		fileGroup.GET("/info", query, filehandler.FileInformation)
@@ -62,9 +68,10 @@ func ConfigureServer(server *handlers.Server, cfg *config.Config) {
 	}
 
 	// Feedback
-	feedback := router.Group("/feedback")
+	feedbackGroup := router.Group("/feedback")
+	feedbackhandler := feedback.NewFeedbackHandler(server)
 	{
-		feedback.GET("/", query, feedbackhandler.GetFeedback)
-		feedback.POST("/", strict, feedbackhandler.AddFeedback)
+		feedbackGroup.GET("/", query, feedbackhandler.GetFeedback)
+		feedbackGroup.POST("/", strict, feedbackhandler.AddFeedback)
 	}
 }
