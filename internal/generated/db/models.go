@@ -19,7 +19,6 @@ type File struct {
 	FileUuid     string
 	Title        sql.NullString
 	Passwdhash   sql.NullString
-	Uploader     sql.NullString
 	AccessToken  string
 	Encrypted    bool
 	EncryptionIv []byte

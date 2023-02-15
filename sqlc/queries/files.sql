@@ -33,13 +33,12 @@ RETURNING encryption_iv;
 INSERT INTO file(
     file_uuid,
     title,
-    uploader,
     passwdhash,
     access_token,
     encryption_iv,
     viewcount
 )
-VALUES($1, $2, $3, $4, $5, $6, 0);
+VALUES($1, $2, $3, $4, $5, 0);
 -- name: DeleteFile :exec
 DELETE FROM file
 WHERE file_uuid = $1;

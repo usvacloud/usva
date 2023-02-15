@@ -141,19 +141,17 @@ const newFile = `-- name: NewFile :exec
 INSERT INTO file(
     file_uuid,
     title,
-    uploader,
     passwdhash,
     access_token,
     encryption_iv,
     viewcount
 )
-VALUES($1, $2, $3, $4, $5, $6, 0)
+VALUES($1, $2, $3, $4, $5, 0)
 `
 
 type NewFileParams struct {
 	FileUuid     string
 	Title        sql.NullString
-	Uploader     sql.NullString
 	Passwdhash   sql.NullString
 	AccessToken  string
 	EncryptionIv []byte
@@ -163,7 +161,6 @@ func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
 	_, err := q.db.Exec(ctx, newFile,
 		arg.FileUuid,
 		arg.Title,
-		arg.Uploader,
 		arg.Passwdhash,
 		arg.AccessToken,
 		arg.EncryptionIv,

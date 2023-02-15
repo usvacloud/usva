@@ -19,7 +19,6 @@ import (
 	"github.com/romeq/usva/internal/generated/db"
 	"github.com/romeq/usva/internal/utils"
 	"github.com/romeq/usva/pkg/cryptography"
-	"github.com/romeq/usva/pkg/ratelimit"
 )
 
 type Handler struct {
@@ -57,12 +56,10 @@ func (s *Handler) UploadFileSimple(ctx *gin.Context) {
 		return
 	}
 
-	apiid := ctx.Writer.Header().Get(ratelimit.Headers.Identifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
 		FileUuid:    filename,
 		Title:       sql.NullString{String: title, Valid: title != ""},
-		Uploader:    sql.NullString{String: apiid, Valid: apiid != ""},
 		AccessToken: uuid.NewString(),
 	})
 	if err != nil {
@@ -171,13 +168,11 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	apiid := ctx.Writer.Header().Get(ratelimit.Headers.Identifier)
 	title := ctx.Request.FormValue("title")
 	err = s.db.NewFile(ctx, db.NewFileParams{
 		FileUuid:     filename,
 		Title:        sql.NullString{String: title, Valid: title != ""},
 		Passwdhash:   sql.NullString{String: string(hash), Valid: string(hash) != ""},
-		Uploader:     sql.NullString{String: apiid, Valid: apiid != ""},
 		EncryptionIv: iv,
 		AccessToken:  uuid.NewString(),
 	})

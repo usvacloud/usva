@@ -2,7 +2,6 @@ CREATE TABLE IF NOT EXISTS file(
     file_uuid VARCHAR(256) PRIMARY KEY,
     title VARCHAR(256),
     passwdhash VARCHAR(512),
-    uploader VARCHAR(256),
     access_token VARCHAR(40) NOT NULL UNIQUE,
     encrypted BOOLEAN NOT NULL DEFAULT FALSE,
     encryption_iv BYTEA DEFAULT NULL,
