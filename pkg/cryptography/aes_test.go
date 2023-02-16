@@ -5,9 +5,11 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
+	"errors"
 	"io"
-	"log"
 	"math"
+	"reflect"
 	"testing"
 
 	"golang.org/x/crypto/argon2"
@@ -58,9 +60,13 @@ func TestEncryptDecrypt(t *testing.T) {
 	_, err = io.ReadFull(rand.Reader, iv)
 	check(t, err)
 
-	encryptSrc := make([]byte, 10000)
+	size := 192
+	encryptSrc := make([]byte, size)
+	var totalDecryptBuffer []byte
+
 	_, err = io.ReadFull(rand.Reader, encryptSrc)
 	check(t, err)
+	integrityOriginal := sha256.Sum256(encryptSrc)
 
 	// test encryption
 	encryptDst := bytes.NewBuffer(nil)
@@ -78,29 +84,45 @@ func TestEncryptDecrypt(t *testing.T) {
 	// verify output
 	bs := cip.BlockSize()
 	chunksVerified := 0
-	verifyChunk := func(decBuffer []byte, offset, read int) {
-		sliceto := offset + read
-		if len(encryptSrc) < sliceto {
-			sliceto = len(encryptSrc) - 1
+	verifyChunk := func(buf []byte, offset, read int) {
+		outset := offset + read
+		if len(encryptSrc) < outset {
+			outset = len(encryptSrc)
 		}
 
-		plaintextSlice := encryptSrc[offset:sliceto]
-		if !bytes.Equal(plaintextSlice, decBuffer) {
-			t.Error(plaintextSlice, "!=", decBuffer)
-			t.Fatalf("%d out of %d chunks were verified before corruption.", chunksVerified, len(encryptSrc)/bs)
+		plaintextSlice := encryptSrc[offset:outset]
+		buf = buf[:len(plaintextSlice)]
+		if !bytes.Equal(plaintextSlice, buf) {
+			t.Errorf("%v (%d) != %v (%d)", plaintextSlice, len(plaintextSlice), buf, len(buf))
+			totalchunks := len(encryptSrc) / bs
+			if len(encryptSrc)%bs != 0 {
+				totalchunks += 1
+			}
+			t.Fatalf("%d out of %d chunks were verified before corruption was identified.", chunksVerified, totalchunks)
 		}
+
+		totalDecryptBuffer = append(totalDecryptBuffer, buf...)
 		chunksVerified++
 	}
 
 	offset := 0
-	for len(encryptSrc) > offset+1 {
+	for len(encryptSrc) > offset {
 		decBuffer := make([]byte, bs)
 		bitsRead, err := decryptDst.Read(decBuffer)
-		if err != nil && err != io.EOF {
-			log.Fatal(err)
+		if err != nil && !errors.Is(err, io.EOF) {
+			t.Fatal(err)
+		} else if errors.Is(err, io.EOF) {
+			break
 		}
 
 		verifyChunk(decBuffer, offset, bitsRead)
 		offset += int(math.Min(float64(bitsRead), float64(len(encryptSrc))-1))
+	}
+
+	integrityGot := sha256.Sum256(totalDecryptBuffer)
+
+	if !reflect.DeepEqual(integrityGot, integrityOriginal) {
+		t.Error("encryption integrity check failed.")
+		t.Errorf("%v != %v", encryptSrc, totalDecryptBuffer)
 	}
 }

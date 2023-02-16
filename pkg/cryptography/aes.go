@@ -51,11 +51,16 @@ func cryptLoop(
 			return err
 		}
 
+		// this happens for example while encrypting non-blocksize buffers
+		if n < bm.BlockSize() {
+			plaintextChunk = pad(plaintextChunk[:n], bm.BlockSize())
+		}
+
 		chunk := make([]byte, bm.BlockSize())
 		bm.CryptBlocks(chunk, plaintextChunk)
 
-		_, err = dst.Write(chunk)
-		if err != nil {
+		chunk = safeUnpad(chunk, bm.BlockSize())
+		if _, err = dst.Write(chunk); err != nil {
 			return err
 		}
 	}
