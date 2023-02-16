@@ -13,9 +13,11 @@ DB_PASSWORD ?= dev
 DB_OWNER ?= dev
 DB_HOST ?= 127.0.0.1
 DB_PORT ?= 5432
+
 DB_NAME_TESTS	?= usva_tests
 DB_USERNAME_TESTS ?= usva_tests
 DB_PASSWORD_TESTS ?= testrunner
+
 START_TEST_DOCKER ?= 1
 DB_CONNECTION_STRING = "postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
 DB_TESTS_CONNECTION_STRING = "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TESTS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME_TESTS)?sslmode=disable"
@@ -23,19 +25,20 @@ DB_TESTS_CONNECTION_STRING = "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TEST
 .PHONY: all lint test
 
 build:
-	@-mkdir $(BUILDDIR)
-	@-CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) $(GOPKG)
-
+	@- CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) $(GOPKG)
 setup:
-	@-go get $(GOPKG)
-	@-cp config-example.toml config.toml
+	@- go get $(GOPKG)
+	@- cp config-example.toml config.toml
+deploy:
+	docker compose build
+	docker compose restart
 
 migrateup:
-	cat ./sqlc/schemas/* | psql -d $(DB_CONNECTION_STRING)
+	cat $(ls ./sqlc/schemas/* | sort) | psql -d $(DB_CONNECTION_STRING)
 migratedown:
 	psql -d $(DB_CONNECTION_STRING) -f ./sqlc/dbdown.sql
 migrateup-tests:
-	cat ./sqlc/schemas/* | psql -d $(DB_TESTS_CONNECTION_STRING)
+	cat $(ls ./sqlc/schemas/* | sort) | psql -d $(DB_TESTS_CONNECTION_STRING)
 migratedown-tests:
 	psql -d $(DB_TESTS_CONNECTION_STRING) -f ./sqlc/dbdown.sql
 
