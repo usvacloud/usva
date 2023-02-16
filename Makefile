@@ -34,11 +34,11 @@ deploy:
 	docker compose restart
 
 migrateup:
-	cat $(ls ./sqlc/schemas/* | sort) | psql -d $(DB_CONNECTION_STRING)
+	cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_CONNECTION_STRING)
 migratedown:
 	psql -d $(DB_CONNECTION_STRING) -f ./sqlc/dbdown.sql
 migrateup-tests:
-	cat $(ls ./sqlc/schemas/* | sort) | psql -d $(DB_TESTS_CONNECTION_STRING)
+	cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_TESTS_CONNECTION_STRING)
 migratedown-tests:
 	psql -d $(DB_TESTS_CONNECTION_STRING) -f ./sqlc/dbdown.sql
 
