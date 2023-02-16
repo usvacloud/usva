@@ -15,7 +15,8 @@ import (
 
 func TestTrasher_Run(t *testing.T) {
 	upd := t.TempDir()
-	dbq := dbengine.Init(utils.NewTestDatabaseConfiguration())
+	dbq, close := dbengine.Init(utils.NewTestDatabaseConfiguration())
+	defer close()
 
 	type fields struct {
 		TimeUntilRemove time.Duration

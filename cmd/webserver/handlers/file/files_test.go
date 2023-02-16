@@ -51,7 +51,8 @@ func TestUploadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db := dbengine.Init(utils.NewTestDatabaseConfiguration())
+	db, close := dbengine.Init(utils.NewTestDatabaseConfiguration())
+	defer close()
 
 	type payload struct {
 		fileData string
