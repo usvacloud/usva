@@ -10,17 +10,22 @@ import (
 )
 
 type DbConfig struct {
-	Host        string
-	Port        int
-	User        string
-	Password    string
-	Name        string
-	SslDisabled bool
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Name     string
+	UseSSL   bool
 }
 
 func Init(x DbConfig) (*db.Queries, func()) {
-	connstr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		x.User, x.Password, x.Host, x.Port, x.Name)
+	psqlconfig := "sslmode=require"
+	if !x.UseSSL {
+		psqlconfig = "sslmode=disable"
+	}
+
+	connstr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?%s",
+		x.User, x.Password, x.Host, x.Port, x.Name, psqlconfig)
 
 	r, err := pgxpool.Connect(context.Background(), connstr)
 	if err != nil {

@@ -37,6 +37,7 @@ func main() {
 		Name:     cfg.Database.Database,
 		User:     cfg.Database.User,
 		Password: cfg.Database.Password,
+		UseSSL:   cfg.Database.UseSSL,
 	})
 
 	if !cfg.Server.DebugMode {

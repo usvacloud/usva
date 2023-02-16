@@ -51,19 +51,20 @@ type Files struct {
 	AuthSaveTime               int           `toml:"auth_save_time"`
 	AuthUseSecureCookie        bool          `toml:"auth_use_secure_cookie"`
 }
-
+type Database struct {
+	User     string `toml:"user"`
+	Password string `toml:"password"`
+	Host     string `toml:"host"`
+	Port     int    `toml:"port"`
+	Database string `toml:"database"`
+	UseSSL   bool   `toml:"use_ssl"`
+}
 type Config struct {
 	Server     Server     `toml:"server"`
 	Files      Files      `toml:"files"`
 	Ratelimit  Ratelimit  `toml:"ratelimit"`
 	Encryption Encryption `toml:"encryption"`
-	Database   struct {
-		User     string `toml:"user"`
-		Password string `toml:"password"`
-		Host     string `toml:"host"`
-		Port     int    `toml:"port"`
-		Database string `toml:"database"`
-	} `toml:"database"`
+	Database   Database   `toml:"database"`
 }
 
 func ParseFromFile(f string) *Config {

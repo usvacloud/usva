@@ -16,11 +16,11 @@ func MustInt(f int, err error) int {
 
 func NewTestDatabaseConfiguration() dbengine.DbConfig {
 	return dbengine.DbConfig{
-		Host:        StringOr(os.Getenv("DB_HOST"), "127.0.0.1"),
-		Port:        IntOr(MustInt(strconv.Atoi(os.Getenv("DB_PORT"))), 5432),
-		User:        StringOr(os.Getenv("DB_USERNAME_TESTS"), "usva_tests"),
-		Password:    StringOr(os.Getenv("DB_PASSWORD_TESTS"), "testrunner"),
-		Name:        StringOr(os.Getenv("DB_NAME_TESTS"), "usva_tests"),
-		SslDisabled: true,
+		Host:     StringOr(os.Getenv("DB_HOST"), "127.0.0.1"),
+		Port:     IntOr(MustInt(strconv.Atoi(os.Getenv("DB_PORT"))), 5432),
+		User:     StringOr(os.Getenv("DB_USERNAME_TESTS"), "usva_tests"),
+		Password: StringOr(os.Getenv("DB_PASSWORD_TESTS"), "testrunner"),
+		Name:     StringOr(os.Getenv("DB_NAME_TESTS"), "usva_tests"),
+		UseSSL:   true,
 	}
 }
