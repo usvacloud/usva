@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -26,7 +31,7 @@ func main() {
 
 	// runtime options
 	opts := NewOptions(cfg, args)
-	db := dbengine.Init(dbengine.DbConfig{
+	db, dbClose := dbengine.Init(dbengine.DbConfig{
 		Port:     cfg.Database.Port,
 		Host:     cfg.Database.Host,
 		Name:     cfg.Database.Database,
@@ -34,9 +39,6 @@ func main() {
 		Password: cfg.Database.Password,
 	})
 
-	log.Println("Starting server at", opts.GetListenAddress())
-
-	// start server
 	if !cfg.Server.DebugMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -67,11 +69,36 @@ func main() {
 	handler.IncludeServerContextWorker(trasher)
 
 	addRouteHandlers(handler, cfg)
+	srv := http.Server{
+		ReadTimeout:       time.Minute,
+		IdleTimeout:       time.Minute,
+		ReadHeaderTimeout: time.Minute,
+		Handler:           r,
+		Addr:              opts.GetListenAddress(),
+	}
 
-	tlssettings := cfg.Server.TLS
-	if tlssettings.Enabled {
-		utils.Must(r.RunTLS(opts.GetListenAddress(), tlssettings.CertFile, tlssettings.KeyFile))
-	} else {
-		utils.Must(r.Run(opts.GetListenAddress()))
+	// start server
+	log.Printf("starting server at %s (pid %d)", opts.GetListenAddress(), os.Getpid())
+	go func() {
+		tlssettings := cfg.Server.TLS
+		if tlssettings.Enabled {
+			err := srv.ListenAndServeTLS(tlssettings.CertFile, tlssettings.KeyFile)
+			utils.Must(err)
+		} else {
+			err := srv.ListenAndServe()
+			utils.Must(err)
+		}
+	}()
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	<-sig
+
+	dbClose()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("server forced to shutdown:", err)
 	}
 }

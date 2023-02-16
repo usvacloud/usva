@@ -18,7 +18,7 @@ type DbConfig struct {
 	SslDisabled bool
 }
 
-func Init(x DbConfig) *db.Queries {
+func Init(x DbConfig) (*db.Queries, func()) {
 	connstr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		x.User, x.Password, x.Host, x.Port, x.Name)
 
@@ -27,5 +27,5 @@ func Init(x DbConfig) *db.Queries {
 		log.Fatalln(err)
 	}
 
-	return db.New(r)
+	return db.New(r), r.Close
 }
