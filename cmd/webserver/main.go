@@ -24,7 +24,7 @@ func main() {
 
 	// arguments
 	args := arguments.Parse()
-	defer setLogWriter(args.LogOutput).Close()
+	logWriterHandle := setLogWriter(args.LogOutput)
 
 	// config file
 	cfg := config.ParseFromFile(args.ConfigFile)
@@ -96,10 +96,12 @@ func main() {
 	<-sig
 
 	dbClose()
+	logWriterHandle.Close()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
+		cancel()
 		log.Fatal("server forced to shutdown:", err)
 	}
 }
