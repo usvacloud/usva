@@ -96,7 +96,7 @@ func TestEncryptDecrypt(t *testing.T) {
 			t.Errorf("%v (%d) != %v (%d)", plaintextSlice, len(plaintextSlice), buf, len(buf))
 			totalchunks := len(encryptSrc) / bs
 			if len(encryptSrc)%bs != 0 {
-				totalchunks += 1
+				totalchunks++
 			}
 			t.Fatalf("%d out of %d chunks were verified before corruption was identified.", chunksVerified, totalchunks)
 		}
