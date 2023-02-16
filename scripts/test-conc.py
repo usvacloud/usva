@@ -8,7 +8,6 @@ FILENAME = "9ffa0e25-7391-485d-a75a-58627d4b46a3.sh"
 
 def sendrequest():
     r = requests.get(BASE_URL+"/file/?filename="+FILENAME)
-
     if r.status_code != 200:
         print("Response: HTTP %d" % r.status_code)
 
@@ -22,4 +21,5 @@ def main():
         th.start()
 
 
-main()
+if __name__ == "__main__":
+    main()
