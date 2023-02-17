@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS file_to_container;
+DROP TABLE IF EXISTS container;
 DROP TABLE IF EXISTS feedback;
 DROP TABLE IF EXISTS report;
 DROP TABLE IF EXISTS file;
+DROP TABLE IF EXISTS peer_ban;

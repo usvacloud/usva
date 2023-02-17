@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS file(
-    file_uuid VARCHAR(256) PRIMARY KEY,
+    file_uuid TEXT PRIMARY KEY, -- TEXT because file_uuid includes the extension for the file
     title VARCHAR(256),
     passwdhash VARCHAR(512),
     access_token VARCHAR(40) NOT NULL UNIQUE,
