@@ -1,6 +1,9 @@
 package ratelimit
 
 import (
+	"bytes"
+	"crypto/rand"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -9,20 +12,22 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jaswdr/faker"
 )
-
-var fakerInstance = faker.New()
 
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.ReleaseMode)
-	os.Exit(m.Run())
+	if code := m.Run(); code != 0 {
+		os.Exit(code)
+	}
 }
 
 func TestRatelimiter_RestrictUploads(t *testing.T) {
 	t.Parallel()
 	type args struct {
-		allowedData uint64
+		allowedData          uint64
+		uploadSize           uint64
+		resetInterval        time.Duration
+		durationBeforeUpload time.Duration
 	}
 	tests := []struct {
 		name       string
@@ -34,11 +39,14 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 		{
 			name: "valid user",
 			client: Client{
-				Identifier: "test-identifier-valid",
+				Identifier: "test-valid",
 				uploads:    nil,
 			},
 			args: args{
-				allowedData: 32,
+				allowedData:          32,
+				uploadSize:           32,
+				resetInterval:        time.Second * 5,
+				durationBeforeUpload: 0,
 			},
 			want:       http.StatusOK,
 			wantHeader: true,
@@ -46,17 +54,20 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 		{
 			name: "invalid user",
 			client: Client{
-				Identifier:  "test-identifier-invalid",
-				lastRequest: time.Now().Add(-time.Minute),
-				uploads: []clientUpload{
+				Identifier:  "test-invalid",
+				lastRequest: time.Now().Add(-time.Second),
+				uploads: []ClientUpload{
 					{
 						size:      32,
-						timestamp: time.Now().Add(-time.Minute),
+						timestamp: time.Now().Add(-time.Second),
 					},
 				},
 			},
 			args: args{
-				allowedData: 32,
+				allowedData:          64,
+				uploadSize:           33,
+				resetInterval:        time.Second * 5,
+				durationBeforeUpload: 0,
 			},
 			want:       http.StatusNotAcceptable,
 			wantHeader: false,
@@ -72,17 +83,25 @@ func TestRatelimiter_RestrictUploads(t *testing.T) {
 			res := httptest.NewRecorder()
 			_, r := gin.CreateTestContext(res)
 
-			limiter := limiterBase.RestrictUploads(time.Hour, tt.args.allowedData)
+			limiter := limiterBase.RestrictUploads(tt.args.resetInterval, tt.args.allowedData)
 			r.POST("/", limiter, func(ctx *gin.Context) {
 				ctx.Status(http.StatusOK)
-			})
+			}) // initialize handler
 
-			req := httptest.NewRequest("POST", "/", strings.NewReader(fakerInstance.App().Name()))
+			buf := make([]byte, tt.args.uploadSize)
+			_, err := io.ReadFull(rand.Reader, buf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			req := httptest.NewRequest("POST", "/", bytes.NewReader(buf))
 			req.Header.Set(Headers.Identifier, tt.client.Identifier)
+
+			time.Sleep(tt.args.durationBeforeUpload)
 			r.ServeHTTP(res, req)
 
 			if tt.want != res.Result().StatusCode {
-				t.Fatal()
+				t.Fatalf("wanted status code %d got %d", tt.want, res.Result().StatusCode)
 			}
 			if tt.wantHeader && res.Header().Get(Headers.AllowedBytes) == "" {
 				t.Fatalf("%s header is empty", Headers.AllowedBytes)
@@ -108,7 +127,7 @@ func TestRequestHandler_UseToken(t *testing.T) {
 		want   bool
 	}{
 		{
-			name: "test case 1",
+			name: "test",
 			fields: fields{
 				nextReset:     time.Now().Add(time.Hour),
 				tokens:        3,
@@ -120,7 +139,7 @@ func TestRequestHandler_UseToken(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "test case 1",
+			name: "test 1",
 			fields: fields{
 				nextReset:     time.Now().Add(time.Hour),
 				tokens:        0,
@@ -134,7 +153,7 @@ func TestRequestHandler_UseToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hand := &requestHandler{
+			hand := &tokenStorage{
 				nextReset:     tt.fields.nextReset,
 				tokens:        tt.fields.tokens,
 				maximumTokens: tt.fields.maximumTokens,
@@ -149,40 +168,59 @@ func TestRequestHandler_UseToken(t *testing.T) {
 func TestRatelimiter_RestrictRequests(t *testing.T) {
 	t.Parallel()
 
-	type fields struct {
+	type args struct {
 		lastCleanup      time.Time
 		allowedRequests  int16
 		testRequestCount uint
+		beforeRequest    time.Duration
+		cleanInterval    time.Duration
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		want   int
+		name string
+		args args
+		want int
 	}{
 		{
-			name: "fail-test",
-			fields: fields{
+			name: "fail",
+			args: args{
 				lastCleanup:      time.Now().Add(-time.Minute),
 				allowedRequests:  1,
 				testRequestCount: 2,
+				beforeRequest:    0,
+				cleanInterval:    time.Second,
 			},
 			want: http.StatusTooManyRequests,
 		},
 		{
-			name: "success-test",
-			fields: fields{
+			name: "success",
+			args: args{
 				lastCleanup:      time.Now().Add(-time.Minute),
 				allowedRequests:  2,
 				testRequestCount: 2,
+				beforeRequest:    0,
+				cleanInterval:    time.Second,
 			},
 			want: http.StatusOK,
 		},
 		{
-			name: "success-test-nolimits",
-			fields: fields{
+			name: "success-1",
+			args: args{
 				lastCleanup:      time.Now().Add(-time.Minute),
 				allowedRequests:  0,
 				testRequestCount: 10,
+				beforeRequest:    0,
+				cleanInterval:    time.Second,
+			},
+			want: http.StatusOK,
+		},
+		{
+			name: "success-2",
+			args: args{
+				lastCleanup:      time.Now().Add(-time.Minute),
+				allowedRequests:  3,
+				testRequestCount: 4,
+				beforeRequest:    time.Second / 2,
+				cleanInterval:    time.Second,
 			},
 			want: http.StatusOK,
 		},
@@ -190,17 +228,18 @@ func TestRatelimiter_RestrictRequests(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			limiterBase := NewRatelimiter()
-			limiter := limiterBase.RestrictRequests(tt.fields.allowedRequests, time.Hour)
+			limiter := limiterBase.RestrictRequests(tt.args.allowedRequests, tt.args.cleanInterval)
 
 			responseWriter := httptest.NewRecorder()
 			_, r := gin.CreateTestContext(responseWriter)
 			r.GET("/", limiter)
 
 			var res *httptest.ResponseRecorder
-			for iter := uint(0); iter < tt.fields.testRequestCount; iter++ {
+			for iter := uint(0); iter < tt.args.testRequestCount; iter++ {
 				req := httptest.NewRequest("GET", "/", strings.NewReader("hello"))
 				req.Header.Set(Headers.Identifier, "api-identifier")
 
+				time.Sleep(tt.args.beforeRequest)
 				res = httptest.NewRecorder()
 				r.Handler().ServeHTTP(res, req)
 			}

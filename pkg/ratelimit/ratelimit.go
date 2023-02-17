@@ -9,21 +9,28 @@ import (
 )
 
 // rH
-type requestHandler struct {
+type tokenStorage struct {
 	nextReset     time.Time
+	saveDuration  time.Duration
 	tokens        int16
 	maximumTokens int16
 }
 
-func newHandler(requestCount int16, saveDuration time.Duration) *requestHandler {
-	return &requestHandler{
+func newTokenStorage(requestCount int16, saveDuration time.Duration) *tokenStorage {
+	return &tokenStorage{
 		nextReset:     time.Now().Add(saveDuration),
+		saveDuration:  saveDuration,
 		tokens:        requestCount,
 		maximumTokens: requestCount,
 	}
 }
 
-func (h *requestHandler) useToken(count int16) bool {
+func (h *tokenStorage) useToken(count int16) bool {
+	if h.nextReset.Before(time.Now()) {
+		h.reset()
+		h.nextReset = time.Now().Add(h.saveDuration)
+	}
+
 	ok := h.tokens >= count
 	if ok {
 		h.tokens -= count
@@ -31,28 +38,26 @@ func (h *requestHandler) useToken(count int16) bool {
 	return ok
 }
 
-func (h *requestHandler) reset() {
+func (h *tokenStorage) reset() {
 	h.tokens = h.maximumTokens
-}
-
-// cU
-type clientUpload struct {
-	size      int64
-	timestamp time.Time
-}
-
-// C
-type Client struct {
-	Identifier  string
-	handler     *requestHandler
-	lastRequest time.Time
-	uploads     []clientUpload
 }
 
 // RateLimiter struct
 type Ratelimiter struct {
 	clients     []Client
 	lastCleanup time.Time
+}
+
+type ClientUpload struct {
+	size      int64
+	timestamp time.Time
+}
+
+type Client struct {
+	Identifier  string
+	handler     *tokenStorage
+	lastRequest time.Time
+	uploads     []ClientUpload
 }
 
 func NewRatelimiter() *Ratelimiter {
@@ -71,7 +76,7 @@ func (r *Ratelimiter) getExistingClient(identifier string) *Client {
 	return nil
 }
 
-func (r *Ratelimiter) newClient(identifier string, handler *requestHandler) *Client {
+func (r *Ratelimiter) newClient(identifier string, handler *tokenStorage) *Client {
 	client := r.getExistingClient(identifier)
 	if client == nil {
 		client = &Client{
@@ -80,13 +85,19 @@ func (r *Ratelimiter) newClient(identifier string, handler *requestHandler) *Cli
 			lastRequest: time.Now(),
 		}
 		r.clients = append(r.clients, *client)
-	} else if client.handler == nil && handler != nil {
+	}
+
+	if client.handler == nil && handler != nil {
 		client.handler = handler
 	}
 	return client
 }
 
-func (r *Ratelimiter) NewUpload(identifier string, upload clientUpload) {
+func (r *Ratelimiter) NewUpload(identifier string, upload ClientUpload) {
+	if upload.size == 0 {
+		return
+	}
+
 	client := r.newClient(identifier, nil)
 	client.uploads = append(client.uploads, upload)
 }
@@ -118,12 +129,8 @@ func (r *Ratelimiter) RestrictRequests(count int16, per time.Duration) gin.Handl
 	return func(ctx *gin.Context) {
 		identifier := ctx.Request.Header.Get(Headers.Identifier)
 
-		client := r.newClient(identifier, newHandler(count, per))
-
-		if client.handler.nextReset.Before(time.Now()) {
-			time.AfterFunc(per, client.handler.reset)
-			client.handler.nextReset = time.Now().Add(per)
-		}
+		ts := newTokenStorage(count, per)
+		client := r.newClient(identifier, ts)
 
 		setRatelimitHeaders(ctx, count, client.handler.tokens, int16(per.Seconds()))
 		if client.handler.useToken(1) {
