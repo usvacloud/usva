@@ -87,7 +87,7 @@ func TestTrasher_Run(t *testing.T) {
 				break
 			}
 
-			file, err := dbq.FileInformation(context.Background(), fuuid)
+			file, err := dbq.GetFileInformation(context.Background(), fuuid)
 			if !tt.wantSaved && errors.Is(err, pgx.ErrNoRows) {
 				return
 			}

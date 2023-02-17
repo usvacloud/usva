@@ -113,7 +113,7 @@ func TestUploadFile(t *testing.T) {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)
 			}
 
-			_, e = server.DB.FileInformation(tt.context, responseStruct.Filename)
+			_, e = server.DB.GetFileInformation(tt.context, responseStruct.Filename)
 			if e != nil {
 				t.Fatal(fmt.Sprintf("test %d failed:", i), e)
 			}

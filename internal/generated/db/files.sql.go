@@ -21,40 +21,6 @@ func (q *Queries) DeleteFile(ctx context.Context, fileUuid string) error {
 	return err
 }
 
-const fileInformation = `-- name: FileInformation :one
-SELECT file_uuid,
-    title,
-    upload_date,
-    encrypted,
-    file_size,
-    viewcount
-FROM file
-WHERE file_uuid = $1
-`
-
-type FileInformationRow struct {
-	FileUuid   string         `json:"file_uuid"`
-	Title      sql.NullString `json:"title"`
-	UploadDate time.Time      `json:"upload_date"`
-	Encrypted  bool           `json:"encrypted"`
-	FileSize   sql.NullInt32  `json:"file_size"`
-	Viewcount  int32          `json:"viewcount"`
-}
-
-func (q *Queries) FileInformation(ctx context.Context, fileUuid string) (FileInformationRow, error) {
-	row := q.db.QueryRow(ctx, fileInformation, fileUuid)
-	var i FileInformationRow
-	err := row.Scan(
-		&i.FileUuid,
-		&i.Title,
-		&i.UploadDate,
-		&i.Encrypted,
-		&i.FileSize,
-		&i.Viewcount,
-	)
-	return i, err
-}
-
 const getAccessToken = `-- name: GetAccessToken :one
 SELECT access_token
 FROM file
@@ -68,22 +34,6 @@ func (q *Queries) GetAccessToken(ctx context.Context, fileUuid string) (string, 
 	return access_token, err
 }
 
-const getDownload = `-- name: GetDownload :one
-UPDATE file
-SET 
-    last_seen = CURRENT_TIMESTAMP,
-    viewcount = viewcount + 1
-WHERE file_uuid = $1
-RETURNING encryption_iv
-`
-
-func (q *Queries) GetDownload(ctx context.Context, fileUuid string) ([]byte, error) {
-	row := q.db.QueryRow(ctx, getDownload, fileUuid)
-	var encryption_iv []byte
-	err := row.Scan(&encryption_iv)
-	return encryption_iv, err
-}
-
 const getEncryptedStatus = `-- name: GetEncryptedStatus :one
 SELECT encrypted FROM file
 WHERE file_uuid = $1
@@ -94,6 +44,56 @@ func (q *Queries) GetEncryptedStatus(ctx context.Context, fileUuid string) (bool
 	var encrypted bool
 	err := row.Scan(&encrypted)
 	return encrypted, err
+}
+
+const getEncryptionIV = `-- name: GetEncryptionIV :one
+UPDATE file
+SET 
+    last_seen = CURRENT_TIMESTAMP,
+    viewcount = viewcount + 1
+WHERE file_uuid = $1
+RETURNING encryption_iv
+`
+
+func (q *Queries) GetEncryptionIV(ctx context.Context, fileUuid string) ([]byte, error) {
+	row := q.db.QueryRow(ctx, getEncryptionIV, fileUuid)
+	var encryption_iv []byte
+	err := row.Scan(&encryption_iv)
+	return encryption_iv, err
+}
+
+const getFileInformation = `-- name: GetFileInformation :one
+SELECT file_uuid,
+    title,
+    upload_date,
+    encrypted,
+    file_size,
+    viewcount
+FROM file
+WHERE file_uuid = $1
+`
+
+type GetFileInformationRow struct {
+	FileUuid   string         `json:"file_uuid"`
+	Title      sql.NullString `json:"title"`
+	UploadDate time.Time      `json:"upload_date"`
+	Encrypted  bool           `json:"encrypted"`
+	FileSize   sql.NullInt32  `json:"file_size"`
+	Viewcount  int32          `json:"viewcount"`
+}
+
+func (q *Queries) GetFileInformation(ctx context.Context, fileUuid string) (GetFileInformationRow, error) {
+	row := q.db.QueryRow(ctx, getFileInformation, fileUuid)
+	var i GetFileInformationRow
+	err := row.Scan(
+		&i.FileUuid,
+		&i.Title,
+		&i.UploadDate,
+		&i.Encrypted,
+		&i.FileSize,
+		&i.Viewcount,
+	)
+	return i, err
 }
 
 const getLastSeenAll = `-- name: GetLastSeenAll :many

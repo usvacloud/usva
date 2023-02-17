@@ -36,7 +36,7 @@ func (s *Handler) DownloadFile(ctx *gin.Context) {
 		return
 	}
 
-	encryptionIv, err := s.db.GetDownload(ctx, filename)
+	encryptionIv, err := s.db.GetEncryptionIV(ctx, filename)
 	if err != nil {
 		handlers.SetErrResponse(ctx, err)
 		return

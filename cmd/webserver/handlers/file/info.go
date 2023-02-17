@@ -20,7 +20,7 @@ func (s *Handler) FileInformation(ctx *gin.Context) {
 		return
 	}
 
-	f, err := s.db.FileInformation(ctx, filename)
+	f, err := s.db.GetFileInformation(ctx, filename)
 	if err != nil {
 		handlers.SetErrResponse(ctx, err)
 		return
