@@ -98,6 +98,6 @@ func BCryptPasswordHash(pwd []byte) ([]byte, error) {
 	case pwdlen < 6:
 		return []byte{}, handlers.ErrInvalidBody
 	default:
-		return bcrypt.GenerateFromPassword(pwd, 12)
+		return bcrypt.GenerateFromPassword(pwd, 15)
 	}
 }

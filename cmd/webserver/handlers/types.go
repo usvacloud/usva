@@ -18,8 +18,8 @@ type Configuration struct {
 	MaxSingleUploadSize    uint64
 	MaxUploadSizePerDay    uint64
 	UploadsDir             string
-	CookieSaveTime         int
 	UseSecureCookie        bool
 	APIDomain              string
+	CookieSaveTime         int
 	FilePersistDuration    time.Duration
 }

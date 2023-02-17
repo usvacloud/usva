@@ -21,6 +21,6 @@ func NewTestDatabaseConfiguration() dbengine.DbConfig {
 		User:     StringOr(os.Getenv("DB_USERNAME_TESTS"), "usva_tests"),
 		Password: StringOr(os.Getenv("DB_PASSWORD_TESTS"), "testrunner"),
 		Name:     StringOr(os.Getenv("DB_NAME_TESTS"), "usva_tests"),
-		UseSSL:   true,
+		UseSSL:   false,
 	}
 }

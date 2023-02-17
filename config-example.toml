@@ -1,6 +1,6 @@
-[Server]
-address = "127.0.0.1" # address to bind to
-api_domain = "http://api.mydomain.com"
+[server]
+address = "0.0.0.0" # address to bind to
+api_domain = "localhost"
 port = 8080 # the port to bind to
 trusted_proxies = ["127.0.0.1"]
 debug_mode = false # use of gin's debug mode (includes verbose logging)
@@ -13,51 +13,46 @@ cert_file = "/path/to/cert"
 key_file = "/path/to/keyfile"
 
 [encryption]
-key_size = 32
+key_size = 16
 
 [files]
-# Maximum size for a single upload in bytes. In this configuration set to 1 Mb
-# Zero (0) disables this field. (ratelimit is bypassed)
-max_single_upload_size = 1048576
+# directory for uploaded files
+uploads_dir = "uploads" 
 
-# Maximum size for uploads per day per IP. In this configuration this value is
-# set to 16 Mb.
-# Zero (0) disables this field. (ratelimit is bypassed)
-max_upload_size_per_day = 16777216
-
-# MaxEncryptableFileSize is the maximum size of a file that can be encrypted on the server.
-# If not set, defaults to MaxSingleUploadSize.
-max_encryptable_file_size = 1048576
-
-# UploadsDir describes the path in current filesystem where uploaded files are saved.
-uploads_dir = "uploads" # directory for uploaded files
+# general toggle for whether files are deleted after specific time or not
 remove_files_after_inactivity = true
 
-# File maximum inactivity in seconds until delete
-inactivity_until_delete = 86400
+# set to be true if site uses SSL
+auth_use_secure_cookie = false
 
-# AuthUseSecureCookie needs to be set to true if the api is served with a SSL
-auth_use_secure_cookie = true
+# file inactivity until delete e.g. how long the file has to be idle before removing
+inactivity_until_delete = "86400s"
 
-# AuthSaveTime describes the seconds the authentication cookie is saved
-auth_save_time = 1900
+# how long client authentication lasts
+auth_save_time = "1900s"
 
-# Cleantrashes boolean specifies if server should remove all files that are not present in database.
-# this can be optimal but dangerous at the same time, if you haven't verified that usva
-# correctly reads the target directory. In the worst case scenario your important files are gone!
-clean_trashes          = false
+# following restriction rules are in bytes
+# maximum size for a single upload that is not encrypted by the server
+max_single_upload_size = 100000000 # 100mb
+# total maximum size that a client can upload during one day
+max_upload_size_per_day = 100000000 # 100mb
+# maximum size for a single upload that is encrypted by the server
+max_encryptable_file_size = 100000000 # 100mb
 
 [ratelimit.strict_limit]
 requests = 3
+# time until reset
 time = 180
 
 [ratelimit.query_limit]
 requests = 2
+# time until reset
 time = 60
 
 [database]
 user  = "usva"
-password = "dbownerpassword"
+password = "usva"
 host = "127.0.0.1"
 port = 5432
 database = "usva"
+use_ssl = false

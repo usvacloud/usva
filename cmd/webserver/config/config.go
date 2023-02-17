@@ -47,8 +47,7 @@ type Files struct {
 	UploadsDir                 string        `toml:"uploads_dir"`
 	RemoveFilesAfterInactivity bool          `toml:"remove_files_after_inactivity"`
 	InactivityUntilDelete      time.Duration `toml:"inactivity_until_delete"`
-	CleanTrashes               bool          `toml:"clean_trashes"`
-	AuthSaveTime               int           `toml:"auth_save_time"`
+	AuthSaveTime               time.Duration `toml:"auth_save_time"`
 	AuthUseSecureCookie        bool          `toml:"auth_use_secure_cookie"`
 }
 type Database struct {

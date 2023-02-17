@@ -10,16 +10,18 @@ Documentation about endpoints and their usage
 
 ### Request authorization
 
-In order to authorize a request, you need to set `Authorization` header to `Bearer <password>` with base64 encoded password.
+In order to authorize a request, you need to set `Authorization` header to `Bearer <password>` with base64 url-encoded password.
 
-Example of authorization header, where file is locked with password `usva` (this password will be used in example requests):
+Example of authorization header, where file is locked with password `usva` (this password will be used in following example requests, too):
 
-| Name          | Value          | Description |
-| ------------- | -------------- | ----------- |
-| Authorization | Bearer dXN2YQo |             |
+| Name          | Value          |
+| ------------- | -------------- |
+| Authorization | Bearer dXN2YQo |
 
 - If authorization fails (e.g. password is invalid), the API returns 403.
 - If authorization header doesn't exist even though it's required, the API returns HTTP 401.
+
+
 
 ## <a name="root">API operations</a>
 
@@ -35,9 +37,12 @@ Returns API restrictions. These can be for example shown on client.
 
 #### Fields
 
-| Field name | Description                                |
-| :--------- | ------------------------------------------ |
-| maxSize    | Maximum size of uploaded file in megabytes |
+| Field name           | Description                                               |
+| :------------------- | --------------------------------------------------------- |
+| maxDailyUploadSize   | Maximum total size of uploaded files in a single day      |
+| filePersistDuration  | Describes how long a file is saved (days, hours, seconds) |
+| maxEncryptedFileSize | Maximum size for an server-side encrypted file            |
+| maxSingleUploadSize  | Maximum size for an non-server-side encrypted file        |
 
 #### Examples
 
@@ -51,7 +56,29 @@ Example response
 
 ```json
 {
-  "maxSize": 20
+  "filePersistDuration": {
+    "days": 1,
+    "hours": 24,
+    "seconds": 86400
+  },
+  "maxDailyUploadSize": {
+    "bytes": 0,
+    "gigabytes": 0,
+    "kilobytes": 0,
+    "megabytes": 0
+  },
+  "maxEncryptedFileSize": {
+    "bytes": 100000000,
+    "gigabytes": 0,
+    "kilobytes": 100000,
+    "megabytes": 100
+  },
+  "maxSingleUploadSize": {
+    "bytes": 0,
+    "gigabytes": 0,
+    "kilobytes": 0,
+    "megabytes": 0
+  }
 }
 ```
 
@@ -63,6 +90,7 @@ Contains all file operations
 
 - [GET /file](#get_file)
 - [GET /file/info](#get_file_info)
+- [POST /file](#post_file)
 - [POST /file/upload](#post_file_upload)
 - [POST /file/report](#post-file-report)
 
@@ -106,14 +134,40 @@ curl "http://usva.local/file/info?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.
 
 ```json
 {
+  "encrypted": false,
   "filename": "5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp",
   "locked": true,
-  "title": "my-upload-title",
-  "size": 6757,
-  "uploadDate": "1970-01-01T00:00:00+03:00",
-  "viewCount": 10
+  "size": 8389748, 
+  "title": {
+    "String": "",
+    "Valid": false
+  },
+  "uploadDate": "2023-02-17T10:33:56.493197Z",
+  "viewCount": 0
 }
 ```
+
+### <a name="post_file">POST /file </a>
+
+Uploads a file without any parameters and returns the perfect path for querying it's result
+
+#### Examples
+
+##### Example request
+
+```sh
+curl --form 'file=@./5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp' http://usva.local/file/
+```
+
+##### Example response
+
+```
+http://usva.local/file/?filename=bdbd3766-4cc1-46f3-ac28-296d958e848c
+```
+
+
+
+
 
 ### <a name="post_file_upload">POST /file/upload </a>
 
@@ -121,18 +175,30 @@ Uploads a file and returns it's filename on server.
 
 ##### Required headers:
 
-| Name         | Valuew    | Description            |
+| Name         | Value     | Description            |
 | ------------ | --------- | ---------------------- |
 | Content-Type | form-data | Specifies content type |
+
+##### Possible form parameters:
+
+| Name          | Description                                                  |
+| ------------- | ------------------------------------------------------------ |
+| `title`       | specifies a title for the upload                             |
+| `password`    | specifies a password for the upload. this is used for server-side encryption. **note**: has to be in url-encoded base64 format |
+| `can_encrypt` | specifies whether file should be encrypted on the server     |
+| `file`        | file to upload                                               |
+
+
 
 #### Examples
 
 ##### Example request:
 
 ```sh
-curl --location --request POST 'localhost:8080/file/upload' \
+curl -L -X POST 'localhost:8080/file/upload' \
     --form 'title="my-upload-title"' \
     --form 'password="some-base64-encoded-string"' \
+    --form 'can_encrypt=yes' \
 	--form 'file=@"./5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp"'
 ```
 
@@ -145,7 +211,7 @@ curl --location --request POST 'localhost:8080/file/upload' \
 }
 ```
 
-### <a name="post-file-report">POST /report</a>
+### <a name="post-file-report">POST /file/report</a>
 
 #### Examples
 

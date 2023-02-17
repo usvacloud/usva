@@ -3,7 +3,6 @@ package file
 import (
 	"database/sql"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,25 +16,8 @@ import (
 	"github.com/romeq/usva/cmd/webserver/handlers"
 	"github.com/romeq/usva/cmd/webserver/handlers/auth"
 	"github.com/romeq/usva/internal/generated/db"
-	"github.com/romeq/usva/internal/utils"
 	"github.com/romeq/usva/pkg/cryptography"
 )
-
-type Handler struct {
-	db                *db.Queries
-	api               *handlers.Configuration
-	encryptionKeySize uint32
-	auth              *auth.Handler
-}
-
-func NewFileHandler(s *handlers.Server, authHandler *auth.Handler) *Handler {
-	return &Handler{
-		db:                s.DB,
-		api:               s.Config,
-		encryptionKeySize: s.EncKeySize,
-		auth:              authHandler,
-	}
-}
 
 // UploadFileSimple is a simple wrapper around ctx.SaveUploadedFile to support
 // an upload with a very very simple curl request (curl -Ld = )
@@ -184,140 +166,5 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message":  "file uploaded",
 		"filename": filename,
-	})
-}
-
-// => /file/info?filename=<uuid>
-func (s *Handler) FileInformation(ctx *gin.Context) {
-	filename, filenameGiven := ctx.GetQuery("filename")
-	if !filenameGiven {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "Filename not given",
-		})
-		return
-	}
-
-	if !s.auth.AuthorizeRequest(ctx, filename) {
-		return
-	}
-
-	f, err := s.db.FileInformation(ctx, filename)
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	if err = s.db.UpdateLastSeen(ctx, filename); err != nil {
-		handlers.SetErrResponse(ctx, err)
-	}
-
-	pwd, err := s.db.GetPasswordHash(ctx, filename)
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	filesize, err := utils.FileSize(path.Join(s.api.UploadsDir, filename))
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"filename":   f.FileUuid,
-		"size":       filesize,
-		"title":      f.Title,
-		"uploadDate": f.UploadDate,
-		"viewCount":  f.Viewcount,
-		"locked":     pwd.Valid,
-		"encrypted":  f.Encrypted,
-	})
-}
-
-func (s *Handler) DownloadFile(ctx *gin.Context) {
-	filename, filenameGiven := ctx.GetQuery("filename")
-	if !filenameGiven {
-		handlers.SetErrResponse(ctx, errors.New("filename not given"))
-		return
-	}
-
-	// authorize request
-	if !s.auth.AuthorizeRequest(ctx, filename) {
-		return
-	}
-
-	filepath := path.Join(s.api.UploadsDir, filename)
-	fileHandle, err := os.Open(filepath)
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	headerPassword, err := s.auth.ParseFilePassword(ctx, filename)
-	if err != nil && !errors.Is(err, handlers.ErrAuthMissing) {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	encryptionIv, err := s.db.GetDownload(ctx, filename)
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	if len(encryptionIv) == 0 {
-		ctx.FileAttachment(filepath, path.Base(filepath))
-		return
-	} else if errors.Is(err, handlers.ErrAuthMissing) {
-		handlers.SetErrResponse(ctx, handlers.ErrAuthMissing)
-		return
-	}
-
-	ctx.Writer.Header().Set("Content-Disposition", `attachment;`)
-
-	ctx.Status(http.StatusOK)
-
-	derivedKey, err := cryptography.DeriveBasicKey([]byte(headerPassword), s.encryptionKeySize)
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	err = cryptography.DecryptStream(ctx.Writer, fileHandle, derivedKey, encryptionIv)
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-}
-
-func (s *Handler) ReportFile(ctx *gin.Context) {
-	var requestBody struct {
-		Filename string `json:"filename"`
-		Reason   string `json:"reason"`
-	}
-	err := ctx.BindJSON(&requestBody)
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	if len(requestBody.Filename) < 36 ||
-		!utils.IsBetween(len(requestBody.Reason), 20, 1024) {
-
-		handlers.SetErrResponse(ctx, handlers.ErrInvalidBody)
-		return
-	}
-
-	err = s.db.NewReport(ctx, db.NewReportParams{
-		FileUuid: requestBody.Filename,
-		Reason:   requestBody.Reason,
-	})
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "thank you! your report has been sent.",
 	})
 }

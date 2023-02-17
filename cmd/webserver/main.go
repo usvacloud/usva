@@ -60,7 +60,7 @@ func main() {
 		MaxSingleUploadSize:    cfg.Files.MaxSingleUploadSize,
 		MaxUploadSizePerDay:    cfg.Files.MaxUploadSizePerDay,
 		UploadsDir:             cfg.Files.UploadsDir,
-		CookieSaveTime:         cfg.Files.AuthSaveTime,
+		CookieSaveTime:         int(cfg.Files.AuthSaveTime.Seconds()),
 		FilePersistDuration:    cfg.Files.InactivityUntilDelete,
 		UseSecureCookie:        cfg.Files.AuthUseSecureCookie,
 		APIDomain:              cfg.Server.APIDomain,
