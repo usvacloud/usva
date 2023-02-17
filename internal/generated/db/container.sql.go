@@ -18,8 +18,8 @@ RETURNING container_uuid
 `
 
 type AddContainerParams struct {
-	Name     string
-	Password string
+	Name     string `json:"name"`
+	Password string `json:"password"`
 }
 
 func (q *Queries) AddContainer(ctx context.Context, arg AddContainerParams) (uuid.UUID, error) {
@@ -47,8 +47,8 @@ RETURNING container_uuid
 `
 
 type UpdateContainerNameParams struct {
-	Name          string
-	ContainerUuid uuid.UUID
+	Name          string    `json:"name"`
+	ContainerUuid uuid.UUID `json:"container_uuid"`
 }
 
 func (q *Queries) UpdateContainerName(ctx context.Context, arg UpdateContainerNameParams) (uuid.UUID, error) {
@@ -66,8 +66,8 @@ RETURNING container_uuid
 `
 
 type UpdateContainerPasswordParams struct {
-	Password      string
-	ContainerUuid uuid.UUID
+	Password      string    `json:"password"`
+	ContainerUuid uuid.UUID `json:"container_uuid"`
 }
 
 func (q *Queries) UpdateContainerPassword(ctx context.Context, arg UpdateContainerPasswordParams) (uuid.UUID, error) {

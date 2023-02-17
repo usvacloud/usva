@@ -33,12 +33,12 @@ WHERE file_uuid = $1
 `
 
 type FileInformationRow struct {
-	FileUuid   string
-	Title      sql.NullString
-	UploadDate time.Time
-	Encrypted  bool
-	FileSize   sql.NullInt32
-	Viewcount  int32
+	FileUuid   string         `json:"file_uuid"`
+	Title      sql.NullString `json:"title"`
+	UploadDate time.Time      `json:"upload_date"`
+	Encrypted  bool           `json:"encrypted"`
+	FileSize   sql.NullInt32  `json:"file_size"`
+	Viewcount  int32          `json:"viewcount"`
 }
 
 func (q *Queries) FileInformation(ctx context.Context, fileUuid string) (FileInformationRow, error) {
@@ -103,8 +103,8 @@ FROM file
 `
 
 type GetLastSeenAllRow struct {
-	FileUuid string
-	LastSeen time.Time
+	FileUuid string    `json:"file_uuid"`
+	LastSeen time.Time `json:"last_seen"`
 }
 
 func (q *Queries) GetLastSeenAll(ctx context.Context) ([]GetLastSeenAllRow, error) {
@@ -154,12 +154,12 @@ VALUES($1, $2, $3, $4, $5, $6, 0)
 `
 
 type NewFileParams struct {
-	FileUuid     string
-	Title        sql.NullString
-	Passwdhash   sql.NullString
-	AccessToken  string
-	EncryptionIv []byte
-	FileSize     sql.NullInt32
+	FileUuid     string         `json:"file_uuid"`
+	Title        sql.NullString `json:"title"`
+	Passwdhash   sql.NullString `json:"passwdhash"`
+	AccessToken  string         `json:"access_token"`
+	EncryptionIv []byte         `json:"encryption_iv"`
+	FileSize     sql.NullInt32  `json:"file_size"`
 }
 
 func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {

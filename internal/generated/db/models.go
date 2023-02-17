@@ -12,41 +12,41 @@ import (
 )
 
 type Container struct {
-	ContainerUuid uuid.UUID
-	Name          string
-	Password      string
+	ContainerUuid uuid.UUID `json:"container_uuid"`
+	Name          string    `json:"name"`
+	Password      string    `json:"password"`
 }
 
 type Feedback struct {
-	ID      int32
-	Comment sql.NullString
-	Boxes   string
+	ID      int32          `json:"id"`
+	Comment sql.NullString `json:"comment"`
+	Boxes   string         `json:"boxes"`
 }
 
 type File struct {
-	FileUuid     string
-	Title        sql.NullString
-	Passwdhash   sql.NullString
-	AccessToken  string
-	Encrypted    bool
-	FileSize     sql.NullInt32
-	EncryptionIv []byte
-	UploadDate   time.Time
-	LastSeen     time.Time
-	Viewcount    int32
+	FileUuid     string         `json:"file_uuid"`
+	Title        sql.NullString `json:"title"`
+	Passwdhash   sql.NullString `json:"passwdhash"`
+	AccessToken  string         `json:"access_token"`
+	Encrypted    bool           `json:"encrypted"`
+	FileSize     sql.NullInt32  `json:"file_size"`
+	EncryptionIv []byte         `json:"encryption_iv"`
+	UploadDate   time.Time      `json:"upload_date"`
+	LastSeen     time.Time      `json:"last_seen"`
+	Viewcount    int32          `json:"viewcount"`
 }
 
 type FileToContainer struct {
-	FileToContainerUuid uuid.UUID
-	ContainerUuid       uuid.UUID
-	FileUuid            uuid.UUID
+	FileToContainerUuid uuid.UUID `json:"file_to_container_uuid"`
+	ContainerUuid       uuid.UUID `json:"container_uuid"`
+	FileUuid            string    `json:"file_uuid"`
 }
 
 type PeerBan struct {
-	PeerID string
+	PeerID string `json:"peer_id"`
 }
 
 type Report struct {
-	FileUuid string
-	Reason   string
+	FileUuid string `json:"file_uuid"`
+	Reason   string `json:"reason"`
 }

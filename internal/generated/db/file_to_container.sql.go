@@ -21,8 +21,8 @@ RETURNING file_to_container_uuid
 `
 
 type AddFileToContainerParams struct {
-	FileUuid      uuid.UUID
-	ContainerUuid uuid.UUID
+	FileUuid      string    `json:"file_uuid"`
+	ContainerUuid uuid.UUID `json:"container_uuid"`
 }
 
 func (q *Queries) AddFileToContainer(ctx context.Context, arg AddFileToContainerParams) (uuid.UUID, error) {

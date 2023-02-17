@@ -19,8 +19,8 @@ LIMIT $1
 `
 
 type GetFeedbacksRow struct {
-	Comment sql.NullString
-	Boxes   string
+	Comment sql.NullString `json:"comment"`
+	Boxes   string         `json:"boxes"`
 }
 
 func (q *Queries) GetFeedbacks(ctx context.Context, limit int32) ([]GetFeedbacksRow, error) {
@@ -49,8 +49,8 @@ VALUES($1, $2)
 `
 
 type NewFeedbackParams struct {
-	Comment sql.NullString
-	Boxes   string
+	Comment sql.NullString `json:"comment"`
+	Boxes   string         `json:"boxes"`
 }
 
 func (q *Queries) NewFeedback(ctx context.Context, arg NewFeedbackParams) error {

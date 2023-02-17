@@ -15,8 +15,8 @@ VALUES($1, $2)
 `
 
 type NewReportParams struct {
-	FileUuid string
-	Reason   string
+	FileUuid string `json:"file_uuid"`
+	Reason   string `json:"reason"`
 }
 
 func (q *Queries) NewReport(ctx context.Context, arg NewReportParams) error {
