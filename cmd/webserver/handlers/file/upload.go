@@ -20,7 +20,7 @@ import (
 )
 
 // UploadFileSimple is a simple wrapper around ctx.SaveUploadedFile to support
-// an upload with a very very simple curl request (curl -Ld = )
+// an upload with a very very simple curl request (curl -LF 'file=@./file' "http://localhost/file" )
 func (s *Handler) UploadFileSimple(ctx *gin.Context) {
 	f, err := ctx.FormFile("file")
 	if err != nil {
@@ -43,6 +43,10 @@ func (s *Handler) UploadFileSimple(ctx *gin.Context) {
 		FileUuid:    filename,
 		Title:       sql.NullString{String: title, Valid: title != ""},
 		AccessToken: uuid.NewString(),
+		FileSize: sql.NullInt32{
+			Int32: int32(f.Size),
+			Valid: f.Size > 0,
+		},
 	})
 	if err != nil {
 		handlers.SetErrResponse(ctx, err)
@@ -157,6 +161,10 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		Passwdhash:   sql.NullString{String: string(hash), Valid: string(hash) != ""},
 		EncryptionIv: iv,
 		AccessToken:  uuid.NewString(),
+		FileSize: sql.NullInt32{
+			Int32: int32(formFile.Size),
+			Valid: formFile.Size > 0,
+		},
 	})
 	if err != nil {
 		handlers.SetErrResponse(ctx, err)

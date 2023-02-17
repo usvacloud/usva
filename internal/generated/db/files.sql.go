@@ -26,6 +26,7 @@ SELECT file_uuid,
     title,
     upload_date,
     encrypted,
+    file_size,
     viewcount
 FROM file
 WHERE file_uuid = $1
@@ -36,6 +37,7 @@ type FileInformationRow struct {
 	Title      sql.NullString
 	UploadDate time.Time
 	Encrypted  bool
+	FileSize   sql.NullInt32
 	Viewcount  int32
 }
 
@@ -47,6 +49,7 @@ func (q *Queries) FileInformation(ctx context.Context, fileUuid string) (FileInf
 		&i.Title,
 		&i.UploadDate,
 		&i.Encrypted,
+		&i.FileSize,
 		&i.Viewcount,
 	)
 	return i, err
@@ -144,9 +147,10 @@ INSERT INTO file(
     passwdhash,
     access_token,
     encryption_iv,
+    file_size,
     viewcount
 )
-VALUES($1, $2, $3, $4, $5, 0)
+VALUES($1, $2, $3, $4, $5, $6, 0)
 `
 
 type NewFileParams struct {
@@ -155,6 +159,7 @@ type NewFileParams struct {
 	Passwdhash   sql.NullString
 	AccessToken  string
 	EncryptionIv []byte
+	FileSize     sql.NullInt32
 }
 
 func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
@@ -164,6 +169,7 @@ func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
 		arg.Passwdhash,
 		arg.AccessToken,
 		arg.EncryptionIv,
+		arg.FileSize,
 	)
 	return err
 }

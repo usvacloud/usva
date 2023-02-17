@@ -21,6 +21,7 @@ type File struct {
 	Passwdhash   sql.NullString
 	AccessToken  string
 	Encrypted    bool
+	FileSize     sql.NullInt32
 	EncryptionIv []byte
 	UploadDate   time.Time
 	LastSeen     time.Time

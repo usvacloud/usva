@@ -36,7 +36,7 @@ func TestTrasher_Run(t *testing.T) {
 			name: "test-1",
 			fields: fields{
 				TimeUntilRemove: time.Second * 2,
-				Interval:        time.Millisecond * 2,
+				Interval:        time.Millisecond,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -47,8 +47,8 @@ func TestTrasher_Run(t *testing.T) {
 		{
 			name: "test-2",
 			fields: fields{
-				TimeUntilRemove: time.Millisecond * 5,
-				Interval:        time.Millisecond * 2,
+				TimeUntilRemove: time.Second / 2,
+				Interval:        time.Second / 5,
 			},
 			args: args{
 				ctx: context.Background(),

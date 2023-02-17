@@ -2,11 +2,9 @@ package file
 
 import (
 	"net/http"
-	"path"
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/cmd/webserver/handlers"
-	"github.com/romeq/usva/internal/utils"
 )
 
 func (s *Handler) FileInformation(ctx *gin.Context) {
@@ -38,15 +36,9 @@ func (s *Handler) FileInformation(ctx *gin.Context) {
 		return
 	}
 
-	filesize, err := utils.FileSize(path.Join(s.api.UploadsDir, filename))
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
 	ctx.JSON(http.StatusOK, gin.H{
 		"filename":   f.FileUuid,
-		"size":       filesize,
+		"size":       f.FileSize.Int32,
 		"title":      f.Title,
 		"uploadDate": f.UploadDate,
 		"viewCount":  f.Viewcount,

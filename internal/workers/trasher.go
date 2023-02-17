@@ -38,8 +38,7 @@ func (t *Trasher) trash(ctx context.Context) {
 			continue
 		}
 
-		err := t.db.DeleteFile(ctx, file.FileUuid)
-		if err != nil {
+		if err := t.db.DeleteFile(ctx, file.FileUuid); err != nil {
 			log.Println("Trasher:", err)
 		}
 
