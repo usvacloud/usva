@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func prettybytes(bytes uint64) gin.H {
+func jsonbytes(bytes uint64) gin.H {
 	return gin.H{
 		"bytes":     bytes,
 		"kilobytes": bytes / 1000,
@@ -22,9 +22,9 @@ func prettybytes(bytes uint64) gin.H {
 
 func (s *Server) RestrictionsHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
-		"maxSingleUploadSize":  prettybytes(s.Config.MaxSingleUploadSize),
-		"maxDailyUploadSize":   prettybytes(s.Config.MaxUploadSizePerDay),
-		"maxEncryptedFileSize": prettybytes(s.Config.MaxEncryptableFileSize),
+		"maxSingleUploadSize":  jsonbytes(s.Config.MaxSingleUploadSize),
+		"maxDailyUploadSize":   jsonbytes(s.Config.MaxUploadSizePerDay),
+		"maxEncryptedFileSize": jsonbytes(s.Config.MaxEncryptableFileSize),
 		"filePersistDuration": gin.H{
 			"seconds": s.Config.FilePersistDuration.Seconds(),
 			"hours":   s.Config.FilePersistDuration.Hours(),
