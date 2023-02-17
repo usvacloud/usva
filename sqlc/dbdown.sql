@@ -1,5 +1,5 @@
-DROP TABLE IF EXISTS file_to_container;
-DROP TABLE IF EXISTS container;
+DROP TABLE IF EXISTS file_to_account;
+DROP TABLE IF EXISTS account;
 DROP TABLE IF EXISTS feedback;
 DROP TABLE IF EXISTS report;
 DROP TABLE IF EXISTS file;
