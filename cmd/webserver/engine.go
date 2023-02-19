@@ -5,7 +5,9 @@ import (
 
 	"github.com/romeq/usva/cmd/webserver/config"
 	"github.com/romeq/usva/cmd/webserver/handlers"
+	"github.com/romeq/usva/cmd/webserver/handlers/account"
 	"github.com/romeq/usva/cmd/webserver/handlers/auth"
+	"github.com/romeq/usva/cmd/webserver/handlers/common"
 	"github.com/romeq/usva/cmd/webserver/handlers/feedback"
 	"github.com/romeq/usva/cmd/webserver/handlers/file"
 	"github.com/romeq/usva/cmd/webserver/handlers/middleware"
@@ -51,8 +53,9 @@ func addRouteHandlers(server *handlers.Server, cfg *config.Config) {
 	}
 
 	// Common
+	commonHandler := common.NewHandler(server.Config)
 	{
-		router.GET("/restrictions", server.RestrictionsHandler)
+		router.GET("/restrictions", commonHandler.RestrictionsHandler)
 	}
 
 	// Files handlers
@@ -63,7 +66,6 @@ func addRouteHandlers(server *handlers.Server, cfg *config.Config) {
 		fileGroup.GET("/info", query, filehandler.FileInformation)
 		fileGroup.GET("/", query, filehandler.DownloadFile)
 		fileGroup.POST("/upload", strict, uploadRestrictor, filehandler.UploadFile)
-		fileGroup.POST("/", strict, uploadRestrictor, filehandler.UploadFileSimple)
 		fileGroup.POST("/report", strict, filehandler.ReportFile)
 	}
 
@@ -73,5 +75,22 @@ func addRouteHandlers(server *handlers.Server, cfg *config.Config) {
 	{
 		feedbackGroup.GET("/", query, feedbackhandler.GetFeedback)
 		feedbackGroup.POST("/", strict, feedbackhandler.AddFeedback)
+	}
+
+	// Accounts
+	accountsGroup := router.Group("/account")
+	userAuthenticator := account.NewAuthenticator(server.DB)
+	accountsHandler := account.NewAccountsHandler(server.DB, *server.Config, userAuthenticator)
+	{
+		accountsGroup.POST("/register", strict, accountsHandler.CreateAccount)
+		accountsGroup.POST("/login", strict, accountsHandler.Login)
+		accountsGroup.GET("/", query, accountsHandler.Profile)
+	}
+
+	sessionsGroup := accountsGroup.Group("/sessions")
+	{
+		sessionsGroup.GET("/", query, accountsHandler.Sessions)
+		sessionsGroup.DELETE("/", query, accountsHandler.RemoveSession)
+		sessionsGroup.DELETE("/all", query, accountsHandler.RemoveSessions)
 	}
 }

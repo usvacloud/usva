@@ -113,7 +113,7 @@ func (q *Queries) GetLastSeenAll(ctx context.Context) ([]GetLastSeenAllRow, erro
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetLastSeenAllRow
+	items := []GetLastSeenAllRow{}
 	for rows.Next() {
 		var i GetLastSeenAllRow
 		if err := rows.Scan(&i.FileUuid, &i.LastSeen); err != nil {

@@ -29,7 +29,7 @@ func (q *Queries) GetFeedbacks(ctx context.Context, limit int32) ([]GetFeedbacks
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetFeedbacksRow
+	items := []GetFeedbacksRow{}
 	for rows.Next() {
 		var i GetFeedbacksRow
 		if err := rows.Scan(&i.Comment, &i.Boxes); err != nil {

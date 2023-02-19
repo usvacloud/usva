@@ -19,60 +19,7 @@ import (
 	"github.com/romeq/usva/pkg/cryptography"
 )
 
-// UploadFileSimple is a simple wrapper around ctx.SaveUploadedFile to support
-// an upload with a very very simple curl request (curl -LF 'file=@./file' "http://localhost/file" )
-func (s *Handler) UploadFileSimple(ctx *gin.Context) {
-	f, err := ctx.FormFile("file")
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	// generate name for the uploaded file
-	filename := uuid.NewString() + path.Ext(f.Filename)
-
-	if s.api.MaxSingleUploadSize > 0 && uint64(f.Size) > s.api.MaxSingleUploadSize {
-		ctx.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
-			"error": "File is too big",
-		})
-		return
-	}
-
-	title := ctx.Request.FormValue("title")
-	err = s.db.NewFile(ctx, db.NewFileParams{
-		FileUuid:    filename,
-		Title:       sql.NullString{String: title, Valid: title != ""},
-		AccessToken: uuid.NewString(),
-		FileSize: sql.NullInt32{
-			Int32: int32(f.Size),
-			Valid: f.Size > 0,
-		},
-	})
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	abspath, err := filepath.Abs(s.api.UploadsDir)
-	if err != nil {
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	err = ctx.SaveUploadedFile(f, path.Join(abspath, filename))
-	if err != nil {
-		_ = s.db.DeleteFile(ctx, filename)
-		handlers.SetErrResponse(ctx, err)
-		return
-	}
-
-	protocol := "http"
-	if s.api.UseSecureCookie {
-		protocol = "https"
-	}
-
-	ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file/?filename=%s", protocol, s.api.APIDomain, filename))
-}
+var protocol = "http"
 
 // UploadFile
 func (s *Handler) UploadFile(ctx *gin.Context) {
@@ -171,8 +118,16 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
+	if strings.Contains(ctx.Request.Header.Get("User-Agent"), "curl") {
+		if s.api.UseSecureCookie {
+			protocol = "https"
+		}
+
+		ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file/?filename=%s", protocol, s.api.APIDomain, filename))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"message":  "file uploaded",
 		"filename": filename,
 	})
 }

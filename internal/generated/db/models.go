@@ -11,10 +11,19 @@ import (
 	"github.com/google/uuid"
 )
 
-type Container struct {
-	ContainerUuid uuid.UUID `json:"container_uuid"`
-	Name          string    `json:"name"`
-	Password      string    `json:"password"`
+type Account struct {
+	AccountID      uuid.UUID `json:"account_id"`
+	Username       string    `json:"username"`
+	Password       string    `json:"password"`
+	RegisterDate   time.Time `json:"register_date"`
+	LastLogin      time.Time `json:"last_login"`
+	ActivityPoints int32     `json:"activity_points"`
+}
+
+type AccountSession struct {
+	SessionID string    `json:"session_id"`
+	AccountID uuid.UUID `json:"account_id"`
+	StartDate time.Time `json:"start_date"`
 }
 
 type Feedback struct {
@@ -36,10 +45,9 @@ type File struct {
 	Viewcount    int32          `json:"viewcount"`
 }
 
-type FileToContainer struct {
-	FileToContainerUuid uuid.UUID `json:"file_to_container_uuid"`
-	ContainerUuid       uuid.UUID `json:"container_uuid"`
-	FileUuid            string    `json:"file_uuid"`
+type FileToAccount struct {
+	AccountID uuid.UUID `json:"account_id"`
+	FileUuid  string    `json:"file_uuid"`
 }
 
 type PeerBan struct {
