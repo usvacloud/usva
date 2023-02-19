@@ -11,9 +11,9 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/romeq/usva/cmd/webserver/api"
 	"github.com/romeq/usva/cmd/webserver/arguments"
 	"github.com/romeq/usva/cmd/webserver/config"
-	"github.com/romeq/usva/cmd/webserver/handlers"
 	"github.com/romeq/usva/internal/dbengine"
 	"github.com/romeq/usva/internal/utils"
 	"github.com/romeq/usva/internal/workers"
@@ -55,7 +55,7 @@ func main() {
 
 	utils.Must(r.SetTrustedProxies(cfg.Server.TrustedProxies))
 
-	handler := handlers.NewServer(r, db, &handlers.Configuration{
+	handler := api.NewServer(r, db, &api.Configuration{
 		MaxEncryptableFileSize: cfg.Files.MaxEncryptableFileSize,
 		MaxSingleUploadSize:    cfg.Files.MaxSingleUploadSize,
 		MaxUploadSizePerDay:    cfg.Files.MaxUploadSizePerDay,
@@ -69,7 +69,7 @@ func main() {
 	trasher := workers.NewTrasher(time.Hour, cfg.Files.InactivityUntilDelete, cfg.Files.UploadsDir, db)
 	handler.IncludeServerContextWorker(trasher)
 
-	addRouteHandlers(handler, cfg)
+	addRouteapi(handler, cfg)
 	srv := http.Server{
 		ReadTimeout:       time.Minute,
 		IdleTimeout:       time.Minute,

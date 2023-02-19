@@ -3,26 +3,26 @@ package main
 import (
 	"time"
 
+	"github.com/romeq/usva/cmd/webserver/api"
+	"github.com/romeq/usva/cmd/webserver/api/account"
+	"github.com/romeq/usva/cmd/webserver/api/auth"
+	"github.com/romeq/usva/cmd/webserver/api/common"
+	"github.com/romeq/usva/cmd/webserver/api/feedback"
+	"github.com/romeq/usva/cmd/webserver/api/file"
+	"github.com/romeq/usva/cmd/webserver/api/middleware"
 	"github.com/romeq/usva/cmd/webserver/config"
-	"github.com/romeq/usva/cmd/webserver/handlers"
-	"github.com/romeq/usva/cmd/webserver/handlers/account"
-	"github.com/romeq/usva/cmd/webserver/handlers/auth"
-	"github.com/romeq/usva/cmd/webserver/handlers/common"
-	"github.com/romeq/usva/cmd/webserver/handlers/feedback"
-	"github.com/romeq/usva/cmd/webserver/handlers/file"
-	"github.com/romeq/usva/cmd/webserver/handlers/middleware"
 	"github.com/romeq/usva/internal/workers"
 	"github.com/romeq/usva/pkg/ratelimit"
 )
 
-func parseRatelimits(cfg *config.Ratelimit) handlers.Ratelimits {
-	return handlers.Ratelimits{
-		StrictLimit: handlers.Limits(cfg.StrictLimit),
-		QueryLimit:  handlers.Limits(cfg.QueryLimit),
+func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {
+	return api.Ratelimits{
+		StrictLimit: api.Limits(cfg.StrictLimit),
+		QueryLimit:  api.Limits(cfg.QueryLimit),
 	}
 }
 
-func addRouteHandlers(server *handlers.Server, cfg *config.Config) {
+func addRouteapi(server *api.Server, cfg *config.Config) {
 	// Initialize ratelimiters
 	strictrl := ratelimit.NewRatelimiter()
 	queryrl := ratelimit.NewRatelimiter()
@@ -58,7 +58,7 @@ func addRouteHandlers(server *handlers.Server, cfg *config.Config) {
 		router.GET("/restrictions", commonHandler.RestrictionsHandler)
 	}
 
-	// Files handlers
+	// Files api
 	fileGroup := router.Group("/file")
 	filehandler := file.NewFileHandler(server, authhandler)
 	{

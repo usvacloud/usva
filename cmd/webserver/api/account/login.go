@@ -1,0 +1,45 @@
+package account
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/romeq/usva/cmd/webserver/api"
+	"github.com/romeq/usva/internal/utils"
+)
+
+type loginStruct struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func verifyLoginProperties(account loginStruct) error {
+	switch {
+	case !utils.IsBetween(len(account.Username), 4, 16):
+		return api.ErrUsernameRequirementsNotMet
+	case !utils.IsBetween(len(account.Password), 8, 32):
+		return api.ErrPasswordRequirementsNotMet
+	}
+
+	return nil
+}
+
+func (h Handler) Login(ctx *gin.Context) {
+	b, err := api.BindBodyToStruct(ctx, verifyLoginProperties)
+	if err != nil {
+		api.SetErrResponse(ctx, err)
+		return
+	}
+
+	sessionID, err := h.authenticator.NewSession(ctx, b.Username, b.Password)
+	if err != nil {
+		api.SetErrResponse(ctx, err)
+		return
+	}
+
+	h.persistSession(ctx, sessionID)
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"sessionId": sessionID,
+	})
+}
