@@ -1,4 +1,4 @@
-package auth
+package file
 
 import (
 	"encoding/base64"
@@ -11,21 +11,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Handler struct {
-	DB     *db.Queries
-	Config *api.Configuration
-}
-
-func NewAuthHandler(s *api.Server) *Handler {
-	return &Handler{
-		DB:     s.DB,
-		Config: s.Config,
-	}
+type Auth struct {
+	db     *db.Queries
+	config api.Configuration
 }
 
 // Functions to help with most common tasks
-func (a *Handler) AuthorizeRequest(ctx *gin.Context, filename string) bool {
-	pwdhash, err := a.DB.GetPasswordHash(ctx, filename)
+func (a *Auth) AuthorizeRequest(ctx *gin.Context, filename string) bool {
+	pwdhash, err := a.db.GetPasswordHash(ctx, filename)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return false
@@ -38,7 +31,7 @@ func (a *Handler) AuthorizeRequest(ctx *gin.Context, filename string) bool {
 	fileauthcookie := fmt.Sprintf("usva-auth-%s", filename)
 	authcookieValue, _ := ctx.Cookie(fileauthcookie)
 
-	accesstoken, err := a.DB.GetAccessToken(ctx, filename)
+	accesstoken, err := a.db.GetAccessToken(ctx, filename)
 	if err != nil {
 		api.SetErrResponse(ctx, api.ErrAuthFailed)
 		return false
@@ -59,12 +52,12 @@ func (a *Handler) AuthorizeRequest(ctx *gin.Context, filename string) bool {
 		api.SetErrResponse(ctx, err)
 		return false
 	}
-	ctx.SetCookie(fileauthcookie, accesstoken, a.Config.CookieSaveTime,
-		"/", a.Config.APIDomain, a.Config.UseSecureCookie, true)
+	ctx.SetCookie(fileauthcookie, accesstoken, a.config.CookieSaveTime,
+		"/", a.config.APIDomain, a.config.UseSecureCookie, true)
 	return true
 }
 
-func (a *Handler) ParseFilePassword(ctx *gin.Context, filename string) (string, error) {
+func (a *Auth) ParseFilePassword(ctx *gin.Context, filename string) (string, error) {
 	passwordcookie := fmt.Sprintf("usva-password-%s", filename)
 
 	if cookie, err := ctx.Cookie(passwordcookie); err == nil && cookie != "" {
@@ -82,8 +75,8 @@ func (a *Handler) ParseFilePassword(ctx *gin.Context, filename string) (string, 
 		return "", err
 	}
 
-	ctx.SetCookie(passwordcookie, authheader[1], a.Config.CookieSaveTime,
-		"/", a.Config.APIDomain, a.Config.UseSecureCookie, true)
+	ctx.SetCookie(passwordcookie, authheader[1], a.config.CookieSaveTime,
+		"/", a.config.APIDomain, a.config.UseSecureCookie, true)
 
 	return strings.TrimSpace(string(p)), nil
 }

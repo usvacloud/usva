@@ -2,22 +2,24 @@ package file
 
 import (
 	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/cmd/webserver/api/auth"
 	"github.com/romeq/usva/internal/generated/db"
 )
 
 type Handler struct {
 	db                *db.Queries
-	api               *api.Configuration
+	config            *api.Configuration
 	encryptionKeySize uint32
-	auth              *auth.Handler
+	auth              Auth
 }
 
-func NewFileHandler(s *api.Server, authHandler *auth.Handler) *Handler {
+func NewFileHandler(s *api.Server) *Handler {
 	return &Handler{
 		db:                s.DB,
-		api:               s.Config,
+		config:            s.Config,
 		encryptionKeySize: s.EncKeySize,
-		auth:              authHandler,
+		auth: Auth{
+			db:     s.DB,
+			config: *s.Config,
+		},
 	}
 }

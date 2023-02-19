@@ -23,7 +23,7 @@ func (s *Handler) DownloadFile(ctx *gin.Context) {
 		return
 	}
 
-	filepath := path.Join(s.api.UploadsDir, filename)
+	filepath := path.Join(s.config.UploadsDir, filename)
 	fileHandle, err := os.Open(filepath)
 	if err != nil {
 		api.SetErrResponse(ctx, err)

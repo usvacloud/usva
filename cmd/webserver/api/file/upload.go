@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/cmd/webserver/api/auth"
 	"github.com/romeq/usva/internal/generated/db"
 	"github.com/romeq/usva/pkg/cryptography"
 )
@@ -31,7 +30,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 
 	filename := uuid.NewString() + path.Ext(formFile.Filename)
 
-	if s.api.MaxSingleUploadSize > 0 && uint64(formFile.Size) > s.api.MaxSingleUploadSize {
+	if s.config.MaxSingleUploadSize > 0 && uint64(formFile.Size) > s.config.MaxSingleUploadSize {
 		api.SetErrResponse(ctx, api.ErrTooBigBody)
 		return
 	}
@@ -50,7 +49,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	absUploads, err := filepath.Abs(s.api.UploadsDir)
+	absUploads, err := filepath.Abs(s.config.UploadsDir)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
@@ -66,7 +65,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		iv              = []byte{}
 		requirementsMet = len(password) >= 6 &&
 			len(password) < 128 &&
-			formFile.Size < int64(s.api.MaxEncryptableFileSize)
+			formFile.Size < int64(s.config.MaxEncryptableFileSize)
 		confirmation = ctx.PostForm("can_encrypt") == "yes"
 	)
 
@@ -95,7 +94,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		}
 	}
 
-	hash, err := auth.BCryptPasswordHash([]byte(password))
+	hash, err := BCryptPasswordHash([]byte(password))
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
@@ -119,11 +118,11 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 	}
 
 	if strings.Contains(ctx.Request.Header.Get("User-Agent"), "curl") {
-		if s.api.UseSecureCookie {
+		if s.config.UseSecureCookie {
 			protocol = "https"
 		}
 
-		ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file/?filename=%s", protocol, s.api.APIDomain, filename))
+		ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file/?filename=%s", protocol, s.config.APIDomain, filename))
 		return
 	}
 

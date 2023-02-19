@@ -13,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/cmd/webserver/api/auth"
 	"github.com/romeq/usva/internal/dbengine"
 	"github.com/romeq/usva/internal/utils"
 )
@@ -101,7 +100,7 @@ func TestUploadFile(t *testing.T) {
 			UploadsDir:          uploadsPath,
 			MaxSingleUploadSize: uint64(tt.payload.maxSize),
 		}, 16)
-		NewFileHandler(server, auth.NewAuthHandler(server)).UploadFile(c)
+		NewFileHandler(server).UploadFile(c)
 
 		if tt.expectedCode != r.Code {
 			t.Fatalf("expected %d got %d", tt.expectedCode, r.Code)
