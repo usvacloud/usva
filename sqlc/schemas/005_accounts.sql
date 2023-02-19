@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS account(
+    account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username VARCHAR(256) UNIQUE NOT NULL,
+    password VARCHAR(256) NOT NULL,
+    register_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    activity_points INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS account_session(
+    session_id VARCHAR(256) PRIMARY KEY,
+    account_id UUID NOT NULL,
+    start_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (account_id) REFERENCES account
+);
