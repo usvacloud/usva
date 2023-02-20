@@ -16,7 +16,7 @@ type Login struct {
 }
 
 type (
-	auther  authenticator.Authenticator[string, Account, Login]
+	auther  authenticator.Authenticator[string, Account, Login, db.NewAccountParams]
 	Account db.GetSessionAccountRow
 )
 

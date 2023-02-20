@@ -33,7 +33,7 @@ WHERE
         FROM account_session AS acse
         WHERE acse.session_id = $1
     )
-RETURNING session_id, account_id, start_date
+RETURNING session_id, account_id, start_date, expire_date
 `
 
 type DeleteSessionParams struct {
@@ -44,7 +44,12 @@ type DeleteSessionParams struct {
 func (q *Queries) DeleteSession(ctx context.Context, arg DeleteSessionParams) (AccountSession, error) {
 	row := q.db.QueryRow(ctx, deleteSession, arg.SessionID, arg.SessionID_2)
 	var i AccountSession
-	err := row.Scan(&i.SessionID, &i.AccountID, &i.StartDate)
+	err := row.Scan(
+		&i.SessionID,
+		&i.AccountID,
+		&i.StartDate,
+		&i.ExpireDate,
+	)
 	return i, err
 }
 
@@ -55,7 +60,7 @@ WHERE account_id = (
     FROM account_session AS acse
     WHERE acse.session_id = $1
 )
-RETURNING session_id, account_id, start_date
+RETURNING session_id, account_id, start_date, expire_date
 `
 
 func (q *Queries) DeleteSessions(ctx context.Context, sessionID string) ([]AccountSession, error) {
@@ -67,7 +72,12 @@ func (q *Queries) DeleteSessions(ctx context.Context, sessionID string) ([]Accou
 	items := []AccountSession{}
 	for rows.Next() {
 		var i AccountSession
-		if err := rows.Scan(&i.SessionID, &i.AccountID, &i.StartDate); err != nil {
+		if err := rows.Scan(
+			&i.SessionID,
+			&i.AccountID,
+			&i.StartDate,
+			&i.ExpireDate,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -104,8 +114,11 @@ SELECT
 FROM 
     account_session AS ac
 JOIN 
-    account AS a ON a.account_id = ac.account_id
-WHERE ac.session_id = $1
+    account AS a USING(account_id)
+WHERE 
+    ac.session_id = $1
+    AND 
+    CURRENT_TIMESTAMP - ac.start_date < ac.expire_date - ac.start_date
 `
 
 type GetSessionAccountRow struct {
@@ -133,12 +146,15 @@ const getSessions = `-- name: GetSessions :many
 SELECT 
     session_id, start_date
 FROM
-    account_session
-WHERE account_id = (
-    SELECT account_id 
-    FROM account_session AS ases
-    WHERE ases.session_id = $1
-)
+    account_session AS ac
+WHERE 
+    account_id = (
+        SELECT account_id 
+        FROM account_session AS ases
+        WHERE ases.session_id = $1
+    )
+    AND 
+    CURRENT_TIMESTAMP - ac.start_date < ac.expire_date - ac.start_date
 `
 
 type GetSessionsRow struct {
@@ -194,28 +210,26 @@ func (q *Queries) NewAccount(ctx context.Context, arg NewAccountParams) (Account
 	return i, err
 }
 
-const newSession = `-- name: NewSession :one
+const newAccountSession = `-- name: NewAccountSession :one
 INSERT INTO account_session(
-    session_id, 
-    account_id
-)
-VALUES 
-    ($1, (
-        SELECT account_id 
-        FROM account
-        WHERE username = $2
-    ))
-RETURNING 
-    session_id
+    session_id,
+    account_id,
+    expire_date
+) VALUES(
+    $1,
+    ( SELECT account_id FROM account WHERE username = $2 ),
+    $3
+) RETURNING session_id
 `
 
-type NewSessionParams struct {
-	SessionID string `json:"session_id"`
-	Username  string `json:"username"`
+type NewAccountSessionParams struct {
+	SessionID  string    `json:"session_id"`
+	Username   string    `json:"username"`
+	ExpireDate time.Time `json:"expire_date"`
 }
 
-func (q *Queries) NewSession(ctx context.Context, arg NewSessionParams) (string, error) {
-	row := q.db.QueryRow(ctx, newSession, arg.SessionID, arg.Username)
+func (q *Queries) NewAccountSession(ctx context.Context, arg NewAccountSessionParams) (string, error) {
+	row := q.db.QueryRow(ctx, newAccountSession, arg.SessionID, arg.Username, arg.ExpireDate)
 	var session_id string
 	err := row.Scan(&session_id)
 	return session_id, err

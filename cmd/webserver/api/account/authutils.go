@@ -1,13 +1,10 @@
 package account
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/internal/generated/db"
 )
 
 const sessionTokenCookieName = "session"
@@ -39,18 +36,6 @@ func (h Handler) persistSession(ctx *gin.Context, token string) {
 		h.configuration.APIDomain, h.configuration.UseSecureCookie, true)
 }
 
-func (h Handler) newSession(c *gin.Context, u string) (string, error) {
-	s, err := generateSessionToken()
-	if err != nil {
-		return "", err
-	}
-
-	return h.dbconn.NewSession(c, db.NewSessionParams{
-		SessionID: s,
-		Username:  u,
-	})
-}
-
 func ParseRequestSession(ctx *gin.Context) (string, error) {
 	cookie, err := ctx.Cookie(sessionTokenCookieName)
 	if cookie == "" || err != nil {
@@ -58,12 +43,4 @@ func ParseRequestSession(ctx *gin.Context) (string, error) {
 	}
 
 	return cookie, nil
-}
-
-func generateSessionToken() (string, error) {
-	randomID := make([]byte, 20)
-	if n, err := rand.Read(randomID); err != nil || n < 20 {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(randomID), nil
 }

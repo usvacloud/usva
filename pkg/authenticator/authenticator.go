@@ -8,7 +8,8 @@ import "context"
 //   - `AuthenticateSession` is used for session verification
 //   - `NewSession` is used for login
 
-type Authenticator[S any, U any, L any] interface {
+type Authenticator[S, U, L, R any] interface {
 	Authenticate(context.Context, S) (U, error)
+	Register(context.Context, R) (S, error)
 	NewSession(context.Context, L) (S, error)
 }

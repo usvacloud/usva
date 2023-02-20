@@ -9,13 +9,13 @@ import (
 )
 
 func (h Handler) Sessions(ctx *gin.Context) {
-	token, err := ParseRequestSession(ctx)
+	token, err := Authenticate(ctx, h.authenticator)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}
 
-	sessionlist, err := h.dbconn.GetSessions(ctx, token)
+	sessionlist, err := h.dbconn.GetSessions(ctx, token.Token)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return

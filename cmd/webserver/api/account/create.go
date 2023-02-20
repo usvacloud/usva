@@ -7,7 +7,6 @@ import (
 	"github.com/romeq/usva/cmd/webserver/api"
 	"github.com/romeq/usva/internal/generated/db"
 	"github.com/romeq/usva/internal/utils"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type createAccountStruct struct {
@@ -33,26 +32,13 @@ func (h Handler) CreateAccount(ctx *gin.Context) {
 		return
 	}
 
-	password, err := bcrypt.GenerateFromPassword([]byte(body.Password), accountPasswordBcryptCost)
+	ses, err := h.authenticator.Register(ctx, db.NewAccountParams(body))
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}
 
-	body.Password = string(password)
-
-	if _, err = h.dbconn.NewAccount(ctx.Request.Context(), db.NewAccountParams(body)); err != nil {
-		api.SetErrResponse(ctx, err)
-		return
-	}
-
-	s, err := h.newSession(ctx, body.Username)
-	if err != nil {
-		api.SetErrResponse(ctx, err)
-		return
-	}
-
-	h.persistSession(ctx, s)
+	h.persistSession(ctx, ses)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"username": body.Username,

@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS account(
 CREATE TABLE IF NOT EXISTS account_session(
     session_id VARCHAR(256) PRIMARY KEY,
     account_id UUID NOT NULL,
-    start_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (account_id) REFERENCES account
+    start_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expire_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES account,
+    CHECK(expire_date > start_date)
 );

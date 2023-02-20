@@ -34,13 +34,13 @@ deploy:
 	docker compose restart
 
 migrateup:
-	cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_CONNECTION_STRING)
+	@cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_CONNECTION_STRING) >/dev/null
 migratedown:
-	psql -d $(DB_CONNECTION_STRING) -f ./sqlc/dbdown.sql
+	@psql -d $(DB_CONNECTION_STRING) -f ./sqlc/dbdown.sql >/dev/null
 migrateup-tests:
-	cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_TESTS_CONNECTION_STRING)
+	@cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_TESTS_CONNECTION_STRING) >/dev/null
 migratedown-tests:
-	psql -d $(DB_TESTS_CONNECTION_STRING) -f ./sqlc/dbdown.sql
+	@psql -d $(DB_TESTS_CONNECTION_STRING) -f ./sqlc/dbdown.sql >/dev/null
 
 db-create:
 	createdb -U $(DB_USERNAME) --owner=$(DB_OWNER) $(DB_NAME)

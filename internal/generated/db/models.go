@@ -21,9 +21,10 @@ type Account struct {
 }
 
 type AccountSession struct {
-	SessionID string    `json:"session_id"`
-	AccountID uuid.UUID `json:"account_id"`
-	StartDate time.Time `json:"start_date"`
+	SessionID  string    `json:"session_id"`
+	AccountID  uuid.UUID `json:"account_id"`
+	StartDate  time.Time `json:"start_date"`
+	ExpireDate time.Time `json:"expire_date"`
 }
 
 type Feedback struct {

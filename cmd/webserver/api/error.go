@@ -3,17 +3,33 @@ package api
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgconn"
 	"github.com/romeq/usva/pkg/cryptography"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func (s *Server) NotFoundHandler(ctx *gin.Context) {
 	SetErrResponse(ctx, ErrNotFound)
+}
+
+var errSomethingBadHappenedLol = fmt.Errorf("something bad happened, please try again later")
+
+func pgerr(err *pgconn.PgError) error {
+	switch err.Code {
+	case "23505":
+		return fmt.Errorf("record already exists")
+	case "42P01":
+		fallthrough
+	default:
+		log.Println("error(database):", err)
+		return errSomethingBadHappenedLol
+	}
 }
 
 // SetErrResponse helper for providing standard error messages in return
@@ -23,6 +39,10 @@ func SetErrResponse(ctx *gin.Context, err error) {
 	}
 
 	errorMessage, status := "request failed", http.StatusBadRequest
+	if perr, ok := err.(*pgconn.PgError); ok {
+		errorMessage, status = pgerr(perr).Error(), http.StatusBadRequest
+		goto abort
+	}
 
 	switch {
 	case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
@@ -49,6 +69,8 @@ func SetErrResponse(ctx *gin.Context, err error) {
 		errorMessage, status = err.Error(), http.StatusBadRequest
 	case errors.Is(err, ErrAuthMissing):
 		errorMessage, status = err.Error(), http.StatusUnauthorized
+	case errors.Is(err, ErrAuthFailed):
+		errorMessage, status = err.Error(), http.StatusUnauthorized
 	case errors.Is(err, ErrNotFound):
 		errorMessage, status = err.Error(), http.StatusNotFound
 	case errors.Is(err, ErrEmptyResponse):
@@ -58,6 +80,7 @@ func SetErrResponse(ctx *gin.Context, err error) {
 		log.Println("error: ", err.Error())
 	}
 
+abort:
 	ctx.AbortWithStatusJSON(status, gin.H{
 		"error": errorMessage,
 	})

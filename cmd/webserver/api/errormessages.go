@@ -6,7 +6,7 @@ import (
 
 var (
 	ErrAuthMissing                = fmt.Errorf("missing authentication to endpoint even though it's required")
-	ErrAuthFailed                 = fmt.Errorf("authentication process failed")
+	ErrAuthFailed                 = fmt.Errorf("invalid authentication parameters")
 	ErrInvalidBody                = fmt.Errorf("invalid request body")
 	ErrNotFound                   = fmt.Errorf("resource was not found")
 	ErrEmptyResponse              = fmt.Errorf("empty response")
