@@ -77,7 +77,7 @@ func addRouteapi(server *api.Server, cfg *config.Config) {
 
 	// Accounts
 	accountsGroup := router.Group("/account")
-	userAuthenticator := account.NewAuthenticator(server.DB, 15)
+	userAuthenticator := account.NewAuthenticator(server.DB, time.Hour)
 	accountsHandler := account.NewAccountsHandler(server.DB, *server.Config, userAuthenticator)
 	{
 		accountsGroup.GET("/", query, accountsHandler.Profile)
