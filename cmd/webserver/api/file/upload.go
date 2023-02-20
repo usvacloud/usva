@@ -107,12 +107,14 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		Passwdhash:   sql.NullString{String: string(hash), Valid: string(hash) != ""},
 		EncryptionIv: iv,
 		AccessToken:  uuid.NewString(),
-		FileSize: sql.NullInt32{
-			Int32: int32(formFile.Size),
-			Valid: formFile.Size > 0,
-		},
+		FileSize:     int32(formFile.Size),
 	})
 	if err != nil {
+		api.SetErrResponse(ctx, err)
+		return
+	}
+
+	if err = s.linkToAccount(ctx, filename); err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}

@@ -10,23 +10,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Authenticator struct {
+type UserAuthenticator struct {
 	db *db.Queries
 }
 
-func NewAuthenticator(dbconn *db.Queries) Authenticator {
-	return Authenticator{
+func NewAuthenticator(dbconn *db.Queries) UserAuthenticator {
+	return UserAuthenticator{
 		db: dbconn,
 	}
 }
 
-func (a Authenticator) NewSession(ctx context.Context, username string, password string) (string, error) {
-	pwd, err := a.db.GetAccountPasswordHash(ctx, username)
+func (a UserAuthenticator) NewSession(ctx context.Context, props Login) (string, error) {
+	pwd, err := a.db.GetAccountPasswordHash(ctx, props.Username)
 	if err != nil {
 		return "", err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(pwd), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(pwd), []byte(props.Password)); err != nil {
 		return "", err
 	}
 
@@ -37,14 +37,14 @@ func (a Authenticator) NewSession(ctx context.Context, username string, password
 
 	return a.db.NewSession(ctx, db.NewSessionParams{
 		SessionID: token,
-		Username:  username,
+		Username:  props.Username,
 	})
 }
 
-func (a Authenticator) AuthenticateSession(ctx context.Context, session string) (db.GetSessionAccountRow, error) {
+func (a UserAuthenticator) Authenticate(ctx context.Context, session string) (Account, error) {
 	m, err := a.db.GetSessionAccount(ctx, session)
 	if errors.Is(err, io.EOF) {
-		return db.GetSessionAccountRow{}, api.ErrAuthFailed
+		return Account{}, api.ErrAuthFailed
 	}
-	return m, nil
+	return Account(m), nil
 }

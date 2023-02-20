@@ -11,13 +11,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Auth struct {
+type FileAuthenticator struct {
 	db     *db.Queries
-	config api.Configuration
+	config *api.Configuration
+}
+
+func NewFileAuthenticator(db *db.Queries, c *api.Configuration) FileAuthenticator {
+	return FileAuthenticator{
+		db:     db,
+		config: c,
+	}
 }
 
 // Functions to help with most common tasks
-func (a *Auth) AuthorizeRequest(ctx *gin.Context, filename string) bool {
+func (a *FileAuthenticator) AuthorizeRequest(ctx *gin.Context, filename string) bool {
 	pwdhash, err := a.db.GetPasswordHash(ctx, filename)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
@@ -57,7 +64,7 @@ func (a *Auth) AuthorizeRequest(ctx *gin.Context, filename string) bool {
 	return true
 }
 
-func (a *Auth) ParseFilePassword(ctx *gin.Context, filename string) (string, error) {
+func (a *FileAuthenticator) ParseFilePassword(ctx *gin.Context, filename string) (string, error) {
 	passwordcookie := fmt.Sprintf("usva-password-%s", filename)
 
 	if cookie, err := ctx.Cookie(passwordcookie); err == nil && cookie != "" {

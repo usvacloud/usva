@@ -5,7 +5,6 @@ import (
 
 	"github.com/romeq/usva/cmd/webserver/api"
 	"github.com/romeq/usva/cmd/webserver/api/account"
-	"github.com/romeq/usva/cmd/webserver/api/auth"
 	"github.com/romeq/usva/cmd/webserver/api/common"
 	"github.com/romeq/usva/cmd/webserver/api/feedback"
 	"github.com/romeq/usva/cmd/webserver/api/file"
@@ -38,7 +37,6 @@ func addRouteapi(server *api.Server, cfg *config.Config) {
 
 	// Middleware/general stuff
 	router := server.GetRouter()
-	authhandler := auth.NewAuthHandler(server)
 
 	// Middlewares
 	middlewarehandler := middleware.NewMiddlewareHandler(server.DB)
@@ -60,7 +58,7 @@ func addRouteapi(server *api.Server, cfg *config.Config) {
 
 	// Files api
 	fileGroup := router.Group("/file")
-	filehandler := file.NewFileHandler(server, authhandler)
+	filehandler := file.NewFileHandler(server)
 	{
 		// Routes
 		fileGroup.GET("/info", query, filehandler.FileInformation)
@@ -82,9 +80,11 @@ func addRouteapi(server *api.Server, cfg *config.Config) {
 	userAuthenticator := account.NewAuthenticator(server.DB)
 	accountsHandler := account.NewAccountsHandler(server.DB, *server.Config, userAuthenticator)
 	{
-		accountsGroup.POST("/register", strict, accountsHandler.CreateAccount)
-		accountsGroup.POST("/login", strict, accountsHandler.Login)
 		accountsGroup.GET("/", query, accountsHandler.Profile)
+		accountsGroup.GET("/files", query, accountsHandler.GetOwnedFiles)
+		accountsGroup.GET("/files/all", query, accountsHandler.GetAllOwnedFiles)
+		accountsGroup.POST("/login", strict, accountsHandler.Login)
+		accountsGroup.POST("/register", strict, accountsHandler.CreateAccount)
 	}
 
 	sessionsGroup := accountsGroup.Group("/sessions")

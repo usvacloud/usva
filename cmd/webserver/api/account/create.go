@@ -41,19 +41,21 @@ func (h Handler) CreateAccount(ctx *gin.Context) {
 
 	body.Password = string(password)
 
-	user, err := h.dbconn.NewAccount(ctx.Request.Context(), db.NewAccountParams(body))
+	if _, err = h.dbconn.NewAccount(ctx.Request.Context(), db.NewAccountParams(body)); err != nil {
+		api.SetErrResponse(ctx, err)
+		return
+	}
+
+	s, err := h.newSession(ctx, body.Username)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}
 
-	if err := h.newSession(ctx, user.Username); err != nil {
-		api.SetErrResponse(ctx, err)
-		return
-	}
+	h.persistSession(ctx, s)
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"account":  user.AccountID,
 		"username": body.Username,
+		"status":   "created",
 	})
 }

@@ -38,7 +38,7 @@ func (s *Handler) FileInformation(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"filename":   f.FileUuid,
-		"size":       f.FileSize.Int32,
+		"size":       f.FileSize,
 		"title":      f.Title,
 		"uploadDate": f.UploadDate,
 		"viewCount":  f.Viewcount,

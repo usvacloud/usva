@@ -8,12 +8,7 @@ import (
 	"github.com/romeq/usva/internal/utils"
 )
 
-type loginStruct struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-func verifyLoginProperties(account loginStruct) error {
+func verifyLoginProperties(account Login) error {
 	switch {
 	case !utils.IsBetween(len(account.Username), 4, 16):
 		return api.ErrUsernameRequirementsNotMet
@@ -31,7 +26,7 @@ func (h Handler) Login(ctx *gin.Context) {
 		return
 	}
 
-	sessionID, err := h.authenticator.NewSession(ctx, b.Username, b.Password)
+	sessionID, err := h.authenticator.NewSession(ctx, b)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return

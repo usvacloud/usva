@@ -9,7 +9,7 @@ type Handler struct {
 	db                *db.Queries
 	config            *api.Configuration
 	encryptionKeySize uint32
-	auth              Auth
+	auth              FileAuthenticator
 }
 
 func NewFileHandler(s *api.Server) *Handler {
@@ -17,9 +17,6 @@ func NewFileHandler(s *api.Server) *Handler {
 		db:                s.DB,
 		config:            s.Config,
 		encryptionKeySize: s.EncKeySize,
-		auth: Auth{
-			db:     s.DB,
-			config: *s.Config,
-		},
+		auth:              NewFileAuthenticator(s.DB, s.Config),
 	}
 }

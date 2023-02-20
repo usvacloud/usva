@@ -12,14 +12,18 @@ import (
 
 const sessionTokenCookieName = "session"
 
-// Authenticate parses
-func Authenticate(ctx *gin.Context, a Authenticator) (Session, error) {
+type Session struct {
+	Token   string
+	Account Account
+}
+
+func Authenticate(ctx *gin.Context, a auther) (Session, error) {
 	token, err := ParseRequestSession(ctx)
 	if err != nil {
 		return Session{}, err
 	}
 
-	m, err := a.AuthenticateSession(ctx.Request.Context(), token)
+	m, err := a.Authenticate(ctx.Request.Context(), token)
 	if err != nil {
 		return Session{}, err
 	}
@@ -30,39 +34,21 @@ func Authenticate(ctx *gin.Context, a Authenticator) (Session, error) {
 	}, err
 }
 
-func (h Handler) newSession(ctx *gin.Context, username string) error {
-	sessionToken, err := generateSessionToken()
-	if err != nil {
-		return err
-	}
-
-	session, err := h.dbconn.NewSession(ctx, db.NewSessionParams{
-		SessionID: sessionToken,
-		Username:  username,
-	})
-	if err != nil {
-		return err
-	}
-
-	h.persistSession(ctx, session)
-	return nil
-}
-
 func (h Handler) persistSession(ctx *gin.Context, token string) {
-	ctx.SetCookie(
-		sessionTokenCookieName,
-		token,
-		int(time.Hour)*24,
-		"/",
-		h.configuration.APIDomain,
-		h.configuration.UseSecureCookie,
-		true,
-	)
+	ctx.SetCookie(sessionTokenCookieName, token, int(time.Hour)*24, "/",
+		h.configuration.APIDomain, h.configuration.UseSecureCookie, true)
 }
 
-type Session struct {
-	Token   string
-	Account db.GetSessionAccountRow
+func (h Handler) newSession(c *gin.Context, u string) (string, error) {
+	s, err := generateSessionToken()
+	if err != nil {
+		return "", err
+	}
+
+	return h.dbconn.NewSession(c, db.NewSessionParams{
+		SessionID: s,
+		Username:  u,
+	})
 }
 
 func ParseRequestSession(ctx *gin.Context) (string, error) {
