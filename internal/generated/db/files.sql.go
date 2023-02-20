@@ -78,7 +78,7 @@ type GetFileInformationRow struct {
 	Title      sql.NullString `json:"title"`
 	UploadDate time.Time      `json:"upload_date"`
 	Encrypted  bool           `json:"encrypted"`
-	FileSize   sql.NullInt32  `json:"file_size"`
+	FileSize   int32          `json:"file_size"`
 	Viewcount  int32          `json:"viewcount"`
 }
 
@@ -159,7 +159,7 @@ type NewFileParams struct {
 	Passwdhash   sql.NullString `json:"passwdhash"`
 	AccessToken  string         `json:"access_token"`
 	EncryptionIv []byte         `json:"encryption_iv"`
-	FileSize     sql.NullInt32  `json:"file_size"`
+	FileSize     int32          `json:"file_size"`
 }
 
 func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {

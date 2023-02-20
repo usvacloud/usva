@@ -38,7 +38,7 @@ type File struct {
 	Passwdhash   sql.NullString `json:"passwdhash"`
 	AccessToken  string         `json:"access_token"`
 	Encrypted    bool           `json:"encrypted"`
-	FileSize     sql.NullInt32  `json:"file_size"`
+	FileSize     int32          `json:"file_size"`
 	EncryptionIv []byte         `json:"encryption_iv"`
 	UploadDate   time.Time      `json:"upload_date"`
 	LastSeen     time.Time      `json:"last_seen"`

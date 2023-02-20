@@ -7,21 +7,121 @@ package db
 
 import (
 	"context"
-
-	"github.com/google/uuid"
+	"database/sql"
+	"time"
 )
 
 const fileToAccount = `-- name: FileToAccount :exec
 INSERT INTO file_to_account(file_uuid, account_id) 
-VALUES($1, $2)
+VALUES($1, (
+    SELECT account_id FROM account_session WHERE session_id = $2
+))
 `
 
 type FileToAccountParams struct {
-	FileUuid  string    `json:"file_uuid"`
-	AccountID uuid.UUID `json:"account_id"`
+	FileUuid  string `json:"file_uuid"`
+	SessionID string `json:"session_id"`
 }
 
 func (q *Queries) FileToAccount(ctx context.Context, arg FileToAccountParams) error {
-	_, err := q.db.Exec(ctx, fileToAccount, arg.FileUuid, arg.AccountID)
+	_, err := q.db.Exec(ctx, fileToAccount, arg.FileUuid, arg.SessionID)
 	return err
+}
+
+const getAllSessionOwnerFiles = `-- name: GetAllSessionOwnerFiles :many
+SELECT 
+    f.file_uuid
+FROM
+    file_to_account
+    JOIN file AS f
+    USING(file_uuid)
+WHERE account_id = (
+    SELECT account_id 
+    FROM account_session
+    WHERE session_id = $1
+)
+`
+
+func (q *Queries) GetAllSessionOwnerFiles(ctx context.Context, sessionID string) ([]string, error) {
+	rows, err := q.db.Query(ctx, getAllSessionOwnerFiles, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var file_uuid string
+		if err := rows.Scan(&file_uuid); err != nil {
+			return nil, err
+		}
+		items = append(items, file_uuid)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSessionOwnerFiles = `-- name: GetSessionOwnerFiles :many
+SELECT 
+    f.file_uuid,
+    f.title,
+    f.file_size,
+    f.viewcount,
+    f.encrypted,
+    f.upload_date,
+    f.last_seen
+FROM
+    file_to_account 
+    JOIN file AS f
+    USING(file_uuid)
+WHERE account_id = (
+    SELECT account_id 
+    FROM account_session
+    WHERE session_id = $1
+)
+LIMIT $2
+`
+
+type GetSessionOwnerFilesParams struct {
+	SessionID string `json:"session_id"`
+	Limit     int32  `json:"limit"`
+}
+
+type GetSessionOwnerFilesRow struct {
+	FileUuid   string         `json:"file_uuid"`
+	Title      sql.NullString `json:"title"`
+	FileSize   int32          `json:"file_size"`
+	Viewcount  int32          `json:"viewcount"`
+	Encrypted  bool           `json:"encrypted"`
+	UploadDate time.Time      `json:"upload_date"`
+	LastSeen   time.Time      `json:"last_seen"`
+}
+
+func (q *Queries) GetSessionOwnerFiles(ctx context.Context, arg GetSessionOwnerFilesParams) ([]GetSessionOwnerFilesRow, error) {
+	rows, err := q.db.Query(ctx, getSessionOwnerFiles, arg.SessionID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetSessionOwnerFilesRow{}
+	for rows.Next() {
+		var i GetSessionOwnerFilesRow
+		if err := rows.Scan(
+			&i.FileUuid,
+			&i.Title,
+			&i.FileSize,
+			&i.Viewcount,
+			&i.Encrypted,
+			&i.UploadDate,
+			&i.LastSeen,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
