@@ -65,11 +65,7 @@ SELECT
 FROM
     account_session AS ac
 WHERE 
-    account_id = (
-        SELECT account_id 
-        FROM account_session AS ases
-        WHERE ases.session_id = $1
-    )
+    account_id = get_userid_by_session($1)
     AND 
     CURRENT_TIMESTAMP - ac.start_date < ac.expire_date - ac.start_date;
 
@@ -77,18 +73,10 @@ WHERE
 DELETE FROM account_session
 WHERE
     account_session.session_id = $2 
-    AND account_session.account_id = (
-        SELECT account_id
-        FROM account_session AS acse
-        WHERE acse.session_id = $1
-    )
+    AND account_session.account_id = get_userid_by_session($1)
 RETURNING *;
 
 -- name: DeleteSessions :many
 DELETE FROM account_session
-WHERE account_id = (
-    SELECT account_id
-    FROM account_session AS acse
-    WHERE acse.session_id = $1
-)
+WHERE account_id = get_userid_by_session($1)
 RETURNING *;
