@@ -3,7 +3,6 @@ package file
 import (
 	"database/sql"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -17,8 +16,6 @@ import (
 	"github.com/romeq/usva/internal/generated/db"
 	"github.com/romeq/usva/pkg/cryptography"
 )
-
-var protocol = "http"
 
 // UploadFile
 func (s *Handler) UploadFile(ctx *gin.Context) {
@@ -94,7 +91,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		}
 	}
 
-	hash, err := BCryptPasswordHash([]byte(password))
+	hash, err := s.passwordhash([]byte(password))
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
@@ -119,14 +116,13 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	if strings.Contains(ctx.Request.Header.Get("User-Agent"), "curl") {
-		if s.config.UseSecureCookie {
-			protocol = "https"
-		}
-
-		ctx.String(http.StatusOK, fmt.Sprintf("%s://%s/file/?filename=%s", protocol, s.config.APIDomain, filename))
+	session, err := s.auth.Register(ctx, filename)
+	if err != nil {
+		api.SetErrResponse(ctx, err)
 		return
 	}
+
+	s.persistSession(ctx, formatauthcookiename(session.filename), session.Token)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"filename": filename,

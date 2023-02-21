@@ -2,102 +2,71 @@ package file
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/internal/generated/db"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type FileAuthenticator struct {
-	db     *db.Queries
-	config *api.Configuration
-}
+func (h Handler) authenticate(ctx *gin.Context, filename string) bool {
+	password := h.getrequestpassword(ctx, filename)
+	sessionCookieName := formatauthcookiename(filename)
+	sessionToken, err := ctx.Cookie(sessionCookieName)
 
-func NewFileAuthenticator(db *db.Queries, c *api.Configuration) FileAuthenticator {
-	return FileAuthenticator{
-		db:     db,
-		config: c,
+	if sessionToken == "" || errors.Is(err, http.ErrNoCookie) {
+		session, err := h.auth.NewSession(ctx, NewAuth(filename, password))
+		if err != nil {
+			api.SetErrResponse(ctx, err)
+			return false
+		}
+
+		sessionToken = session.Token
 	}
-}
 
-// Functions to help with most common tasks
-func (a *FileAuthenticator) AuthorizeRequest(ctx *gin.Context, filename string) bool {
-	pwdhash, err := a.db.GetPasswordHash(ctx, filename)
-	if err != nil {
+	if _, err := h.auth.Authenticate(ctx, NewAuthSession(filename, sessionToken)); err != nil {
 		api.SetErrResponse(ctx, err)
 		return false
 	}
 
-	if !pwdhash.Valid {
-		return true
-	}
+	h.persistSession(ctx, formatauthcookiename(sessionCookieName), sessionToken)
 
-	fileauthcookie := fmt.Sprintf("usva-auth-%s", filename)
-	authcookieValue, _ := ctx.Cookie(fileauthcookie)
-
-	accesstoken, err := a.db.GetAccessToken(ctx, filename)
-	if err != nil {
-		api.SetErrResponse(ctx, api.ErrAuthFailed)
-		return false
-	}
-
-	if authcookieValue == accesstoken {
-		return true
-	}
-
-	pwd, err := a.ParseFilePassword(ctx, filename)
-	if err != nil {
-		api.SetErrResponse(ctx, err)
-		return false
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(pwdhash.String), []byte(pwd))
-	if err != nil {
-		api.SetErrResponse(ctx, err)
-		return false
-	}
-	ctx.SetCookie(fileauthcookie, accesstoken, a.config.CookieSaveTime,
-		"/", a.config.APIDomain, a.config.UseSecureCookie, true)
 	return true
 }
 
-func (a *FileAuthenticator) ParseFilePassword(ctx *gin.Context, filename string) (string, error) {
-	passwordcookie := fmt.Sprintf("usva-password-%s", filename)
-
-	if cookie, err := ctx.Cookie(passwordcookie); err == nil && cookie != "" {
-		dec, err := base64.RawStdEncoding.DecodeString(cookie)
-		return string(dec), err
-	}
-
-	authheader := strings.Split(ctx.Request.Header.Get("Authorization"), " ")
-	if len(authheader) < 2 {
-		return "", api.ErrAuthMissing
-	}
-
-	p, err := base64.RawStdEncoding.DecodeString(authheader[1])
-	if err != nil {
-		return "", err
-	}
-
-	ctx.SetCookie(passwordcookie, authheader[1], a.config.CookieSaveTime,
-		"/", a.config.APIDomain, a.config.UseSecureCookie, true)
-
-	return strings.TrimSpace(string(p)), nil
+func (h Handler) persistSession(ctx *gin.Context, cookie, value string) {
+	ctx.SetCookie(cookie, value, h.config.CookieSaveTime, "/",
+		h.config.APIDomain, h.config.UseSecureCookie, true)
 }
 
-func BCryptPasswordHash(pwd []byte) ([]byte, error) {
-	pwdlen := len(pwd)
-	switch {
-	case pwdlen == 0:
-		return []byte{}, nil
-	case pwdlen > 512:
-		return []byte{}, api.ErrInvalidBody
-	case pwdlen < 6:
-		return []byte{}, api.ErrInvalidBody
-	default:
-		return bcrypt.GenerateFromPassword(pwd, 15)
+func (h Handler) getrequestpassword(ctx *gin.Context, filename string) string {
+	hdr := strings.Split(ctx.GetHeader("Authorization"), " ")
+	if len(hdr) == 2 {
+		h.persistSession(ctx, formatpasswordcookiename(filename), hdr[1])
+
+		r, _ := base64.RawStdEncoding.DecodeString(hdr[1])
+		return strings.TrimSpace(string(r))
 	}
+
+	cookie, _ := ctx.Cookie(formatpasswordcookiename(filename))
+	r, _ := base64.RawStdEncoding.DecodeString(cookie)
+	return strings.TrimSpace(string(r))
+}
+
+// passwordhash generates a password hash using constant cost of 12
+func (h Handler) passwordhash(s []byte) ([]byte, error) {
+	return bcrypt.GenerateFromPassword(s, 12)
+}
+
+// formatauthcookiename returns cookie name where authentication token should be located
+func formatauthcookiename(filename string) string {
+	return fmt.Sprintf("usva-token-%s", filename)
+}
+
+// formatauthcookiename returns cookie name where password should be located
+func formatpasswordcookiename(filename string) string {
+	return fmt.Sprintf("usva-password-%s", filename)
 }

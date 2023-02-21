@@ -18,20 +18,13 @@ func (s *Handler) DownloadFile(ctx *gin.Context) {
 		return
 	}
 
-	// authorize request
-	if !s.auth.AuthorizeRequest(ctx, filename) {
+	if !s.authenticate(ctx, filename) {
 		return
 	}
 
 	filepath := path.Join(s.config.UploadsDir, filename)
 	fileHandle, err := os.Open(filepath)
 	if err != nil {
-		api.SetErrResponse(ctx, err)
-		return
-	}
-
-	headerPassword, err := s.auth.ParseFilePassword(ctx, filename)
-	if err != nil && !errors.Is(err, api.ErrAuthMissing) {
 		api.SetErrResponse(ctx, err)
 		return
 	}
@@ -54,7 +47,8 @@ func (s *Handler) DownloadFile(ctx *gin.Context) {
 
 	ctx.Status(http.StatusOK)
 
-	derivedKey, err := cryptography.DeriveBasicKey([]byte(headerPassword), s.encryptionKeySize)
+	password := s.getrequestpassword(ctx, filename)
+	derivedKey, err := cryptography.DeriveBasicKey([]byte(password), s.encryptionKeySize)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return

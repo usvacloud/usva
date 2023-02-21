@@ -16,7 +16,7 @@ func (s *Handler) FileInformation(ctx *gin.Context) {
 		return
 	}
 
-	if !s.auth.AuthorizeRequest(ctx, filename) {
+	if !s.authenticate(ctx, filename) {
 		return
 	}
 

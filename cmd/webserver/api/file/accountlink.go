@@ -9,7 +9,7 @@ import (
 	"github.com/romeq/usva/internal/generated/db"
 )
 
-func (h Handler) linkToAccount(ctx *gin.Context, uploadId string) error {
+func (h Handler) linkToAccount(ctx *gin.Context, uploadID string) error {
 	session, err := account.ParseRequestSession(ctx)
 	if errors.Is(err, api.ErrAuthMissing) {
 		return nil
@@ -18,7 +18,7 @@ func (h Handler) linkToAccount(ctx *gin.Context, uploadId string) error {
 	}
 
 	return h.db.FileToAccount(ctx, db.FileToAccountParams{
-		FileUuid:  uploadId,
+		FileUuid:  uploadID,
 		SessionID: session,
 	})
 }
