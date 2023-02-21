@@ -28,12 +28,8 @@ const deleteSession = `-- name: DeleteSession :one
 DELETE FROM account_session
 WHERE
     account_session.session_id = $2 
-    AND account_session.account_id = (
-        SELECT account_id
-        FROM account_session AS acse
-        WHERE acse.session_id = $1
-    )
-RETURNING session_id, account_id, start_date, expire_date
+    AND account_session.account_id = get_userid_by_session($1)
+RETURNING session_id, account_id, start_date, expire_date, token_type
 `
 
 type DeleteSessionParams struct {
@@ -49,18 +45,15 @@ func (q *Queries) DeleteSession(ctx context.Context, arg DeleteSessionParams) (A
 		&i.AccountID,
 		&i.StartDate,
 		&i.ExpireDate,
+		&i.TokenType,
 	)
 	return i, err
 }
 
 const deleteSessions = `-- name: DeleteSessions :many
 DELETE FROM account_session
-WHERE account_id = (
-    SELECT account_id
-    FROM account_session AS acse
-    WHERE acse.session_id = $1
-)
-RETURNING session_id, account_id, start_date, expire_date
+WHERE account_id = get_userid_by_session($1)
+RETURNING session_id, account_id, start_date, expire_date, token_type
 `
 
 func (q *Queries) DeleteSessions(ctx context.Context, sessionID string) ([]AccountSession, error) {
@@ -77,6 +70,7 @@ func (q *Queries) DeleteSessions(ctx context.Context, sessionID string) ([]Accou
 			&i.AccountID,
 			&i.StartDate,
 			&i.ExpireDate,
+			&i.TokenType,
 		); err != nil {
 			return nil, err
 		}
@@ -148,11 +142,7 @@ SELECT
 FROM
     account_session AS ac
 WHERE 
-    account_id = (
-        SELECT account_id 
-        FROM account_session AS ases
-        WHERE ases.session_id = $1
-    )
+    account_id = get_userid_by_session($1)
     AND 
     CURRENT_TIMESTAMP - ac.start_date < ac.expire_date - ac.start_date
 `

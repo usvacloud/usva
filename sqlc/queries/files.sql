@@ -29,6 +29,10 @@ FROM file;
 SELECT access_token
 FROM file
 WHERE file_uuid = $1;
+-- name: GetFilename :one
+SELECT file_uuid
+FROM file
+WHERE access_token = $1;
 
 -- name: UpdateViewCount :exec
 UPDATE file

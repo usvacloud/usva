@@ -96,6 +96,19 @@ func (q *Queries) GetFileInformation(ctx context.Context, fileUuid string) (GetF
 	return i, err
 }
 
+const getFilename = `-- name: GetFilename :one
+SELECT file_uuid
+FROM file
+WHERE access_token = $1
+`
+
+func (q *Queries) GetFilename(ctx context.Context, accessToken string) (string, error) {
+	row := q.db.QueryRow(ctx, getFilename, accessToken)
+	var file_uuid string
+	err := row.Scan(&file_uuid)
+	return file_uuid, err
+}
+
 const getLastSeenAll = `-- name: GetLastSeenAll :many
 SELECT file_uuid,
     last_seen

@@ -6,10 +6,54 @@ package db
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type TokenType string
+
+const (
+	TokenTypeRefresh        TokenType = "refresh"
+	TokenTypeAuthentication TokenType = "authentication"
+)
+
+func (e *TokenType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TokenType(s)
+	case string:
+		*e = TokenType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TokenType: %T", src)
+	}
+	return nil
+}
+
+type NullTokenType struct {
+	TokenType TokenType
+	Valid     bool // Valid is true if TokenType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTokenType) Scan(value interface{}) error {
+	if value == nil {
+		ns.TokenType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TokenType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTokenType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TokenType), nil
+}
 
 type Account struct {
 	AccountID      uuid.UUID `json:"account_id"`
@@ -25,6 +69,7 @@ type AccountSession struct {
 	AccountID  uuid.UUID `json:"account_id"`
 	StartDate  time.Time `json:"start_date"`
 	ExpireDate time.Time `json:"expire_date"`
+	TokenType  TokenType `json:"token_type"`
 }
 
 type Feedback struct {
