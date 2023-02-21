@@ -6,8 +6,6 @@ require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgx/v4 v4.17.2
-	github.com/jaswdr/faker v1.15.0
-	github.com/romeq/jobscheduler v1.0.3
 )
 
 require (
