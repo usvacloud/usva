@@ -27,7 +27,7 @@ func (h Handler) GetOwnedFiles(ctx *gin.Context) {
 
 	files, err := h.dbconn.GetSessionOwnerFiles(ctx, db.GetSessionOwnerFilesParams{
 		SessionID: session.Token,
-		Limit:     int32(limit),
+		Limit:     int32(uint(limit)),
 	})
 	if err != nil {
 		api.SetErrResponse(ctx, err)

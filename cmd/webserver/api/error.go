@@ -39,7 +39,9 @@ func SetErrResponse(ctx *gin.Context, err error) {
 	}
 
 	errorMessage, status := "request failed", http.StatusBadRequest
-	if perr, ok := err.(*pgconn.PgError); ok {
+
+	var perr *pgconn.PgError
+	if errors.As(err, &perr) {
 		errorMessage, status = pgerr(perr).Error(), http.StatusBadRequest
 		goto abort
 	}
