@@ -23,15 +23,18 @@ func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {
 
 func addRouteapi(server *api.Server, cfg *config.Config) {
 	// Initialize ratelimiters
-	strictrl := ratelimit.NewRatelimiter()
-	queryrl := ratelimit.NewRatelimiter()
-
-	server.IncludeServerContextWorker(workers.NewRatelimitCleaner(strictrl, time.Second))
-	server.IncludeServerContextWorker(workers.NewRatelimitCleaner(queryrl, time.Second))
-
 	ratelimits := parseRatelimits(&cfg.Ratelimit)
 
+	accountrl := ratelimit.NewRatelimiter()
+	server.IncludeServerContextWorker(workers.NewRatelimitCleaner(accountrl, time.Minute))
+	login := accountrl.RestrictRequests(3, time.Minute)
+
+	strictrl := ratelimit.NewRatelimiter()
+	server.IncludeServerContextWorker(workers.NewRatelimitCleaner(strictrl, ratelimits.StrictLimit.Time))
 	strict := strictrl.RestrictRequests(ratelimits.StrictLimit.Requests, ratelimits.StrictLimit.Time)
+
+	queryrl := ratelimit.NewRatelimiter()
+	server.IncludeServerContextWorker(workers.NewRatelimitCleaner(queryrl, ratelimits.StrictLimit.Time))
 	query := queryrl.RestrictRequests(ratelimits.QueryLimit.Requests, ratelimits.QueryLimit.Time)
 	uploadRestrictor := strictrl.RestrictUploads(time.Duration(24)*time.Hour, cfg.Files.MaxUploadSizePerDay)
 
@@ -83,7 +86,7 @@ func addRouteapi(server *api.Server, cfg *config.Config) {
 		accountsGroup.GET("/", query, accountsHandler.Profile)
 		accountsGroup.GET("/files", query, accountsHandler.GetOwnedFiles)
 		accountsGroup.GET("/files/all", query, accountsHandler.GetAllOwnedFiles)
-		accountsGroup.POST("/login", strict, accountsHandler.Login)
+		accountsGroup.POST("/login", login, accountsHandler.Login)
 		accountsGroup.POST("/register", strict, accountsHandler.CreateAccount)
 	}
 
