@@ -14,7 +14,7 @@ const (
 )
 
 func (h Handler) GetOwnedFiles(ctx *gin.Context) {
-	session, err := Authenticate(ctx, h.authenticator)
+	session, err := h.authenticate(ctx, h.authenticator)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
@@ -40,7 +40,7 @@ func (h Handler) GetOwnedFiles(ctx *gin.Context) {
 }
 
 func (h Handler) GetAllOwnedFiles(ctx *gin.Context) {
-	session, err := Authenticate(ctx, h.authenticator)
+	session, err := h.authenticate(ctx, h.authenticator)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return

@@ -8,7 +8,7 @@ import (
 )
 
 func (h Handler) Profile(ctx *gin.Context) {
-	s, err := Authenticate(ctx, h.authenticator)
+	s, err := h.authenticate(ctx, h.authenticator)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return

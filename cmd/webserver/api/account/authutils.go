@@ -7,14 +7,16 @@ import (
 	"github.com/romeq/usva/cmd/webserver/api"
 )
 
-const sessionTokenCookieName = "session"
+const (
+	sessionTokenCookieName = "session"
+)
 
 type Session struct {
 	Token   string
 	Account Account
 }
 
-func Authenticate(ctx *gin.Context, a auther) (Session, error) {
+func (h Handler) authenticate(ctx *gin.Context, a auther) (Session, error) {
 	token, err := ParseRequestSession(ctx)
 	if err != nil {
 		return Session{}, err
@@ -32,7 +34,7 @@ func Authenticate(ctx *gin.Context, a auther) (Session, error) {
 }
 
 func (h Handler) persistSession(ctx *gin.Context, token string) {
-	ctx.SetCookie(sessionTokenCookieName, token, int(time.Hour)*24, "/",
+	ctx.SetCookie(sessionTokenCookieName, token, int(time.Hour)*24*30, "/",
 		h.configuration.APIDomain, h.configuration.UseSecureCookie, true)
 }
 

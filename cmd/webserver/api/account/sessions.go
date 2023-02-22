@@ -9,7 +9,7 @@ import (
 )
 
 func (h Handler) Sessions(ctx *gin.Context) {
-	token, err := Authenticate(ctx, h.authenticator)
+	token, err := h.authenticate(ctx, h.authenticator)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
@@ -27,7 +27,7 @@ func (h Handler) Sessions(ctx *gin.Context) {
 }
 
 func (h Handler) RemoveSessions(ctx *gin.Context) {
-	session, err := Authenticate(ctx, h.authenticator)
+	session, err := h.authenticate(ctx, h.authenticator)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
@@ -61,7 +61,7 @@ func (h Handler) RemoveSession(ctx *gin.Context) {
 		return
 	}
 
-	s, err := Authenticate(ctx, h.authenticator)
+	s, err := h.authenticate(ctx, h.authenticator)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
