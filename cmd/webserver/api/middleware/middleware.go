@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/romeq/usva/internal/generated/db"
+	"github.com/usvacloud/usva/internal/generated/db"
 )
 
 type Handler struct {

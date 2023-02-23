@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/romeq/usva/internal/workers"
+	"github.com/usvacloud/usva/internal/workers"
 )
 
 func (s *Server) IncludeServerContextWorker(w workers.Worker) {

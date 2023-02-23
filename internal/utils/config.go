@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/romeq/usva/internal/dbengine"
+	"github.com/usvacloud/usva/internal/dbengine"
 )
 
 func MustInt(f int, err error) int {

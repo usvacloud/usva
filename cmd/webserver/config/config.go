@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/internal/utils"
+	"github.com/usvacloud/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/internal/utils"
 )
 
 // ratelimitRestriction includes properties used specifically to configure

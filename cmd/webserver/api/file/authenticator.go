@@ -3,8 +3,8 @@ package file
 import (
 	"context"
 
-	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/internal/generated/db"
+	"github.com/usvacloud/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/internal/generated/db"
 	"golang.org/x/crypto/bcrypt"
 )
 

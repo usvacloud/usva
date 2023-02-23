@@ -7,8 +7,8 @@ import (
 	"sort"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/internal/generated/db"
+	"github.com/usvacloud/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/internal/generated/db"
 )
 
 func (s *Handler) AddFeedback(ctx *gin.Context) {

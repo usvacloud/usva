@@ -7,8 +7,8 @@ import (
 	"path"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/pkg/cryptography"
+	"github.com/usvacloud/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/pkg/cryptography"
 )
 
 func (s *Handler) DownloadFile(ctx *gin.Context) {

@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4"
-	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/pkg/ratelimit"
+	"github.com/usvacloud/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/pkg/ratelimit"
 )
 
 func (s *Handler) Jail(ctx *gin.Context) {

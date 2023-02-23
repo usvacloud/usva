@@ -12,9 +12,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/internal/generated/db"
-	"github.com/romeq/usva/pkg/cryptography"
+	"github.com/usvacloud/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/internal/generated/db"
+	"github.com/usvacloud/usva/pkg/cryptography"
 )
 
 // UploadFile

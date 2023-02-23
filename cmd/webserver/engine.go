@@ -3,15 +3,15 @@ package main
 import (
 	"time"
 
-	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/cmd/webserver/api/account"
-	"github.com/romeq/usva/cmd/webserver/api/common"
-	"github.com/romeq/usva/cmd/webserver/api/feedback"
-	"github.com/romeq/usva/cmd/webserver/api/file"
-	"github.com/romeq/usva/cmd/webserver/api/middleware"
-	"github.com/romeq/usva/cmd/webserver/config"
-	"github.com/romeq/usva/internal/workers"
-	"github.com/romeq/usva/pkg/ratelimit"
+	"github.com/usvacloud/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/cmd/webserver/api/account"
+	"github.com/usvacloud/usva/cmd/webserver/api/common"
+	"github.com/usvacloud/usva/cmd/webserver/api/feedback"
+	"github.com/usvacloud/usva/cmd/webserver/api/file"
+	"github.com/usvacloud/usva/cmd/webserver/api/middleware"
+	"github.com/usvacloud/usva/cmd/webserver/config"
+	"github.com/usvacloud/usva/internal/workers"
+	"github.com/usvacloud/usva/pkg/ratelimit"
 )
 
 func parseRatelimits(cfg *config.Ratelimit) api.Ratelimits {

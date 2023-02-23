@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/romeq/usva/internal/utils"
+	"github.com/usvacloud/usva/internal/utils"
 )
 
 func setLogWriter(file string) *os.File {

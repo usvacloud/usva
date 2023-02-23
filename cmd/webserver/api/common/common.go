@@ -1,6 +1,6 @@
 package common
 
-import "github.com/romeq/usva/cmd/webserver/api"
+import "github.com/usvacloud/usva/cmd/webserver/api"
 
 type Handler struct {
 	config *api.Configuration

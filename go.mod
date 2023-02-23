@@ -1,4 +1,4 @@
-module github.com/romeq/usva
+module github.com/usvacloud/usva
 
 go 1.19
 

@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
-	"github.com/romeq/usva/internal/dbengine"
-	"github.com/romeq/usva/internal/generated/db"
-	"github.com/romeq/usva/internal/utils"
+	"github.com/usvacloud/usva/internal/dbengine"
+	"github.com/usvacloud/usva/internal/generated/db"
+	"github.com/usvacloud/usva/internal/utils"
 )
 
 func TestTrasher_Run(t *testing.T) {

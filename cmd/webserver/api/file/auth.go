@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/cmd/webserver/api"
 	"golang.org/x/crypto/bcrypt"
 )
 

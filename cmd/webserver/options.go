@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/romeq/usva/cmd/webserver/arguments"
-	"github.com/romeq/usva/cmd/webserver/config"
-	"github.com/romeq/usva/internal/utils"
+	"github.com/usvacloud/usva/cmd/webserver/arguments"
+	"github.com/usvacloud/usva/cmd/webserver/config"
+	"github.com/usvacloud/usva/internal/utils"
 )
 
 type Options config.Config

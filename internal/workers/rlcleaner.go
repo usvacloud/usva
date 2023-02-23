@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/romeq/usva/pkg/ratelimit"
+	"github.com/usvacloud/usva/pkg/ratelimit"
 )
 
 type RatelimitCleaner struct {

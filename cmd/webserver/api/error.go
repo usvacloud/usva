@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgconn"
-	"github.com/romeq/usva/pkg/cryptography"
+	"github.com/usvacloud/usva/pkg/cryptography"
 	"golang.org/x/crypto/bcrypt"
 )
 

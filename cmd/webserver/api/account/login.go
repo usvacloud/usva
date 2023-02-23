@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/romeq/usva/cmd/webserver/api"
-	"github.com/romeq/usva/internal/utils"
+	"github.com/usvacloud/usva/cmd/webserver/api"
+	"github.com/usvacloud/usva/internal/utils"
 )
 
 func verifyLoginProperties(account Login) error {
