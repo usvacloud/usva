@@ -13,9 +13,7 @@ import (
 
 const fileToAccount = `-- name: FileToAccount :exec
 INSERT INTO file_to_account(file_uuid, account_id) 
-VALUES($1, (
-    SELECT account_id FROM account_session WHERE session_id = $2
-))
+VALUES($1, get_userid_by_session($2))
 `
 
 type FileToAccountParams struct {
@@ -35,11 +33,7 @@ FROM
     file_to_account
     JOIN file AS f
     USING(file_uuid)
-WHERE account_id = (
-    SELECT account_id 
-    FROM account_session
-    WHERE session_id = $1
-)
+WHERE account_id = get_userid_by_session($1)
 `
 
 func (q *Queries) GetAllSessionOwnerFiles(ctx context.Context, sessionID string) ([]string, error) {
@@ -64,7 +58,7 @@ func (q *Queries) GetAllSessionOwnerFiles(ctx context.Context, sessionID string)
 
 const getSessionOwnerFiles = `-- name: GetSessionOwnerFiles :many
 SELECT 
-    f.file_uuid,
+    f.file_uuid AS filename,
     f.title,
     f.file_size,
     f.viewcount,
@@ -75,11 +69,7 @@ FROM
     file_to_account 
     JOIN file AS f
     USING(file_uuid)
-WHERE account_id = (
-    SELECT account_id 
-    FROM account_session
-    WHERE session_id = $1
-)
+WHERE account_id = get_userid_by_session($1)
 LIMIT $2
 `
 
@@ -89,7 +79,7 @@ type GetSessionOwnerFilesParams struct {
 }
 
 type GetSessionOwnerFilesRow struct {
-	FileUuid   string         `json:"file_uuid"`
+	Filename   string         `json:"filename"`
 	Title      sql.NullString `json:"title"`
 	FileSize   int32          `json:"file_size"`
 	Viewcount  int32          `json:"viewcount"`
@@ -108,7 +98,7 @@ func (q *Queries) GetSessionOwnerFiles(ctx context.Context, arg GetSessionOwnerF
 	for rows.Next() {
 		var i GetSessionOwnerFilesRow
 		if err := rows.Scan(
-			&i.FileUuid,
+			&i.Filename,
 			&i.Title,
 			&i.FileSize,
 			&i.Viewcount,
