@@ -60,8 +60,8 @@ type Client struct {
 	uploads     []ClientUpload
 }
 
-func NewRatelimiter() *Ratelimiter {
-	return &Ratelimiter{
+func NewRatelimiter() Ratelimiter {
+	return Ratelimiter{
 		clients:     []Client{},
 		lastCleanup: time.Now(),
 	}

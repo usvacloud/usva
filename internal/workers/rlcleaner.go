@@ -8,12 +8,12 @@ import (
 )
 
 type RatelimitCleaner struct {
-	Ratelimiter *ratelimit.Ratelimiter
+	Ratelimiter ratelimit.Ratelimiter
 	Interval    time.Duration
 	Running     bool
 }
 
-func NewRatelimitCleaner(rl *ratelimit.Ratelimiter, it time.Duration) *RatelimitCleaner {
+func NewRatelimitCleaner(rl ratelimit.Ratelimiter, it time.Duration) *RatelimitCleaner {
 	return &RatelimitCleaner{
 		Ratelimiter: rl,
 		Interval:    it,
