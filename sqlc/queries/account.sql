@@ -74,9 +74,9 @@ DELETE FROM account_session
 WHERE
     account_session.session_id = $2 
     AND account_session.account_id = get_userid_by_session($1)
-RETURNING *;
+RETURNING session_id;
 
 -- name: DeleteSessions :many
 DELETE FROM account_session
 WHERE account_id = get_userid_by_session($1)
-RETURNING *;
+RETURNING session_id;

@@ -29,7 +29,7 @@ DELETE FROM account_session
 WHERE
     account_session.session_id = $2 
     AND account_session.account_id = get_userid_by_session($1)
-RETURNING session_id, account_id, start_date, expire_date, token_type
+RETURNING session_id
 `
 
 type DeleteSessionParams struct {
@@ -37,44 +37,32 @@ type DeleteSessionParams struct {
 	SessionID_2 string `json:"session_id_2"`
 }
 
-func (q *Queries) DeleteSession(ctx context.Context, arg DeleteSessionParams) (AccountSession, error) {
+func (q *Queries) DeleteSession(ctx context.Context, arg DeleteSessionParams) (string, error) {
 	row := q.db.QueryRow(ctx, deleteSession, arg.SessionID, arg.SessionID_2)
-	var i AccountSession
-	err := row.Scan(
-		&i.SessionID,
-		&i.AccountID,
-		&i.StartDate,
-		&i.ExpireDate,
-		&i.TokenType,
-	)
-	return i, err
+	var session_id string
+	err := row.Scan(&session_id)
+	return session_id, err
 }
 
 const deleteSessions = `-- name: DeleteSessions :many
 DELETE FROM account_session
 WHERE account_id = get_userid_by_session($1)
-RETURNING session_id, account_id, start_date, expire_date, token_type
+RETURNING session_id
 `
 
-func (q *Queries) DeleteSessions(ctx context.Context, sessionID string) ([]AccountSession, error) {
+func (q *Queries) DeleteSessions(ctx context.Context, sessionID string) ([]string, error) {
 	rows, err := q.db.Query(ctx, deleteSessions, sessionID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []AccountSession{}
+	items := []string{}
 	for rows.Next() {
-		var i AccountSession
-		if err := rows.Scan(
-			&i.SessionID,
-			&i.AccountID,
-			&i.StartDate,
-			&i.ExpireDate,
-			&i.TokenType,
-		); err != nil {
+		var session_id string
+		if err := rows.Scan(&session_id); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, session_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
