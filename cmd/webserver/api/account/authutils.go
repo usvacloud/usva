@@ -12,8 +12,8 @@ const (
 )
 
 type Session struct {
-	Token   string
-	Account Account
+	Token   string  `json:"token"`
+	Account Account `json:"account"`
 }
 
 func (h Handler) authenticate(ctx *gin.Context, a auther) (Session, error) {
