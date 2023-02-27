@@ -158,10 +158,7 @@ Contains all file operations
 ```sh
 > curl -LX POST 'http://localhost:8080/file/report' \
 	-H 'Content-Type: application/json' \
-	-d '{
-    	"filename": "5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp",
-    	"reason": "this file includes copyrighted content!"
-	}' | jq
+	-d '{"filename": "5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp", "reason": "somethings wrong"}' | jq
 {
     "message": "thank you! your report has been sent."
 }
@@ -183,12 +180,9 @@ Contains all file operations
 Send a new feedback
 
 ```sh
-> curl -L -X POST 'http://localhost:8080/feedback' \
+> curl -LX POST 'http://localhost:8080/feedback' \
 	-H 'Content-Type: application/json' \
-	-d '{ 
-		"message": "mycomment", 
-		"boxes": [ 1, 2, 3 ] 
-	}' | jq
+	-d '{ "message": "mycomment", "boxes": [ 1, 2, 3 ] }' | jq
 {
     "message": "Feedback added"
 }
@@ -236,7 +230,7 @@ Contains all file operations
 - [DELETE /sessions](#account_delete_session)
 - [DELETE /sessions/all](#account_delete_sessions)
 
-### 
+
 
 ### <a id="get_account">GET /account</a>
 
@@ -287,7 +281,7 @@ Get files that are linked to your profile, you will probably find this the only 
 {
   "files": [
     {
-      "file_uuid": "<random uuid>",
+      "filename": "<random uuid>",
       "title": {
         "String": "",
         "Valid": false
