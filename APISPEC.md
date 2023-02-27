@@ -2,17 +2,20 @@
 
 Documentation about endpoints and their usage
 
-| Route                  | Description                  |
-| :--------------------- | ---------------------------- |
-| [/](#root)             | Contains all API operations  |
-| [/file](#file)         | Contains all file operations |
-| [/feedback](#feedback) | Contains feedback operations |
+| Route                  | Description                                        |
+| :--------------------- | -------------------------------------------------- |
+| [/](#root)             | Contains all general query operations              |
+| [/file](#file)         | Contains all file operations                       |
+| [/feedback](#feedback) | Contains feedback operations                       |
+| [/account](#account)   | Contains all account management related operations |
+
+
 
 ### Request authorization
 
 In order to authorize a request, you need to set `Authorization` header to `Bearer <password>` with base64 url-encoded password.
 
-Example of authorization header, where file is locked with password `usva` (this password will be used in following example requests, too):
+Example of authorization header, where file is locked with password `usva` (this password will be used in this documentation's example requests, too):
 
 | Name          | Value          |
 | ------------- | -------------- |
@@ -23,13 +26,15 @@ Example of authorization header, where file is locked with password `usva` (this
 
 
 
-## <a name="root">API operations</a>
+## <a name="root">General/informing operations</a>
 
-Contains all API operations
+Contains all informing endpoints
 
 ### Existing routes
 
 - [GET /restrictions](#restrc)
+
+
 
 ### <a name="restrc">GET /restrictions</a>
 
@@ -44,17 +49,8 @@ Returns API restrictions. These can be for example shown on client.
 | maxEncryptedFileSize | Maximum size for an server-side encrypted file            |
 | maxSingleUploadSize  | Maximum size for an non-server-side encrypted file        |
 
-#### Examples
-
-Example request
-
 ```sh
-curl "http://usva.local/restrictions"
-```
-
-Example response
-
-```json
+> curl -L "usva.local/restrictions" | jq
 {
   "filePersistDuration": {
     "days": 1,
@@ -82,6 +78,8 @@ Example response
 }
 ```
 
+
+
 ## <a name="file">File operations</a>
 
 Contains all file operations
@@ -89,50 +87,31 @@ Contains all file operations
 ##### Existing routes:
 
 - [GET /file](#get_file)
+
 - [GET /file/info](#get_file_info)
-- [POST /file](#post_file)
+
 - [POST /file/upload](#post_file_upload)
+
 - [POST /file/report](#post-file-report)
+
+  
 
 ### <a name="get_file"> GET /file </a>
 
-**Existing file operation: possibly requires authentication**
-
-Request file's content. `filename` parameter is required.
-
-#### Examples
-
-##### Example request
-
 ```sh
-curl "http://usva.local/file?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
-	--header "Authorization: Bearer dGFwc2Fpc2Jlc3QK"
+> curl -L "usva.local/file?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
+	-H "Authorization: Bearer dGFwc2Fpc2Jlc3QK" \
+	-o-
+(file content)	
 ```
 
-##### Example response
 
-```
-(file content)
-```
 
 ### <a name="get_file_info">GET /file/info</a>
 
-**Existing file operation: possibly requires authentication**
-
-Request file's information. `filename` parameter is required.
-
-#### Examples
-
-##### Example request
-
 ```sh
-curl "http://usva.local/file/info?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
-	--header "Authorization: Bearer dGFwc2Fpc2Jlc3QK"
-```
-
-##### Example response
-
-```json
+> curl "http://usva.local/file/info?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp" \
+	-H "Authorization: Bearer dGFwc2Fpc2Jlc3QK"
 {
   "encrypted": false,
   "filename": "5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp",
@@ -147,39 +126,9 @@ curl "http://usva.local/file/info?filename=5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.
 }
 ```
 
-### <a name="post_file">POST /file </a>
+### 
 
-Uploads a file without any parameters and returns the perfect path for querying it's result
-
-#### Examples
-
-##### Example request
-
-```sh
-curl --form 'file=@./5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp' http://usva.local/file/
-```
-
-##### Example response
-
-```
-http://usva.local/file/?filename=bdbd3766-4cc1-46f3-ac28-296d958e848c
-```
-
-
-
-
-
-### <a name="post_file_upload">POST /file/upload </a>
-
-Uploads a file and returns it's filename on server.
-
-##### Required headers:
-
-| Name         | Value     | Description            |
-| ------------ | --------- | ---------------------- |
-| Content-Type | form-data | Specifies content type |
-
-##### Possible form parameters:
+### <a name="post_file_upload">POST /file/upload</a>
 
 | Name          | Description                                                  |
 | ------------- | ------------------------------------------------------------ |
@@ -190,49 +139,35 @@ Uploads a file and returns it's filename on server.
 
 
 
-#### Examples
-
-##### Example request:
-
 ```sh
-curl -L -X POST 'localhost:8080/file/upload' \
+> curl -L 'localhost:8080/file/upload' \
     --form 'title="my-upload-title"' \
     --form 'password="some-base64-encoded-string"' \
     --form 'can_encrypt=yes' \
-	--form 'file=@"./5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp"'
-```
-
-##### Example response:
-
-```json
+	--form 'file=@./file.pgp'
 {
   "message": "file uploaded",
   "filename": "5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp"
 }
 ```
 
+
+
 ### <a name="post-file-report">POST /file/report</a>
 
-#### Examples
-
-##### Example request:
-
 ```sh
-curl --location --request POST 'http://localhost:8080/file/report' \
-	--header 'Content-Type: application/json' \
-	--data-raw '{
+> curl -LX POST 'http://localhost:8080/file/report' \
+	-H 'Content-Type: application/json' \
+	-d '{
     	"filename": "5cf42bdf-aa14-4b33-8534-ea214fbd1c8f.pgp",
     	"reason": "this file includes copyrighted content!"
-	}'
-```
-
-##### Example response:
-
-```json
+	}' | jq
 {
     "message": "thank you! your report has been sent."
 }
 ```
+
+
 
 ## <a name="feedback">Feedback operations</a>
 
@@ -241,55 +176,196 @@ curl --location --request POST 'http://localhost:8080/file/report' \
 - [POST /feedback](#feedback-add)
 - [GET /feedback](#feedback-get)
 
+
+
 ### <a name="feedback-add">POST /feedback</a>
 
-### Examples
-
-##### Example request:
+Send a new feedback
 
 ```sh
-curl --location --request POST 'http://localhost:8080/feedback' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "comment": "Hello there. Your website is amazing. Great job.",
-    "boxes": [
-        1, 
-        2,
-        3
-    ]
-}'
-```
-
-#### Example response:
-
-```json
+> curl -L -X POST 'http://localhost:8080/feedback' \
+	-H 'Content-Type: application/json' \
+	-d '{ 
+		"message": "mycomment", 
+		"boxes": [ 1, 2, 3 ] 
+	}' | jq
 {
     "message": "Feedback added"
 }
 ```
 
+
+
 ### <a name="feedback-get">GET /feedback</a>
 
-### Examples
-
-##### Example request:
-
 ```sh
-curl --location 'http://localhost:8080/feedback'
-```
-
-#### Example response:
-
-```json
+> curl -L 'http://localhost:8080/feedback' | jq
 [
     {
-        "comment": "Such a great experience!",
+        "comment": {
+        	"String": "Such a great experience!",
+        	"Valid": true
+        },
         "boxes": [ 1, 2, 3 ]
     },
     {
-        "comment": "I would wish for more smooth workflow",
+        "comment": {
+        	"String": "",
+        	"Valid": false
+        },
         "boxes": [ 4, 2, 3, 1 ]
     }
 ]
+```
+
+
+
+## <a name="account">Account operations</a>
+
+Contains all file operations
+
+##### Existing routes:
+
+- [GET /account](#get_account)
+- [POST /login](#account_login)
+- [POST /register](#account_register)
+- [GET /account/files](#get_account_files)
+- [GET /account/files/all](#get_all_account_files)
+
+- [GET /sessions](#get_sessions)
+- [DELETE /sessions](#account_delete_session)
+- [DELETE /sessions/all](#account_delete_sessions)
+
+### 
+
+### <a id="get_account">GET /account</a>
+
+Get your current session profile. Session is read from cookies.
+
+```sh
+> curl -b mycookiefile -L "usva.local/account" | jq 		# jq: command line json parsing tool
+{
+  "token": "KULgs34BJjis_jRBysts84afxyg", 					# this is the same as your session token 
+  "account": { 												# this includes your profile information
+    "account_id": "7e08549f-44e1-4b97-b9dc-864f9f8fc5ca",
+    "username": "toke",
+    "register_date": "2023-02-21T01:00:48.617262Z",
+    "last_login": "2023-02-21T01:00:48.617262Z",
+    "activity_points": 0									# how many files are linked to your account 
+  }
+}
+```
+
+
+
+### <a id="account_login">POST /account/login</a>
+
+Create a new session. Session is read from cookies.
+
+```sh
+> curl -c mycookiefile -d '{"username": "myuser", "password": "mypassword"}' -L "usva.local/account" | jq
+{
+  "sessionId": "KULgs34BJjis_jRBysts84afxyg", # session token. this is also saved to cookies. 
+}
+```
+
+
+
+### <a id="account_login">POST /account/register</a>
+
+Takes in the same parameters as [/account/login](#account_login).
+This path does not implement existing account authentication logic (e.g. you can not use this for logging in to existing account).
+
+
+
+### <a id="get_account_files">GET /account/files</a>
+
+Get files that are linked to your profile, you will probably find this the only reason to use accounts
+
+```sh
+> curl -b mycookiefile -L "usva.local/account/files/?limit=1" # limit <= 10 (not required)
+{
+  "files": [
+    {
+      "file_uuid": "<random uuid>",
+      "title": {
+        "String": "",
+        "Valid": false
+      },
+      "file_size": 420,
+      "viewcount": 69,
+      "encrypted": true,
+      "upload_date": "2023-02-27T13:25:39.778869Z",
+      "last_seen": "2023-02-27T13:25:39.778869Z"
+    }
+  ]
+}
+```
+
+
+
+### <a id="get_all_account_files">GET /account/files/all</a>
+
+Get all owned files. Does not include anything else than filename. 
+
+```sh
+> curl -b mycookiefile -L "usva.local/account/files/all"
+{
+  "files": [
+  	"<file uuid>",
+  	"<some other file uuid>"
+  ]
+}
+```
+
+
+
+### <a id="get_sessions">GET /account/sessions</a>
+
+Show all user sessions
+
+```sh
+> curl -b mycookiefile -L "usva.local/account/sessions"
+{
+  "sessions": [
+    {
+      "session_id": "KULgs34BJjis_jRBysts84afxyg",
+      "start_date": "2023-02-27T13:15:37.053267+02:00"
+    }
+  ]
+}
+```
+
+
+
+### <a id="account_delete_session">DELETE /account/sessions</a>
+
+Delete a single session
+
+```sh
+> curl \
+	-b cookiejar \
+	-X DELETE \
+	-d '{"token": "KULgs34BJjis_jRBysts84afxyg"}' \
+	-L "localhost:8080/account/sessions" | jq
+{ 
+	"message": "ok"
+}
+```
+
+
+
+### <a id="account_delete_sessions">DELETE /account/sessions/all</a>
+
+Delete a single session
+
+```sh
+> curl -b cookiejar -X DELETE -L "localhost:8080/account/sessions/all" | jq
+{
+  "message": "ok",
+  "removed": [
+  	"KULgs34BJjis_jRBysts84afxyg",
+  ]
+}
 ```
 
