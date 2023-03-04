@@ -2,6 +2,7 @@ package cryptography
 
 import (
 	"bytes"
+	"log"
 	"math"
 )
 
@@ -13,18 +14,18 @@ func pad(in []byte, blocksize int) []byte {
 }
 
 func safeUnpad(in []byte, blocksize int) []byte {
-	if len(in) != blocksize {
+	l := len(in)
+	if l != blocksize || l%2 != 0 {
 		return in
 	}
 
-	lastByteInteger := int(in[len(in)-1])
+	lastByteInteger := int(in[l-1])
 	padding := bytes.Repeat([]byte{byte(lastByteInteger)}, lastByteInteger)
 
-	if lastByteInteger > len(in) {
-		return in
-	} else if !bytes.Contains(in, padding) {
+	if lastByteInteger > blocksize || !bytes.HasSuffix(in, padding) || lastByteInteger == 0 {
 		return in
 	}
 
+	log.Println(in)
 	return in[:blocksize-lastByteInteger]
 }

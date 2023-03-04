@@ -47,14 +47,14 @@ func cryptLoop(dst io.Writer, src io.Reader, bm cipher.BlockMode) error {
 			return err
 		}
 
+		chunk := make([]byte, bm.BlockSize())
 		if n < bm.BlockSize() {
 			plaintextChunk = pad(plaintextChunk[:n], bm.BlockSize())
+		} else {
+			chunk = safeUnpad(chunk, bm.BlockSize())
 		}
 
-		chunk := make([]byte, bm.BlockSize())
 		bm.CryptBlocks(chunk, plaintextChunk)
-
-		chunk = safeUnpad(chunk, bm.BlockSize())
 		if _, err = dst.Write(chunk); err != nil {
 			return err
 		}
