@@ -57,6 +57,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		api.SetErrResponse(ctx, err)
 		return
 	}
+	defer file.Close()
 
 	var (
 		iv              = []byte{}
@@ -105,6 +106,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		EncryptionIv: iv,
 		AccessToken:  uuid.NewString(),
 		FileSize:     int32(formFile.Size),
+		Encrypted:    len(iv) > 0,
 	})
 	if err != nil {
 		api.SetErrResponse(ctx, err)

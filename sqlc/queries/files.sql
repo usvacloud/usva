@@ -49,10 +49,11 @@ INSERT INTO file(
     passwdhash,
     access_token,
     encryption_iv,
+    encrypted,
     file_size,
     viewcount
 )
-VALUES($1, $2, $3, $4, $5, $6, 0);
+VALUES($1, $2, $3, $4, $5, $7, $6, 0);
 -- name: DeleteFile :exec
 DELETE FROM file
 WHERE file_uuid = $1;

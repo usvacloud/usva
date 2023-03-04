@@ -160,10 +160,11 @@ INSERT INTO file(
     passwdhash,
     access_token,
     encryption_iv,
+    encrypted,
     file_size,
     viewcount
 )
-VALUES($1, $2, $3, $4, $5, $6, 0)
+VALUES($1, $2, $3, $4, $5, $7, $6, 0)
 `
 
 type NewFileParams struct {
@@ -173,6 +174,7 @@ type NewFileParams struct {
 	AccessToken  string         `json:"access_token"`
 	EncryptionIv []byte         `json:"encryption_iv"`
 	FileSize     int32          `json:"file_size"`
+	Encrypted    bool           `json:"encrypted"`
 }
 
 func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
@@ -183,6 +185,7 @@ func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
 		arg.AccessToken,
 		arg.EncryptionIv,
 		arg.FileSize,
+		arg.Encrypted,
 	)
 	return err
 }

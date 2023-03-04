@@ -37,11 +37,7 @@ func DecryptStream(dst io.Writer, src io.Reader, key []byte, iv []byte) error {
 	return cryptLoop(dst, src, cipher.NewCBCDecrypter(cip, iv))
 }
 
-func cryptLoop(
-	dst io.Writer,
-	src io.Reader,
-	bm cipher.BlockMode,
-) error {
+func cryptLoop(dst io.Writer, src io.Reader, bm cipher.BlockMode) error {
 	for {
 		plaintextChunk := make([]byte, aes.BlockSize)
 		n, err := src.Read(plaintextChunk)
@@ -51,7 +47,6 @@ func cryptLoop(
 			return err
 		}
 
-		// this happens for example while encrypting non-blocksize buffers
 		if n < bm.BlockSize() {
 			plaintextChunk = pad(plaintextChunk[:n], bm.BlockSize())
 		}
