@@ -23,7 +23,7 @@ func EncryptStream(dst io.Writer, src io.Reader, key []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return iv, cryptLoop(dst, src, cipher.NewCBCEncrypter(cip, iv))
+	return iv, cryptLoop(dst, src, cipher.NewCBCEncrypter(cip, iv), 0)
 }
 
 // DecryptStream reads chunks from src and writes decrypted chunks to dst.
@@ -34,10 +34,10 @@ func DecryptStream(dst io.Writer, src io.Reader, key []byte, iv []byte) error {
 		return err
 	}
 
-	return cryptLoop(dst, src, cipher.NewCBCDecrypter(cip, iv))
+	return cryptLoop(dst, src, cipher.NewCBCDecrypter(cip, iv), 1)
 }
 
-func cryptLoop(dst io.Writer, src io.Reader, bm cipher.BlockMode) error {
+func cryptLoop(dst io.Writer, src io.Reader, bm cipher.BlockMode, mode int) error {
 	for {
 		plaintextChunk := make([]byte, aes.BlockSize)
 		n, err := src.Read(plaintextChunk)
@@ -48,13 +48,15 @@ func cryptLoop(dst io.Writer, src io.Reader, bm cipher.BlockMode) error {
 		}
 
 		chunk := make([]byte, bm.BlockSize())
-		if n < bm.BlockSize() {
+		if n < bm.BlockSize() && mode == 0 {
 			plaintextChunk = pad(plaintextChunk[:n], bm.BlockSize())
-		} else {
-			chunk = safeUnpad(chunk, bm.BlockSize())
 		}
 
 		bm.CryptBlocks(chunk, plaintextChunk)
+		if mode == 1 {
+			chunk = safeUnpad(chunk, bm.BlockSize())
+		}
+
 		if _, err = dst.Write(chunk); err != nil {
 			return err
 		}
