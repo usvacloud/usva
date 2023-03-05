@@ -72,13 +72,13 @@ func TestEncryptDecrypt(t *testing.T) {
 	encryptDst := bytes.NewBuffer(nil)
 	encryptionBlockMode := cipher.NewCBCEncrypter(cip, iv)
 	encryptSrcReader := bytes.NewReader(encryptSrc)
-	err = cryptLoop(encryptDst, encryptSrcReader, encryptionBlockMode)
+	err = cryptLoop(encryptDst, encryptSrcReader, encryptionBlockMode, 0)
 	check(t, err)
 
 	// test decryption
 	decryptDst := bytes.NewBuffer(nil)
 	decryptionBlockMode := cipher.NewCBCDecrypter(cip, iv)
-	err = cryptLoop(decryptDst, encryptDst, decryptionBlockMode)
+	err = cryptLoop(decryptDst, encryptDst, decryptionBlockMode, 1)
 	check(t, err)
 
 	// verify output
