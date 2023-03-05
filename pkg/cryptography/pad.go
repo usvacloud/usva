@@ -2,7 +2,6 @@ package cryptography
 
 import (
 	"bytes"
-	"log"
 	"math"
 )
 
@@ -29,8 +28,6 @@ func safeUnpad(in []byte, blocksize int) []byte {
 	if lastByteInteger > blocksize || !bytes.HasSuffix(in, padding) || lastByteInteger == 0 {
 		return in
 	}
-
-	log.Println("unpadding", in)
 
 	return in[:blocksize-lastByteInteger]
 }
