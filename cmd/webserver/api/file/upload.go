@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -17,42 +18,46 @@ import (
 	"github.com/usvacloud/usva/pkg/cryptography"
 )
 
+type uploadForm struct {
+	File       *multipart.FileHeader `form:"file"`
+	Password   string                `form:"password"`
+	CanEncrypt string                `form:"can_encrypt"`
+}
+
 // UploadFile
 func (s *Handler) UploadFile(ctx *gin.Context) {
-	formFile, err := ctx.FormFile("file")
+	body, err := api.BindBodyToStruct[uploadForm](ctx)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}
 
-	filename := uuid.NewString() + path.Ext(formFile.Filename)
+	filename := uuid.NewString() + path.Ext(body.File.Filename)
 
-	if s.config.MaxSingleUploadSize > 0 && uint64(formFile.Size) > s.config.MaxSingleUploadSize {
+	if s.config.MaxSingleUploadSize > 0 && uint64(body.File.Size) > s.config.MaxSingleUploadSize {
 		api.SetErrResponse(ctx, api.ErrTooBigBody)
 		return
 	}
 
-	formpwd := strings.TrimSpace(ctx.PostForm("password"))
-	pwd, err := base64.RawStdEncoding.DecodeString(formpwd)
-	if err != nil {
-		api.SetErrResponse(ctx, err)
-		return
-	}
-	password := strings.TrimSpace(string(pwd))
-
-	formFileHandle, err := formFile.Open()
+	pwd, err := base64.RawStdEncoding.DecodeString(body.Password)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}
 
-	absUploads, err := filepath.Abs(s.config.UploadsDir)
+	formFileHandle, err := body.File.Open()
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}
 
-	file, err := os.OpenFile(path.Join(absUploads, filename), os.O_CREATE|os.O_WRONLY, 0o600)
+	absUploadsPath, err := filepath.Abs(s.config.UploadsDir)
+	if err != nil {
+		api.SetErrResponse(ctx, err)
+		return
+	}
+
+	file, err := os.OpenFile(path.Join(absUploadsPath, filename), os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
@@ -60,11 +65,10 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 	defer file.Close()
 
 	var (
+		password        = strings.TrimSpace(string(pwd))
 		iv              = []byte{}
-		requirementsMet = len(password) >= 6 &&
-			len(password) < 128 &&
-			formFile.Size < int64(s.config.MaxEncryptableFileSize)
-		confirmation = ctx.PostForm("can_encrypt") == "yes"
+		requirementsMet = len(password) >= 6 && len(password) < 128 && body.File.Size < int64(s.config.MaxEncryptableFileSize)
+		confirmation    = body.CanEncrypt == "yes"
 	)
 
 	switch {
@@ -105,7 +109,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		Passwdhash:   sql.NullString{String: string(hash), Valid: string(hash) != ""},
 		EncryptionIv: iv,
 		AccessToken:  uuid.NewString(),
-		FileSize:     int32(formFile.Size),
+		FileSize:     int32(body.File.Size),
 		Encrypted:    len(iv) > 0,
 	})
 	if err != nil {

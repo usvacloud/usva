@@ -4,7 +4,7 @@ import "github.com/gin-gonic/gin"
 
 func BindBodyToStruct[T any](ctx *gin.Context, verifyStruct ...func(T) error) (T, error) {
 	var body T
-	if err := ctx.ShouldBindJSON(&body); err != nil {
+	if err := ctx.ShouldBind(&body); err != nil {
 		return body, err
 	}
 
