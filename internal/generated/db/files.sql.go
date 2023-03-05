@@ -66,6 +66,7 @@ const getFileInformation = `-- name: GetFileInformation :one
 SELECT file_uuid,
     title,
     upload_date,
+    file_hash,
     encrypted,
     file_size,
     viewcount
@@ -77,6 +78,7 @@ type GetFileInformationRow struct {
 	FileUuid   string         `json:"file_uuid"`
 	Title      sql.NullString `json:"title"`
 	UploadDate time.Time      `json:"upload_date"`
+	FileHash   string         `json:"file_hash"`
 	Encrypted  bool           `json:"encrypted"`
 	FileSize   int32          `json:"file_size"`
 	Viewcount  int32          `json:"viewcount"`
@@ -89,6 +91,7 @@ func (q *Queries) GetFileInformation(ctx context.Context, fileUuid string) (GetF
 		&i.FileUuid,
 		&i.Title,
 		&i.UploadDate,
+		&i.FileHash,
 		&i.Encrypted,
 		&i.FileSize,
 		&i.Viewcount,
@@ -162,9 +165,10 @@ INSERT INTO file(
     encryption_iv,
     encrypted,
     file_size,
+    file_hash,
     viewcount
 )
-VALUES($1, $2, $3, $4, $5, $7, $6, 0)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0)
 `
 
 type NewFileParams struct {
@@ -173,8 +177,9 @@ type NewFileParams struct {
 	Passwdhash   sql.NullString `json:"passwdhash"`
 	AccessToken  string         `json:"access_token"`
 	EncryptionIv []byte         `json:"encryption_iv"`
-	FileSize     int32          `json:"file_size"`
 	Encrypted    bool           `json:"encrypted"`
+	FileSize     int32          `json:"file_size"`
+	FileHash     string         `json:"file_hash"`
 }
 
 func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
@@ -184,8 +189,9 @@ func (q *Queries) NewFile(ctx context.Context, arg NewFileParams) error {
 		arg.Passwdhash,
 		arg.AccessToken,
 		arg.EncryptionIv,
-		arg.FileSize,
 		arg.Encrypted,
+		arg.FileSize,
+		arg.FileHash,
 	)
 	return err
 }

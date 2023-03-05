@@ -13,6 +13,7 @@ WHERE file_uuid = $1;
 SELECT file_uuid,
     title,
     upload_date,
+    file_hash,
     encrypted,
     file_size,
     viewcount
@@ -51,9 +52,11 @@ INSERT INTO file(
     encryption_iv,
     encrypted,
     file_size,
+    file_hash,
     viewcount
 )
-VALUES($1, $2, $3, $4, $5, $7, $6, 0);
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0);
+
 -- name: DeleteFile :exec
 DELETE FROM file
 WHERE file_uuid = $1;

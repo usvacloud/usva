@@ -89,6 +89,7 @@ type File struct {
 	UploadDate   time.Time      `json:"upload_date"`
 	LastSeen     time.Time      `json:"last_seen"`
 	Viewcount    int32          `json:"viewcount"`
+	FileHash     string         `json:"file_hash"`
 }
 
 type FileToAccount struct {

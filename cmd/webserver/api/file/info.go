@@ -44,5 +44,6 @@ func (s *Handler) FileInformation(ctx *gin.Context) {
 		"viewCount":  f.Viewcount,
 		"locked":     pwd.Valid,
 		"encrypted":  f.Encrypted,
+		"hash":       f.FileHash,
 	})
 }

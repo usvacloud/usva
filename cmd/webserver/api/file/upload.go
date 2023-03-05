@@ -20,8 +20,10 @@ import (
 
 type uploadForm struct {
 	File       *multipart.FileHeader `form:"file"`
+	Title      string                `form:"title"`
 	Password   string                `form:"password"`
 	CanEncrypt string                `form:"can_encrypt"`
+	FileHash   string                `form:"hash"`
 }
 
 // UploadFile
@@ -45,13 +47,13 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	formFileHandle, err := body.File.Open()
+	absUploadsPath, err := filepath.Abs(s.config.UploadsDir)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}
 
-	absUploadsPath, err := filepath.Abs(s.config.UploadsDir)
+	formFileHandle, err := body.File.Open()
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
@@ -65,8 +67,8 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 	defer file.Close()
 
 	var (
-		password        = strings.TrimSpace(string(pwd))
 		iv              = []byte{}
+		password        = strings.TrimSpace(string(pwd))
 		requirementsMet = len(password) >= 6 && len(password) < 128 && body.File.Size < int64(s.config.MaxEncryptableFileSize)
 		confirmation    = body.CanEncrypt == "yes"
 	)
@@ -102,17 +104,16 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	title := ctx.Request.FormValue("title")
-	err = s.db.NewFile(ctx, db.NewFileParams{
+	if err = s.db.NewFile(ctx, db.NewFileParams{
 		FileUuid:     filename,
-		Title:        sql.NullString{String: title, Valid: title != ""},
+		Title:        sql.NullString{String: body.Title, Valid: body.Title != ""},
 		Passwdhash:   sql.NullString{String: string(hash), Valid: string(hash) != ""},
 		EncryptionIv: iv,
 		AccessToken:  uuid.NewString(),
 		FileSize:     int32(body.File.Size),
 		Encrypted:    len(iv) > 0,
-	})
-	if err != nil {
+		FileHash:     body.FileHash,
+	}); err != nil {
 		api.SetErrResponse(ctx, err)
 		return
 	}
