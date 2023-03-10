@@ -67,10 +67,11 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 	defer file.Close()
 
 	var (
-		iv              = []byte{}
-		password        = strings.TrimSpace(string(pwd))
-		requirementsMet = len(password) >= 6 && len(password) < 128 && body.File.Size < int64(s.config.MaxEncryptableFileSize)
-		confirmation    = body.CanEncrypt == "yes"
+		iv                   = []byte{}
+		password             = strings.TrimSpace(string(pwd))
+		passwordRequirements = len(password) >= 6 && len(password) < 128
+		requirementsMet      = passwordRequirements && body.File.Size < int64(s.config.MaxEncryptableFileSize)
+		confirmation         = body.CanEncrypt == "yes"
 	)
 
 	switch {
@@ -98,10 +99,13 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		}
 	}
 
-	hash, err := s.passwordhash([]byte(password))
-	if err != nil {
-		api.SetErrResponse(ctx, err)
-		return
+	var hash []byte
+	if passwordRequirements {
+		hash, err = s.passwordhash([]byte(password))
+		if err != nil {
+			api.SetErrResponse(ctx, err)
+			return
+		}
 	}
 
 	if err = s.db.NewFile(ctx, db.NewFileParams{
