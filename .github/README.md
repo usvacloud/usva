@@ -1,6 +1,8 @@
 # Usva
 
 [![push-validation](https://github.com/romeq/usva/actions/workflows/push-validation.yml/badge.svg)](https://github.com/romeq/usva/actions/workflows/push-validation.yml)
+![star](https://img.shields.io/github/stars/usvacloud/usva?style=social)
+![code-size](https://img.shields.io/github/languages/code-size/usvacloud/usva)
 
 Usva is a feature-rich file cloud with a modern REST API.
 Privacy, accessibility and efficiency will always come first, thus usva is built to be highly reliable and easy to set up for anybody.
