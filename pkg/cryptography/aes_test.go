@@ -78,7 +78,9 @@ func TestEncryptDecrypt(t *testing.T) {
 	// test decryption
 	decryptDst := bytes.NewBuffer(nil)
 	decryptionBlockMode := cipher.NewCBCDecrypter(cip, iv)
-	err = cryptLoop(decryptDst, encryptDst, decryptionBlockMode, 1)
+
+	encryptDstReader := bytes.NewReader(encryptDst.Bytes())
+	err = cryptLoop(decryptDst, encryptDstReader, decryptionBlockMode, 1)
 	check(t, err)
 
 	// verify output
