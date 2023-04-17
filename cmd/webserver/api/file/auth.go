@@ -14,6 +14,7 @@ import (
 
 func (h Handler) authenticate(ctx *gin.Context, filename string) bool {
 	password := h.getrequestpassword(ctx, filename)
+
 	sessionCookieName := formatauthcookiename(filename)
 	sessionToken, err := ctx.Cookie(sessionCookieName)
 
@@ -47,12 +48,12 @@ func (h Handler) getrequestpassword(ctx *gin.Context, filename string) string {
 	if len(hdr) == 2 {
 		h.persistSession(ctx, formatpasswordcookiename(filename), hdr[1])
 
-		r, _ := base64.RawStdEncoding.DecodeString(hdr[1])
+		r, _ := base64.RawStdEncoding.WithPadding(base64.StdPadding).DecodeString(hdr[1])
 		return strings.TrimSpace(string(r))
 	}
 
 	cookie, _ := ctx.Cookie(formatpasswordcookiename(filename))
-	r, _ := base64.RawStdEncoding.DecodeString(cookie)
+	r, _ := base64.RawStdEncoding.WithPadding(base64.StdPadding).DecodeString(cookie)
 	return strings.TrimSpace(string(r))
 }
 

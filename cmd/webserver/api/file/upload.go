@@ -41,7 +41,7 @@ func (s *Handler) UploadFile(ctx *gin.Context) {
 		return
 	}
 
-	pwd, err := base64.RawStdEncoding.DecodeString(body.Password)
+	pwd, err := base64.RawStdEncoding.WithPadding(base64.StdPadding).DecodeString(body.Password)
 	if err != nil {
 		api.SetErrResponse(ctx, err)
 		return
