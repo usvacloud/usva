@@ -60,7 +60,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	_, err = io.ReadFull(rand.Reader, iv)
 	check(t, err)
 
-	size := 192
+	size := 29517239
 	encryptSrc := make([]byte, size)
 	var totalDecryptBuffer []byte
 
