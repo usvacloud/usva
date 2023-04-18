@@ -10,60 +10,43 @@ import (
 
 var ErrProcessingFailed = errors.New("panic while processing data chunks")
 
-// EncryptStream reads chunks from src and writes them as encrypted to dst.
-// Encryption with AES Block cipher mode, returns a random initialization vector and error
-func EncryptStream(dst io.Writer, src io.ReadSeeker, key []byte) ([]byte, error) {
-	cip, err := aes.NewCipher(key)
+func EncryptStream(ciphertext io.Writer, plaintext io.Reader, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, err
+		return []byte{}, err
 	}
 
-	iv := make([]byte, cip.BlockSize())
+	// Generate a random IV
+	iv := make([]byte, aes.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil, err
+		return iv, err
 	}
 
-	return iv, cryptLoop(dst, src, cipher.NewCBCEncrypter(cip, iv), 0)
+	// Create a stream cipher using AES in CBC mode
+	stream := cipher.NewCFBEncrypter(block, iv)
+
+	// Encrypt the plaintext and write to the ciphertext
+	writer := &cipher.StreamWriter{S: stream, W: ciphertext}
+	if _, err := io.Copy(writer, plaintext); err != nil {
+		return iv, err
+	}
+
+	return iv, nil
 }
 
-// DecryptStream reads chunks from src and writes decrypted chunks to dst.
-// Decryption with AES Block cipher mode.
-func DecryptStream(dst io.Writer, src io.ReadSeeker, key []byte, iv []byte) error {
-	cip, err := aes.NewCipher(key)
+func DecryptStream(plaintext io.Writer, ciphertext io.Reader, key []byte, iv []byte) error {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return err
 	}
 
-	return cryptLoop(dst, src, cipher.NewCBCDecrypter(cip, iv), 1)
-}
+	// Create a stream cipher using AES in CBC mode
+	stream := cipher.NewCFBDecrypter(block, iv)
 
-func cryptLoop(dst io.Writer, src io.ReadSeeker, bm cipher.BlockMode, mode int) error {
-	for {
-		sourceChunk := make([]byte, aes.BlockSize)
-		n, err := src.Read(sourceChunk)
-		if errors.Is(err, io.EOF) || n == 0 {
-			break
-		} else if err != nil {
-			return err
-		}
-
-		chunk := make([]byte, bm.BlockSize())
-		if n < bm.BlockSize() && mode == 0 {
-			sourceChunk = pad(sourceChunk[:n], bm.BlockSize())
-		}
-
-		bm.CryptBlocks(chunk, sourceChunk)
-
-		_, err = src.Read(make([]byte, 1))
-		if err != nil && mode == 1 {
-			chunk = safeUnpad(chunk, bm.BlockSize())
-		} else if err == nil {
-			src.Seek(-1, io.SeekCurrent)
-		}
-
-		if _, err = dst.Write(chunk); err != nil {
-			return err
-		}
+	// Decrypt the ciphertext and write to the plaintext
+	reader := &cipher.StreamReader{S: stream, R: ciphertext}
+	if _, err := io.Copy(plaintext, reader); err != nil {
+		return err
 	}
 
 	return nil

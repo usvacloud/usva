@@ -50,41 +50,29 @@ func TestChunking(t *testing.T) {
 }
 
 func TestEncryptDecrypt(t *testing.T) {
-	// prepare ciphers
-	key := argon2.Key([]byte("this is my awesome key"), []byte{}, 2, 1024, 2, 16)
-	cip, err := aes.NewCipher(key)
-	check(t, err)
+	key := argon2.Key([]byte("this is my awesome key"), []byte{}, 2, 1024, 2, 32)
 
-	// prepare IV
-	iv := make([]byte, aes.BlockSize)
-	_, err = io.ReadFull(rand.Reader, iv)
-	check(t, err)
-
-	size := 29517239
+	size := int(math.Pow(2, 20) * 4)
 	encryptSrc := make([]byte, size)
 	var totalDecryptBuffer []byte
 
-	_, err = io.ReadFull(rand.Reader, encryptSrc)
+	_, err := io.ReadFull(rand.Reader, encryptSrc)
 	check(t, err)
 	integrityOriginal := sha256.Sum256(encryptSrc)
 
 	// test encryption
 	encryptDst := bytes.NewBuffer(nil)
-	encryptionBlockMode := cipher.NewCBCEncrypter(cip, iv)
 	encryptSrcReader := bytes.NewReader(encryptSrc)
-	err = cryptLoop(encryptDst, encryptSrcReader, encryptionBlockMode, 0)
+	iv, err := EncryptStream(encryptDst, encryptSrcReader, key)
 	check(t, err)
 
 	// test decryption
 	decryptDst := bytes.NewBuffer(nil)
-	decryptionBlockMode := cipher.NewCBCDecrypter(cip, iv)
-
 	encryptDstReader := bytes.NewReader(encryptDst.Bytes())
-	err = cryptLoop(decryptDst, encryptDstReader, decryptionBlockMode, 1)
-	check(t, err)
+	check(t, DecryptStream(decryptDst, encryptDstReader, key, iv))
 
 	// verify output
-	bs := cip.BlockSize()
+	bs := aes.BlockSize
 	chunksVerified := 0
 	verifyChunk := func(buf []byte, offset, read int) {
 		outset := offset + read
