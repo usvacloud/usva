@@ -39,6 +39,7 @@ func (h Handler) authenticate(ctx *gin.Context, filename string) bool {
 }
 
 func (h Handler) persistSession(ctx *gin.Context, cookie, value string) {
+	ctx.SetSameSite(http.SameSiteNoneMode)
 	ctx.SetCookie(cookie, value, h.config.CookieSaveTime, "/",
 		h.config.APIDomain, h.config.UseSecureCookie, true)
 }
