@@ -47,11 +47,11 @@ Docker setup is recommended because it's easy, straightforward and Docker makes 
 % make run-docker
 ```
 
-##### In configuration
+##### Notes for `config.toml` when used with Docker
 
+- **IMPORTANT** `database.host` must be equal to`"db"`, which is the database's container name in `docker-compose.yml`
 - `server.address` has to be `0.0.0.0` so that the server can be accessed from outside
 - if `SVPORT` environment variable is set, `server.port` has to be equal to it
-- `database.host` must be equal to`"db"`, which is the database's container name in `docker-compose.yml`
 - `database.port` has to be 5432 or same as `DB_PORT`
 - `database.user` has to be same as `DB_USERNAME`
 - `database.password` has to be same as `DB_PASSWORD`  
@@ -86,14 +86,6 @@ DB_USERNAME=$DB_OWNER \
 	DB_PASSWORD=dbownerpassword \
 	make migrateup setup build run
 ```
-
-##### Following these steps, if database is located in the same machine, configure Usva as follows:
-
-- `database.user` has to be same as `DB_OWNER` 
-- `database.password` has to be the same password you provided when you created the user
-- `database.host` has to be `"127.0.0.1"`
-- `database.port` has to be the same port where database is listening, default for PostgreSQL is  `5432`
-- `database.database` has to be same as `DB_OWNER`
 
 ### Server configuration
 
