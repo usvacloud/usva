@@ -286,8 +286,8 @@ Get files that are linked to your profile, you will probably find this the only 
         "String": "",
         "Valid": false
       },
-      "file_size": 420,
-      "viewcount": 69,
+      "file_size": 5034,
+      "viewcount": 100,
       "encrypted": true,
       "upload_date": "2023-02-27T13:25:39.778869Z",
       "last_seen": "2023-02-27T13:25:39.778869Z"
