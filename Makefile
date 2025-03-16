@@ -25,27 +25,27 @@ DB_TESTS_CONNECTION_STRING = "postgres://$(DB_USERNAME_TESTS):$(DB_PASSWORD_TEST
 .PHONY: all lint test
 
 build:
-	@- CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) $(GOPKG)
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) build -o $(BUILDDIR)/$(BINARY) $(GOPKG)
 setup:
-	@- go get $(GOPKG)
-	@- cp config-example.toml config.toml
+	go get $(GOPKG)
+	cp config-example.toml config.toml
 deploy:
 	docker compose build
 	docker compose restart
 
 migrateup:
-	@cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_CONNECTION_STRING) >/dev/null
+	cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_CONNECTION_STRING) >/dev/null
 migratedown:
-	@psql -d $(DB_CONNECTION_STRING) -f ./sqlc/dbdown.sql >/dev/null
+	psql -d $(DB_CONNECTION_STRING) -f ./sqlc/dbdown.sql >/dev/null
 migrateup-tests:
-	@cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_TESTS_CONNECTION_STRING) >/dev/null
+	cat $$(ls ./sqlc/schemas/* | sort) | psql -d $(DB_TESTS_CONNECTION_STRING) >/dev/null
 migratedown-tests:
-	@psql -d $(DB_TESTS_CONNECTION_STRING) -f ./sqlc/dbdown.sql >/dev/null
+	psql -d $(DB_TESTS_CONNECTION_STRING) -f ./sqlc/dbdown.sql >/dev/null
 
 db-create:
 	createdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USERNAME) --owner=$(DB_OWNER) $(DB_NAME)
 db-shell:
-	@psql -qd $(DB_CONNECTION_STRING)
+	psql -qd $(DB_CONNECTION_STRING)
 
 # running
 run: build
