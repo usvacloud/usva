@@ -51,6 +51,10 @@ func addRouteapi(server *api.Server, cfg *config.Config) {
 		if !cfg.Server.HideRequests {
 			router.Use(middlewarehandler.Log)
 		}
+
+		if cfg.Server.APIKey != "" {
+			router.Use(middlewarehandler.CheckAPIKey(cfg.Server.APIKey))
+		}
 	}
 
 	// Common
@@ -88,7 +92,7 @@ func addRouteapi(server *api.Server, cfg *config.Config) {
 		accountsGroup.GET("/files/all", query, accountsHandler.GetAllOwnedFiles)
 		accountsGroup.POST("/login", login, accountsHandler.Login)
 		accountsGroup.POST("/register", strict, accountsHandler.CreateAccount)
-        accountsGroup.DELETE("/", strict, accountsHandler.DeleteAccount)
+		accountsGroup.DELETE("/", strict, accountsHandler.DeleteAccount)
 	}
 
 	sessionsGroup := accountsGroup.Group("/sessions")

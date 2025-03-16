@@ -13,4 +13,6 @@ var (
 	ErrTooBigBody                 = fmt.Errorf("request body too big")
 	ErrPasswordRequirementsNotMet = fmt.Errorf("password has to be between 8 and 32 charecters long")
 	ErrUsernameRequirementsNotMet = fmt.Errorf("username has to be between 4 and 16 charecters long")
+    ErrAPIKeyMissing              = fmt.Errorf("api key is missing")
+    ErrInvalidAPIKey              = fmt.Errorf("api key is invalid")
 )

@@ -29,6 +29,7 @@ type Server struct {
 	DebugMode      bool     `toml:"debug_mode"`
 	HideRequests   bool     `toml:"hide_requests"`
 	AllowedOrigins []string `toml:"allowed_origins"`
+	APIKey         string   `toml:"api_key"`
 	TLS            struct {
 		Enabled  bool   `toml:"enabled"`
 		CertFile string `toml:"cert_file"`
