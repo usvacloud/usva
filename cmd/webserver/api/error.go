@@ -76,10 +76,10 @@ func SetErrResponse(ctx *gin.Context, err error) {
 		errorMessage, status = err.Error(), http.StatusNotFound
 	case errors.Is(err, ErrEmptyResponse):
 		errorMessage, status = err.Error(), http.StatusNoContent
-    case errors.Is(err, ErrAPIKeyMissing):
-        errorMessage, status = err.Error(), http.StatusUnauthorized
-    case errors.Is(err, ErrInvalidAPIKey):
-        errorMessage, status = err.Error(), http.StatusForbidden
+	case errors.Is(err, ErrAPIKeyMissing):
+		errorMessage, status = err.Error(), http.StatusUnauthorized
+	case errors.Is(err, ErrInvalidAPIKey):
+		errorMessage, status = err.Error(), http.StatusForbidden
 
 	default:
 		log.Println("error: ", err.Error())

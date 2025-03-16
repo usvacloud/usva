@@ -1,9 +1,9 @@
 package api
 
 type APIHeaders struct {
-    APIKeyHeaderName string
+	APIKeyHeaderName string
 }
 
-var Headers = APIHeaders {
-    APIKeyHeaderName: "X-Usva-Api-Key",
+var Headers = APIHeaders{
+	APIKeyHeaderName: "X-Usva-Api-Key",
 }
