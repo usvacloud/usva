@@ -8,9 +8,9 @@ BUILDDIR ?= ./bin
 GOPKG=./cmd/webserver
 
 DB_NAME ?= usva
-DB_USERNAME ?= dev
-DB_PASSWORD ?= dev
-DB_OWNER ?= dev
+DB_USERNAME ?= usva
+DB_PASSWORD ?= usva
+DB_OWNER ?= usva
 DB_HOST ?= 127.0.0.1
 DB_PORT ?= 5432
 
@@ -43,7 +43,7 @@ migratedown-tests:
 	@psql -d $(DB_TESTS_CONNECTION_STRING) -f ./sqlc/dbdown.sql >/dev/null
 
 db-create:
-	createdb -U $(DB_USERNAME) --owner=$(DB_OWNER) $(DB_NAME)
+	createdb -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USERNAME) --owner=$(DB_OWNER) $(DB_NAME)
 db-shell:
 	@psql -qd $(DB_CONNECTION_STRING)
 
@@ -56,9 +56,9 @@ run-docker-nodaemon:
 	docker-compose run --service-ports --rm server
 
 test:
-	echo "--------- GO TESTS -----------" 
+	echo "--------- GO TESTS -----------"
 	- go test ./...
-	echo "------------------------------" 
+	echo "------------------------------"
 preparetests:
 	[ "${START_TEST_DOCKER}" = "1" ] \
 		&& docker-compose -f docker-compose-tests.yml up -d --remove-orphans \
