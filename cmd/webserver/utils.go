@@ -12,9 +12,9 @@ func setLogWriter(file string) *os.File {
 		return nil
 	}
 
-	fhandle, err := os.OpenFile(file, os.O_WRONLY, 0o644)
-	utils.Must(err)
+	handle, err := os.OpenFile(file, os.O_WRONLY, 0o644)
+	utils.MustBeNil(err)
 
-	log.SetOutput(fhandle)
-	return fhandle
+	log.SetOutput(handle)
+	return handle
 }
